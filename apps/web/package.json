@@ -5,13 +5,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
   },
   "dependencies": {
+    "@ai-media/provider-aliyun-bailian": "workspace:*",
+    "@ai-media/provider-azure-openai": "workspace:*",
+    "@ai-media/sdk": "workspace:*",
     "@workspace/ui": "workspace:*",
     "lucide-react": "^1.27.0",
     "next": "16.2.6",
@@ -21,6 +25,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/bun": "^1.2.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
