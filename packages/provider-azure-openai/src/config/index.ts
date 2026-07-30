@@ -1,15 +1,16 @@
 /**
  * Azure OpenAI Provider configuration boundary.
  *
- * Azure OpenAI uses API Key authentication (`api-key` header) and a
- * synchronous image API. Phase 0 only defines the configuration shape; it
- * never reads credentials or performs a network call.
+ * Azure OpenAI uses API Key authentication sent as `Authorization: Bearer
+ * {apiKey}` (live-confirmed for Global Standard `gpt-image-2` deployments) and
+ * a synchronous image API. The configuration only defines the shape; it never
+ * reads credentials until an adapter request is executed.
  */
 export interface AzureOpenAIConfig {
-  /** API key sent via the `api-key` header. */
+  /** API key sent as the `Authorization: Bearer` credential. */
   readonly apiKey: string;
   /** Azure resource endpoint, e.g. `https://<resource>.cognitiveservices.azure.com`. */
   readonly endpoint: string;
-  /** Azure OpenAI API version, e.g. `2024-10-01`. */
+  /** Azure OpenAI API version, e.g. `2024-02-01`. */
   readonly apiVersion: string;
 }

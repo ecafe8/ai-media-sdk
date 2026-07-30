@@ -116,10 +116,10 @@ flowchart LR
 
 - 参考 AI SDK 的 `azure.image(deploymentName)` 心智模型。
 - deployment name 是 Azure 资源中的部署标识，不等同于跨平台模型 alias。
-- Provider 配置至少需要考虑 endpoint、deployment、API version 和必要 Azure headers；**鉴权仅 API Key（`api-key` 头）**，Entra ID 后置。
-- 图像生成为**同步调用**：`POST {endpoint}/openai/deployments/{deployment}/images/generations?api-version=...`，响应即含 `data[].url` 或 `data[].b64_json`（DALL-E 2/3 可返回 url，GPT image 模型默认 b64_json）。适配器把同步结果映射为已完成的 `GenerationResult`。
+- Provider 配置至少需要考虑 endpoint、deployment、API version 和必要 Azure headers；**鉴权为 API Key（Phase 1 live 确认为 `Authorization: Bearer {apiKey}` 头，适用 Global Standard `gpt-image-2` 等 Serverless 部署）**；经典 Azure OpenAI 资源亦支持 `api-key` 头，作为备选评估；Entra ID 后置。
+- 图像生成为**同步调用**：`POST {endpoint}/openai/deployments/{deployment}/images/generations?api-version=...`，响应即含 `data[].url` 或 `data[].b64_json`（DALL-E 2/3 可返回 url，GPT image 模型默认 b64_json）。适配器把同步结果映射为已完成的 `GenerationResult`。Phase 1 live 确认：部署 `gpt-image-2`、API 版本 `2024-02-01`、请求体 `prompt/size/n`（公共）与 `quality/output_format/output_compression`（Azure 原生，经 `providerOptions.azure` 透传）。
 - AI SDK 文档显示 DALL-E 2/3 图像能力使用 `size` 而不是 `aspectRatio`；本项目只把经过能力验证的参数放入公共契约。
-- Azure Responses API 的图像生成工具路径与直接图像模型路径存在差异，MVP 选型待确认。
+- Azure Responses API 的图像生成工具路径与直接图像模型路径存在差异，MVP 选型已 live 确认走直接 `images/generations` 路径；编辑走 `images/edits`（multipart form-data），Phase 1 后置。
 - Provider 包 `@ai-media/provider-azure-openai` 纯 fetch 实现，不包装 `openai` 官方 SDK。
 
 ### 4.2 Google
@@ -301,3 +301,4 @@ Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料�
 | v1.0.0 | 2026-07-30 | 创建 Provider 适配体系技术方案，记录 Azure/Google/阿里云/Seedream 调研边界。 |
 | v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型能力、输出数量、分辨率和资料来源。 |
 | v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记 shadcn 迁移事实。 |
+| v1.3.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权改为 `Authorization: Bearer`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头列为经典资源备选；确认 `2024-02-01` API 版本、直接 `images/generations` 路径、请求体公共/原生字段划分；编辑 `images/edits` multipart 后置。 |

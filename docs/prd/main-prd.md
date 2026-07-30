@@ -514,7 +514,7 @@ flowchart LR
 | 当前 Web 提供受控 Playground，但不建设管理控制台 | 仅提供 Node.js examples；或同期建设公共 Playground/管理控制台 | 保留直观验证体验，同时避免平台化范围膨胀 | 需要服务端保护密钥；不承诺公共多租户能力 |
 | 产品定位为多模态 umbrella SDK，MVP 仅图像但类型预留多模态 | 三模态各起独立 SDK；MVP 直接做视频/音频 | 同批 Provider 跨多模态，共享 transport/任务/错误核心；先发图像避免范围膨胀 | 核心类型泛型化（`TaskHandle<T>`/`GenerationResult<T>`）；后续加 `generateVideo`/`generateAudio` |
 | Provider 适配器纯 fetch，不包装官方 SDK | Azure 用官方 openai SDK；阿里云等无 SDK 才 fetch | 契约统一（共用可注入 transport + 单一错误/重试路径）；Azure 图像 API 极简无需 SDK；避免版本耦合与传递依赖 | 两 Provider 零外部 SDK 依赖；错误分类直接拿 HTTP 状态码 |
-| Azure OpenAI 仅支持 API Key 鉴权 | 同时支持 Entra ID/Azure AD bearer | 用户确认首期仅用 API Key（`api-key` 头），复杂度最低；Entra ID 后置 | 若未来需 Entra ID，仅 Azure provider 引 `@azure/identity` 做 token 获取，HTTP 仍走自有 fetch |
+| Azure OpenAI 仅支持 API Key 鉴权 | 同时支持 Entra ID/Azure AD bearer | 用户确认首期仅用 API Key，复杂度最低；Entra ID 后置 | Phase 1 live 确认：Global Standard `gpt-image-2` 等 Serverless 部署使用 `Authorization: Bearer {apiKey}` 头；经典 Azure OpenAI 资源亦支持 `api-key` 头，作为备选评估。若未来需 Entra ID，仅 Azure provider 引 `@azure/identity` 做 token 获取，HTTP 仍走自有 fetch |
 | 包 scope 为 `@ai-media/*`，按平台拆独立 Provider 包 | 单包内分目录；保持图像单一 scope | 用户按需安装 Provider；外部依赖隔离；feat↔package 一一对应 | 新增 `@ai-media/sdk` + `@ai-media/provider-<name>` + `examples/<provider>` |
 | 测试基线采用 `bun:test` | 引入 Vitest/Jest；不配测试 | 与 Bun 工具链一致，零额外依赖；SUB tech 均假设有单元/契约测试 | 根加 `test` 脚本 + turbo `test` task；契约测试 mock 双 Provider |
 
@@ -637,3 +637,4 @@ flowchart LR
 | v1.2.0 | 2026-07-30 | 根据 SUB-005 需求澄清，将当前 Web 的受控 Playground 纳入范围，同时明确不建设管理控制台或公共多租户平台。 |
 | v1.3.0 | 2026-07-30 | 根据百炼模型资料补充阿里云推荐模型目录、模型级能力矩阵、分辨率/输出数和调研依据。 |
 | v1.4.0 | 2026-07-30 | 产品定位升级为多模态 umbrella SDK（AI Media SDK），MVP 仍仅图像但核心类型模态无关泛型化；确定包 scope `@ai-media/*` 与按平台拆分 Provider 包；确定 Provider 纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确定测试基线 `bun:test`；将 `packages/ui` 迁移到 `shadcn/` 约定；预留 SUB-006 视频生成、SUB-007 音频生成。 |
+| v1.5.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权由 `api-key` 头修订为 `Authorization: Bearer {apiKey}`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头保留为经典资源备选；确认 API 版本 `2024-02-01`、直接 `images/generations` 路径、请求体公共字段（`prompt/size/n`）与 Azure 原生字段（`quality/output_format/output_compression`，经 `providerOptions.azure` 透传）；编辑契约 `images/edits`（multipart）后置。详见 `docs/prd/sub-provider-adapters/tech.md` v1.3.0。 |

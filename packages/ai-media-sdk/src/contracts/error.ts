@@ -75,3 +75,44 @@ export function notImplemented(feature: string): SdkError {
     retryable: false,
   });
 }
+
+/**
+ * Map an HTTP status code to the stable `SdkErrorCode` used by Provider
+ * adapters. The optional message is forwarded as-is; adapters SHALL pass only
+ * sanitized, non-sensitive text (never the API key or full request headers).
+ *
+ * @param status - HTTP status code returned by the Provider.
+ * @param message - Optional sanitized provider error text.
+ */
+export function classifyHttpError(status: number, message?: string): SdkError {
+  const code = statusToErrorCode(status);
+  return new SdkError({
+    code,
+    message: message ?? defaultErrorMessage(code, status),
+  });
+}
+
+function statusToErrorCode(status: number): SdkErrorCode {
+  if (status === 401 || status === 403) return "AUTH_ERROR";
+  if (status === 429) return "RATE_LIMITED";
+  if (status === 400 || status === 413 || status === 422) {
+    return "INVALID_REQUEST";
+  }
+  if (status >= 500 && status < 600) return "PROVIDER_ERROR";
+  return "UNKNOWN";
+}
+
+function defaultErrorMessage(code: SdkErrorCode, status: number): string {
+  switch (code) {
+    case "AUTH_ERROR":
+      return `Provider authentication failed (HTTP ${status})`;
+    case "RATE_LIMITED":
+      return `Provider rate limited the request (HTTP ${status})`;
+    case "INVALID_REQUEST":
+      return `Provider rejected the request as invalid (HTTP ${status})`;
+    case "PROVIDER_ERROR":
+      return `Provider returned a server error (HTTP ${status})`;
+    default:
+      return `Provider returned an unexpected status (HTTP ${status})`;
+  }
+}

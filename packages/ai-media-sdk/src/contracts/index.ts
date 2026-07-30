@@ -24,5 +24,5 @@ export type {
   AdapterOptions,
   ProviderAdapter,
 } from "./adapter.js";
-export { SdkError, notImplemented } from "./error.js";
+export { SdkError, notImplemented, classifyHttpError } from "./error.js";
 export type { SdkErrorCode, SdkErrorOptions } from "./error.js";

@@ -2,12 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import {
-  SdkError,
-  editImage,
-  generateImage,
-  notImplemented,
-} from "@ai-media/sdk";
+import { SdkError, classifyHttpError, notImplemented } from "@ai-media/sdk";
 
 describe("core error contract", () => {
   test("notImplemented builds a non-retryable NOT_IMPLEMENTED error", () => {
@@ -19,24 +14,31 @@ describe("core error contract", () => {
     expect(error.message).toContain("generateImage");
   });
 
-  test("generateImage rejects with NOT_IMPLEMENTED and makes no request", async () => {
-    const call = () => generateImage({ model: "test-model", prompt: "p" });
+  test("classifyHttpError maps HTTP status to stable codes", () => {
+    expect(classifyHttpError(401).code).toBe("AUTH_ERROR");
+    expect(classifyHttpError(403).code).toBe("AUTH_ERROR");
+    expect(classifyHttpError(401).retryable).toBe(false);
 
-    await expect(call()).rejects.toBeInstanceOf(SdkError);
-    await expect(call()).rejects.toMatchObject({
-      code: "NOT_IMPLEMENTED",
-      retryable: false,
-    });
+    expect(classifyHttpError(429).code).toBe("RATE_LIMITED");
+    expect(classifyHttpError(429).retryable).toBe(true);
+
+    expect(classifyHttpError(400).code).toBe("INVALID_REQUEST");
+    expect(classifyHttpError(413).code).toBe("INVALID_REQUEST");
+    expect(classifyHttpError(422).code).toBe("INVALID_REQUEST");
+    expect(classifyHttpError(400).retryable).toBe(false);
+
+    expect(classifyHttpError(500).code).toBe("PROVIDER_ERROR");
+    expect(classifyHttpError(503).code).toBe("PROVIDER_ERROR");
+    expect(classifyHttpError(500).retryable).toBe(false);
+
+    expect(classifyHttpError(418).code).toBe("UNKNOWN");
   });
 
-  test("editImage rejects with NOT_IMPLEMENTED and makes no request", async () => {
-    const call = () =>
-      editImage({ model: "test-model", prompt: "p", image: {} });
+  test("classifyHttpError forwards sanitized messages and omits secrets", () => {
+    const error = classifyHttpError(401, "azure returned 401");
 
-    await expect(call()).rejects.toBeInstanceOf(SdkError);
-    await expect(call()).rejects.toMatchObject({
-      code: "NOT_IMPLEMENTED",
-      retryable: false,
-    });
+    expect(error.message).toBe("azure returned 401");
+    expect(error.message).not.toContain("Bearer");
+    expect(error.message).not.toContain("api-key");
   });
 });
