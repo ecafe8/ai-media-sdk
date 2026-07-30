@@ -615,12 +615,13 @@ flowchart LR
 
 ### 待确认事项
 
-- 阿里云百炼首期推荐模型和文生图/编辑能力已依据用户提供资料记录；具体 API 产品、endpoint、请求格式和认证方式待确认。
-- 阿里云百炼模型的异步任务/轮询、URL 生命周期、地域限制、价格和邀测可用性待接入前核实。
+- ~~阿里云百炼首期推荐模型和文生图/编辑能力已依据用户提供资料记录；具体 API 产品、endpoint、请求格式和认证方式待确认~~ 已确认（2026-07-30 live 文档）：鉴权 `Authorization: Bearer`；万相走 `/services/aigc/image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `/services/aigc/multimodal-generation/generation`（同步）；地域化 base_url。
+- ~~阿里云百炼模型的异步任务/轮询、URL 生命周期、地域限制、价格和邀测可用性待接入前核实~~ 部分确认：URL 有效期 24h；`task_id` 查询有效期 24h；轮询建议前 30s 每 3s、最终超时 2min；地域 `cn-beijing`/`ap-southeast-1`，各地域 API Key 不同；价格/邀测待核实。
+- 阿里云编辑契约（wan/qwen 是否共用）待后续 live 探查；是否拆 wan/qwen Provider 包由 Phase 2 架构决策定。
 - Doubao-Seedream 首期具体模型、任务接口和认证方式待确认。
 - Azure OpenAI、Google 首期验证的具体模型或 Azure deployment name 待确认；模型版本和 deployment 不作为总 PRD 固定范围。
-- ~~Azure OpenAI 的 API Key 与 Entra ID 认证方式~~ 已确认：首期仅支持 API Key（`api-key` 头）；Entra ID 后置评估。
-- Azure OpenAI 的 endpoint、API version、是否需兼容 Azure 特定请求头、`providerOptions.azure` 与兼容 `openai` 图像选项命名空间的取舍，待 Provider 接入探查确认。
+- ~~Azure OpenAI 的 API Key 与 Entra ID 认证方式~~ 已确认：首期仅支持 API Key（`api-key` 头）；Entra ID 后置评估。（Phase 1 live 修订：Global Standard Serverless 部署用 `Authorization: Bearer`，`api-key` 为经典资源备选。）
+- ~~Azure OpenAI 的 endpoint、API version、是否需兼容 Azure 特定请求头、`providerOptions.azure` 与兼容 `openai` 图像选项命名空间的取舍，待 Provider 接入探查确认~~ 已确认：直接 `images/generations` 路径、API 版本 `2024-02-01`、`providerOptions.azure` 透传 `quality/output_format/output_compression`。
 - ~~阿里云百炼是否有官方 JS/TS SDK~~ 已确认：DashScope 无官方 JS/TS SDK（仅 Python/Java/CLI），`@ai-media/provider-aliyun-bailian` 必须原生 fetch 直连 REST API。
 - 统一任务状态是否需要包含“取消中”和“已取消”取决于首批 Provider 的取消能力。
 - 统一结果是默认懒加载二进制、默认下载，还是由调用方显式选择读取方式，待 API 设计确认。
@@ -638,3 +639,4 @@ flowchart LR
 | v1.3.0 | 2026-07-30 | 根据百炼模型资料补充阿里云推荐模型目录、模型级能力矩阵、分辨率/输出数和调研依据。 |
 | v1.4.0 | 2026-07-30 | 产品定位升级为多模态 umbrella SDK（AI Media SDK），MVP 仍仅图像但核心类型模态无关泛型化；确定包 scope `@ai-media/*` 与按平台拆分 Provider 包；确定 Provider 纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确定测试基线 `bun:test`；将 `packages/ui` 迁移到 `shadcn/` 约定；预留 SUB-006 视频生成、SUB-007 音频生成。 |
 | v1.5.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权由 `api-key` 头修订为 `Authorization: Bearer {apiKey}`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头保留为经典资源备选；确认 API 版本 `2024-02-01`、直接 `images/generations` 路径、请求体公共字段（`prompt/size/n`）与 Azure 原生字段（`quality/output_format/output_compression`，经 `providerOptions.azure` 透传）；编辑契约 `images/edits`（multipart）后置。详见 `docs/prd/sub-provider-adapters/tech.md` v1.3.0。 |
+| v1.6.0 | 2026-07-30 | 阿里云百炼文生图 live 契约确认：鉴权 `Authorization: Bearer`；地域化 base_url；纠正"wan/qwen 共用契约"误判——万相走 `image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `multimodal-generation/generation`（同步）；参数按系列分化；URL/`task_id` 均为 24h 有效。详见 `docs/prd/sub-provider-adapters/tech.md` v1.4.0。 |

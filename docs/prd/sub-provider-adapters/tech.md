@@ -138,10 +138,14 @@ flowchart LR
   - `qwen-image-2.0-pro`：文生图/编辑，最多 6 张，最高 2048x2048，并适合负向提示词场景。
   - `qwen-image-2.0`：文生图/编辑，最多 6 张，最高 2048x2048，为快速版本。
 - 百炼资料明确 Wan 和 Qwen Image 存在不同编辑、多图、输出数量和分辨率能力，适配器必须按模型注册能力，不得只按 Provider 设置单一能力。
-- 资料尚未确认首期 HTTP API endpoint、认证、请求字段、异步任务接口、返回 URL 生命周期和地域限制；先保持可替换 transport/adapter。
-- Context7 已确认 DashScope **无官方 JS/TS SDK**（仅 Python/Java/CLI），Provider 包 `@ai-media/provider-aliyun-bailian` 必须原生 fetch 直连 REST。
-- DashScope 图像合成为**异步任务契约**：`async_call(model, prompt)` → 返回 task id → 轮询 `wait()` → `output.results[].url`（部分模型如 `wan2.2-t2i-flash` 支持 `sync_call`）。初步判断 wan 与 qwen 文生图共用同一 `ImageSynthesis` 契约，**编辑契约是否共用须 live 探查确认后再定是否拆 wan/qwen 包**。
-- 资料来源：https://help.aliyun.com/zh/model-studio/text-to-image、https://help.aliyun.com/zh/model-studio/qwen-image-edit-guide、https://help.aliyun.com/zh/model-studio/wan-image-edit；日期 2026-07-30。Context7 DashScope SDK 查询日期 2026-07-30。
+- **Live 契约已确认（2026-07-30 官方文档）**：鉴权统一 `Authorization: Bearer {apiKey}`（与 Azure 一致，复用共享 transport）；地域 base_url 形如 `https://{WorkspaceId}.{region}.maas.aliyuncs.com/api/v1`（北京 `cn-beijing`、新加坡 `ap-southeast-1`），各地域 API Key 不同；图片返回 URL 有效期 24 小时。
+- **文生图 wan 与 qwen 不共用契约**（关键，纠正此前"共用 ImageSynthesis"的初步判断）：
+  - 万相（Wan）走 `POST /services/aigc/image-generation/generation`；异步调用必须设 `X-DashScope-Async: enable`，返回 `output.task_id` + `task_status=PENDING`，再 `GET /tasks/{task_id}` 轮询至 `SUCCEEDED`/`FAILED`（`task_id` 查询有效期 24h，过期变 `UNKNOWN`）；`SUCCEEDED` 时结果在 `output.choices[].message.content[].image`。`wan2.7-image-pro`、`wan2.7-image`、`wan2.6-image`、`wan2.6-t2i` 亦支持同步调用（不带异步头）。
+  - 千问（Qwen-Image）走 `POST /services/aigc/multimodal-generation/generation`；`qwen-image-2.0` 系列均支持同步，`qwen-image-plus`/`qwen-image` 支持异步；同步响应直接含 `output.choices[].message.content[].image`。
+- **参数集按模型系列分化**：`prompt`（`input.messages[].content[].text`，必选）、`n`、`size`（wan 用 `2K`/`4K` 缩写或 `宽*高`，qwen 用 `宽*高`）为公共；`negative_prompt`、`prompt_extend` 仅 qwen；`thinking_mode`、`color_palette`、`enable_sequential`（组图，1-12 张）仅 wan2.7；`watermark` 通用。
+- DashScope 无官方 JS/TS SDK（Context7 确认，仅 Python/Java/CLI），Provider 包必须原生 fetch 直连 REST。
+- 编辑契约（`/images/edits` 等价物）本次未探查，待后续 live 确认；**是否拆 wan/qwen 包由 Phase 2 架构决策定**（见下）。
+- 资料来源：https://help.aliyun.com/zh/model-studio/text-to-image、https://help.aliyun.com/zh/model-studio/qwen-image-api、https://help.aliyun.com/zh/model-studio/wan-image-generation-and-editing-api-reference；日期 2026-07-30。
 
 ### 4.4 Doubao-Seedream
 
@@ -302,3 +306,4 @@ Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料�
 | v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型能力、输出数量、分辨率和资料来源。 |
 | v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记 shadcn 迁移事实。 |
 | v1.3.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权改为 `Authorization: Bearer`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头列为经典资源备选；确认 `2024-02-01` API 版本、直接 `images/generations` 路径、请求体公共/原生字段划分；编辑 `images/edits` multipart 后置。 |
+| v1.4.0 | 2026-07-30 | 阿里云百炼文生图 live 契约确认：鉴权 `Authorization: Bearer`；地域化 base_url；纠正"wan/qwen 共用契约"误判——万相走 `image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `multimodal-generation/generation`（同步）；参数按系列分化；编辑契约与 wan/qwen 拆包决策留 Phase 2。 |
