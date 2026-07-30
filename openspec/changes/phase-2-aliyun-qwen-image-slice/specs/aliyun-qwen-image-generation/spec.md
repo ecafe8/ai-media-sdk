@@ -12,7 +12,7 @@ The Aliyun Bailian provider SHALL maintain an in-package model capability regist
 - **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not send a request
 
 #### Scenario: Wan models stay not implemented in this slice
-- **WHEN** the adapter `generate` is dispatched for a Wan-family model id (e.g. `wan2.7-image-pro`)
+- **WHEN** the adapter `generate` or `edit` is dispatched for a Wan-family model id (e.g. `wan2.7-image-pro`)
 - **THEN** it SHALL throw an `SdkError` with code `NOT_IMPLEMENTED`, `retryable: false`, and SHALL not invoke the transport
 
 ### Requirement: Qwen request is built via the shared transport
@@ -66,3 +66,36 @@ The Aliyun adapter SHALL classify non-2xx responses and transport failures via t
 #### Scenario: Config shape is explicit
 - **WHEN** a consumer constructs the Aliyun Provider configuration
 - **THEN** TypeScript SHALL require both `apiKey` and `baseUrl` fields
+
+### Requirement: Qwen image editing reuses the T2I endpoint and request contract
+The Aliyun adapter `edit()` SHALL build the same `POST {baseUrl}/services/aigc/multimodal-generation/generation` request as `generate()`, differing only in the `content` array: it SHALL lead with 1-3 `{"image": ...}` entries (in input order) followed by exactly one `{"text": prompt}`. Response mapping and error classification SHALL be identical to T2I.
+
+#### Scenario: I2I content array shape
+- **WHEN** `edit()` is called for a Qwen model with 1-3 input images and a prompt
+- **THEN** the request body `input.messages[0].content` SHALL contain the image entries first, in input order, followed by a single text entry
+
+#### Scenario: I2I response maps like T2I
+- **WHEN** Qwen returns `output.choices[].message.content[].image` for an edit call
+- **THEN** the result SHALL be a `GenerationResult<ImageContent[]>` with `provider: "aliyun-bailian"` and the model id, identical in shape to the T2I result
+
+### Requirement: Image inputs map to Qwen content entries
+For each input `ImageContent`, the adapter SHALL emit a Qwen `{"image": <value>}` entry: `input.url` → `{image: url}`; otherwise `input.base64` → `{image: "data:" + (mimeType ?? "image/png") + ";base64," + base64}`.
+
+#### Scenario: URL input maps to an image entry
+- **WHEN** an input `ImageContent` carries a `url`
+- **THEN** the adapter SHALL place `{"image": url}` in the content array
+
+#### Scenario: Base64 input maps to a data-URI image entry
+- **WHEN** an input `ImageContent` carries `base64` (and no `url`)
+- **THEN** the adapter SHALL place `{"image": "data:" + (mimeType ?? "image/png") + ";base64," + base64}` in the content array
+
+### Requirement: editImage pre-flight validates edit capability and image count
+`editImage` SHALL reject a model whose capabilities do not include edit with `INVALID_REQUEST`, and SHALL reject an `images` array whose length is outside the model's `maxEditImages` (Qwen: 1-3) with `INVALID_REQUEST` before any transport call.
+
+#### Scenario: Non-editable model is rejected pre-flight
+- **WHEN** `editImage` is called with a model whose `capabilities.edit` is false
+- **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not invoke the transport
+
+#### Scenario: Out-of-range image count is rejected pre-flight
+- **WHEN** `editImage` is called with zero images or more than `maxEditImages`
+- **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not invoke the transport

@@ -7,15 +7,16 @@ Aliyun Bailian live contract discovery (PRD v1.6.0) confirmed: auth is `Authoriz
 ## Goals / Non-Goals
 
 **Goals:**
-- Land a second Provider end to end on the synchronous Qwen path, reusing the Phase 1 transport and error classifier.
+- Land a second Provider end to end on the synchronous Qwen path, reusing the Phase 1 transport and error classifier — covering **both** text-to-image and image editing (I2I), since Qwen serves both on the same endpoint.
+- Promote the core `editImage` from a stub to a real dispatcher (mirror of `generateImage`), and land the public multi-image input contract.
 - Establish the in-package **model capability registry** so `provider.image(modelId)` routes to the right endpoint family and parameter set without a global registry.
 - Evolve `AliyunBailianConfig` to the live region-scoped shape.
 - Keep Aliyun pure-fetch with `Authorization: Bearer`; no DashScope SDK.
 
 **Non-Goals:**
 - Wan async (`image-generation/generation` + `X-DashScope-Async` + `/tasks/{task_id}` polling) and `TaskHandle` `wait()`/polling (SUB-003) — Phase 3.
-- `editImage` — stays `NOT_IMPLEMENTED`.
-- Multi-region failover, URL download/persistence (24h TTL handled by the caller), and content-safety policy decisions.
+- Azure `editImage` — stays `NOT_IMPLEMENTED` (Azure edit is multipart `/images/edits`, deferred).
+- Temporary `oss://` URL upload helpers and image download/persistence (24h TTL handled by the caller), content-safety policy decisions.
 
 ## Decisions
 
@@ -54,6 +55,16 @@ Non-2xx → `classifyHttpError(status, sanitizedMessage)` where `sanitizedMessag
 
 *Why:* the live base URL embeds `WorkspaceId` + region, which cannot be defaulted; requiring `baseUrl` is the clean, explicit boundary. A future convenience could accept `{ workspaceId, region }` and synthesize `baseUrl`, but the slice keeps the explicit string.
 
+### D7: `editImage` becomes a real dispatcher with a multi-image input contract
+Core `editImage` mirrors `generateImage`: validate `model.capabilities.edit`, build an `AdapterRequest` whose input is `ImageEditInput { prompt, images, providerOptions }`, and dispatch to `adapter.edit()`. `ImageEditRequest` evolves from `{ image: ImageContent }` to `{ images: ImageContent[] }` (1-3 inputs for Qwen). `ImageContent` already carries `url`/`base64`; the adapter maps each input to the provider's image-entry form.
+
+*Why over keeping `image` singular:* the live Qwen I2I contract supports 1-3 reference images, and the PRD's multi-image editing (SUB-002 FEAT-002/FEAT-003) needs an array. A single array field covers both single- and multi-image cases (`images: [img]`). *Breaking:* `ImageEditRequest.image` → `images`; acceptable because editImage was a stub with no consumers.
+
+### D8: Qwen I2I request building reuses the T2I endpoint and body
+The Aliyun `edit()` builds the **same** `POST {baseUrl}/services/aigc/multimodal-generation/generation` with `Authorization: Bearer` and `{ model, input.messages, parameters }`. The only difference from `generate()` is the `content` array: I2I leads with 1-3 `{ image: <url | data:{mime};base64,...> }` entries (in input order, defining image order) followed by exactly one `{ text: prompt }`. Image-input mapping: `input.url` → `{image: url}`; otherwise `input.base64` → `{image: "data:${mime};base64,${base64}"}` (mime from `input.mimeType`, default `image/png`).
+
+*Why:* Qwen unifies T2I and I2I on one sync endpoint, so `edit()` shares request/auth/response/error handling with `generate()` — only the `content` array shape differs. This maximizes reuse and keeps editing cheap. *Validation:* `model.capabilities.edit` and the registry's `maxEditImages` bound the `images` length (Qwen: 1-3) before any network call.
+
 ## Risks / Trade-offs
 
 - **[Single-package wan/qwen coupling]** → the shared adapter switches on `family`; a Wan sub-adapter slot is reserved so Phase 3 adds async without restructuring the package.
@@ -64,9 +75,10 @@ Non-2xx → `classifyHttpError(status, sanitizedMessage)` where `sanitizedMessag
 ## Open Questions
 
 - Whether to synthesize `baseUrl` from `{ workspaceId, region }` for ergonomics — deferred; the explicit `baseUrl` string is the slice default.
-- Whether `n` (output count) is supported by Qwen models — the live Qwen sample omits it; the slice forwards `n` only when `paramSupport` declares it, else drops it.
-- Finer Aliyun error-code surfacing (e.g. content-safety vs generic invalid) — map onto existing codes now, refine metadata later.
+- Whether `n` (output count) is supported per Qwen model — confirmed yes (1-6 for `qwen-image-3.0-pro`/`2.0-pro`); the registry's `paramSupport` declares it per model so `generate()`/`edit()` forward it only when supported.
+- Finer Aliyun error-code surfacing (e.g. content-safety `DataInspectionFailed` vs generic invalid) — map onto existing codes now, refine metadata later.
+- Whether to expose `seed` (deterministic seed) as a public param or keep it under `providerOptions.aliyun` — deferred; the slice keeps `seed` in `providerOptions.aliyun`.
 
 ## Migration Plan
 
-No production consumers. Rollout: implement → add fake-transport contract tests → `lint → typecheck → test`. Rollback is reverting the slice commit; Azure and core stay untouched.
+No production consumers. Rollout: implement → add fake-transport contract tests (T2I + I2I) → `lint → typecheck → test`. Rollback is reverting the slice commit; Azure and core `generateImage` stay untouched (only `editImage` core path changes from stub to dispatch).
