@@ -1,0 +1,304 @@
+# 技术方案：Provider 适配体系
+
+## 0. 文档信息
+
+- Sub：`SUB-001 Provider 适配体系`
+- 总 PRD：`docs/prd/main-prd.md`
+- 对应需求文档：`./prd.md`
+- 文档版本：v1.2.0
+- 文档状态：草稿
+- 方案性质：独立 Provider 契约，参考 AI SDK，不将 AI SDK 作为核心运行时依赖；Provider 适配器纯 fetch，不包装官方 SDK
+
+## 1. 代码库事实与复用点
+
+当前仓库事实：
+
+- 根目录是 Bun workspace + Turborepo monorepo，根包名 `ai-media-sdk`（scope `@ai-media/*`）。工作区匹配 `apps/*`、`packages/*`，待加 `examples/*`。
+- 当前只有 `apps/web` 和 `packages/ui`，没有 SDK package、Provider package、examples workspace 或业务 API。
+- `.reference/zbx-template-monorepo` 为只读 git submodule，作为 examples 页面与组件参考；不纳入 workspaces、turbo、Tailwind `@source` 与构建。
+- `packages/ui` 已迁移到 shadcn 子目录约定（`@workspace/ui/components/shadcn/*`），与参考仓库对齐；本 sub 不直接依赖 UI。
+- `apps/web` 使用 Next `16.2.6`、React `19.2.4`、TypeScript `^5`。
+- 根包要求 Node.js `>=20`，包管理器为 Bun `1.3.14`；测试基线待引入 `bun:test`（当前仓库无测试框架）。
+
+这些事实意味着本 sub 需要新增 SDK package 结构：核心契约包 `@ai-media/sdk` 与各 Provider 包 `@ai-media/provider-<name>`；本次只记录架构，不安装包或修改业务代码。
+
+## 2. 分层架构
+
+建议分层：
+
+- `core contract`：Provider、ImageModel、Capability、AdapterResult 的独立 TypeScript 类型。
+- `provider factory`：创建 Provider 实例并读取调用方配置。
+- `provider adapter`：逐平台负责请求映射、响应解析、任务操作。
+- `transport`：可注入 fetch、超时和请求头处理；不绑定具体 HTTP 客户端。
+- `diagnostics`：生成非敏感请求/任务上下文，交给 `SUB-004`。
+
+Provider 适配器不得依赖 `SUB-002` 的业务实现，统一层通过接口反向调用适配器。Provider 适配器一律通过共享 `transport`（可注入 fetch、超时、请求头）发起 HTTP，**不引入或包装官方 SDK**；官方 SDK/文档仅作为契约调研参考。Azure OpenAI 仅支持 API Key（`api-key` 头）鉴权。
+
+## 3. 模块架构图
+
+**目的**：表达 Provider sub 内部边界、外部服务和跨 sub 依赖。
+
+**范围**：Provider 适配器层，不展开函数和具体 HTTP 方法。
+
+**图例**：实线为同步依赖，虚线为异步任务能力；外部系统在边界外。
+
+**关键假设**：每个 Provider 都可以通过适配器表达同步或异步结果；具体模型能力待接入确认。
+
+ASCII 草图：
+
+```text
+[SUB-002 统一请求]
+          |
+          v
+[Provider Contract] -> [Provider Factory]
+          |                    |
+          v                    v
+[Capability Registry]    [Model Instance]
+          |                    |
+          +----------> [Adapter Boundary]
+                              |
+             +----------------+----------------+
+             v                v                v
+      [Azure OpenAI]      [Google]       [Alibaba/Seedream]
+             |                |                |
+             v                v                v
+         [外部 API]        [外部 API]       [外部 API]
+                              |
+                    [SUB-003 / SUB-004]
+```
+
+Mermaid：
+
+```mermaid
+flowchart LR
+    Unified[SUB-002 统一请求]
+    Contract[Provider Contract]
+    Factory[Provider Factory]
+    Registry[Capability Registry]
+    Model[Model Instance]
+    Adapter[Adapter Boundary]
+    Azure[(Azure OpenAI)]
+    Google[(Google API)]
+    Alibaba[(Alibaba Bailian image API)]
+    Seedream[(Doubao-Seedream)]
+    Task[SUB-003 Task Contract]
+    Error[SUB-004 Error Contract]
+
+    Unified --> Contract
+    Contract --> Factory
+    Factory --> Model
+    Model --> Adapter
+    Registry --> Adapter
+    Adapter --> Azure
+    Adapter --> Google
+    Adapter --> Alibaba
+    Adapter --> Seedream
+    Adapter -.任务操作.-> Task
+    Adapter --> Error
+```
+
+**异常路径**：配置缺失在工厂或请求前失败；外部认证、模型不存在、限流和未知响应进入统一错误契约；不自动切换 Provider。
+
+**相关模块**：`FEAT-001` 至 `FEAT-006`、`SUB-002`、`SUB-003`、`SUB-004`。
+
+## 4. Provider 设计
+
+建议公共 Provider 接口具备以下能力概念：
+
+- `createProvider(config)`：绑定凭证、endpoint、API version、headers 和 fetch。
+- `image(modelOrDeployment)`：创建不可变模型实例。
+- `capabilities(model)`：返回操作、输入、输出和任务能力。
+- `generate(request)` / `edit(request)`：接收已经过统一层校验的适配请求。
+- `getTaskStatus(taskId)` / `getTaskResult(taskId)`：仅由支持异步的 Provider 实现。
+
+不预先固定具体函数名和泛型形状，最终公共契约由 `SUB-002`、`SUB-003` 和 feat 级文档确认。
+
+### 4.1 Azure OpenAI
+
+- 参考 AI SDK 的 `azure.image(deploymentName)` 心智模型。
+- deployment name 是 Azure 资源中的部署标识，不等同于跨平台模型 alias。
+- Provider 配置至少需要考虑 endpoint、deployment、API version 和必要 Azure headers；**鉴权仅 API Key（`api-key` 头）**，Entra ID 后置。
+- 图像生成为**同步调用**：`POST {endpoint}/openai/deployments/{deployment}/images/generations?api-version=...`，响应即含 `data[].url` 或 `data[].b64_json`（DALL-E 2/3 可返回 url，GPT image 模型默认 b64_json）。适配器把同步结果映射为已完成的 `GenerationResult`。
+- AI SDK 文档显示 DALL-E 2/3 图像能力使用 `size` 而不是 `aspectRatio`；本项目只把经过能力验证的参数放入公共契约。
+- Azure Responses API 的图像生成工具路径与直接图像模型路径存在差异，MVP 选型待确认。
+- Provider 包 `@ai-media/provider-azure-openai` 纯 fetch 实现，不包装 `openai` 官方 SDK。
+
+### 4.2 Google
+
+- Google 官方 JS SDK 文档显示多模态输出可通过模型和 `response_modalities: ['image']` 请求图片。
+- 需要区分 Gemini Developer API 与 Vertex AI 的认证和 endpoint；首期选择待确认。
+- 生成图片输出可能包含 base64 数据、MIME 和安全过滤信息，适配器需转为统一结果并保留非敏感元数据。
+
+### 4.3 阿里云百炼
+
+- 用户提供的百炼资料已确定首期推荐模型和模型级能力：
+  - `wan2.7-image-pro`：文生图/编辑，最多 4 张（连续 12），文生图最高 4096x4096，编辑最高 2048x2048。
+  - `wan2.7-image`：文生图/编辑，最多 4 张（连续 12），最高 2048x2048。
+  - `z-image-turbo`：仅文生图，最多 1 张，最高 2048x2048，快速低成本场景。
+  - `qwen-image-3.0-pro`：文生图/编辑，最多 6 张，最高 2048x2048，复杂版面和多语言字体，邀测中。
+  - `qwen-image-2.0-pro`：文生图/编辑，最多 6 张，最高 2048x2048，并适合负向提示词场景。
+  - `qwen-image-2.0`：文生图/编辑，最多 6 张，最高 2048x2048，为快速版本。
+- 百炼资料明确 Wan 和 Qwen Image 存在不同编辑、多图、输出数量和分辨率能力，适配器必须按模型注册能力，不得只按 Provider 设置单一能力。
+- 资料尚未确认首期 HTTP API endpoint、认证、请求字段、异步任务接口、返回 URL 生命周期和地域限制；先保持可替换 transport/adapter。
+- Context7 已确认 DashScope **无官方 JS/TS SDK**（仅 Python/Java/CLI），Provider 包 `@ai-media/provider-aliyun-bailian` 必须原生 fetch 直连 REST。
+- DashScope 图像合成为**异步任务契约**：`async_call(model, prompt)` → 返回 task id → 轮询 `wait()` → `output.results[].url`（部分模型如 `wan2.2-t2i-flash` 支持 `sync_call`）。初步判断 wan 与 qwen 文生图共用同一 `ImageSynthesis` 契约，**编辑契约是否共用须 live 探查确认后再定是否拆 wan/qwen 包**。
+- 资料来源：https://help.aliyun.com/zh/model-studio/text-to-image、https://help.aliyun.com/zh/model-studio/qwen-image-edit-guide、https://help.aliyun.com/zh/model-studio/wan-image-edit；日期 2026-07-30。Context7 DashScope SDK 查询日期 2026-07-30。
+
+### 4.4 Doubao-Seedream
+
+- 当前 Context7 可获得 fal.ai 托管的 Seedream v4 edit 参考，展示 prompt、image URLs、队列提交、状态和结果查询。
+- 该资料不是字节官方 API 契约，不能直接作为字节 Provider 的最终实现依据。
+- 在官方资料确认前，只记录 Provider 边界和待确认接口，不把 fal.ai endpoint 或字段写入公共契约。
+
+## 5. 关键时序图
+
+**目的**：表达 Provider 工厂、模型实例、适配器和外部 API 的请求顺序。
+
+**范围**：一次生成请求；轮询是可选路径。
+
+**参与者**：调用方、Factory、Model、Adapter、外部 Provider；虚线为查询。
+
+**假设**：外部 Provider 可能同步完成或返回任务 ID。
+
+ASCII 草图：
+
+```text
+[调用方] -> [Factory] -> [Model] -> [Adapter] -> [Provider API]
+                                         |              |
+                                         |<--结果/任务 ID
+                                         |- - 查询状态 ->|
+                                         |< - 状态/结果 -|
+                                         +-> [SUB-003]
+```
+
+Mermaid：
+
+```mermaid
+sequenceDiagram
+    actor Caller as 调用方
+    participant Factory as Provider Factory
+    participant Model as Model Instance
+    participant Adapter as Adapter
+    participant API as 外部 Provider API
+    participant Task as SUB-003
+    Caller->>Factory: create/configure Provider
+    Factory-->>Caller: image(deployment/model)
+    Caller->>Model: submit adapted request
+    Model->>Adapter: generate/edit
+    Adapter->>API: provider request
+    API-->>Adapter: image or task id
+    Adapter-->>Task: normalized task/result capability
+    loop async status when supported
+        Task-->>Adapter: query task
+        Adapter-->>API: status request
+        API-->>Adapter: status/result
+    end
+    Adapter-->>Caller: provider-normalized result or error
+```
+
+**异常路径**：错误响应必须通过错误层处理；任务 ID 丢失、未知状态和结果解析失败都不能返回成功。
+
+## 6. Provider 适配状态图
+
+**目的**：表达单个模型实例从配置到可调用、失败和停用的状态。
+
+**范围**：Provider 适配器生命周期，不代表外部图像任务状态。
+
+**图例**：配置和能力检查是同步步骤；停用是维护者动作。
+
+**关键假设**：Provider 工厂不会在创建时必然发起网络请求，远端认证可能延迟到首次调用。
+
+```mermaid
+stateDiagram-v2
+    [*] --> Configured: create provider
+    Configured --> Ready: local config valid
+    Configured --> Invalid: missing/invalid config
+    Ready --> Calling: generate/edit
+    Calling --> Ready: response adapted
+    Calling --> Degraded: provider capability unavailable
+    Calling --> Failed: transport/auth/parse error
+    Degraded --> Ready: capability update
+    Failed --> Ready: retryable recovery
+    Ready --> Disabled: adapter disabled
+    Invalid --> [*]
+    Disabled --> [*]
+```
+
+## 7. Provider 数据流图
+
+**目的**：表达凭证、统一请求、外部响应和脱敏诊断的边界。
+
+**范围**：单次 Provider 调用；不含图片长期存储。
+
+**图例**：凭证和图片/Prompt 是敏感数据；虚线表示非敏感诊断流。
+
+**关键假设**：适配器只在内存中处理请求和响应。
+
+```mermaid
+flowchart TD
+    Config[调用方 Provider 配置\n凭证/endpoint/deployment] --> Adapter[Provider Adapter]
+    Request[SUB-002 统一请求\nprompt/图片/选项] --> Adapter
+    Adapter --> External[(外部 Provider API)]
+    External --> Raw[原始响应]
+    Raw --> Normalize[响应解析与结果适配]
+    Normalize --> Consumer[SUB-002/SUB-003]
+    Adapter -.非敏感上下文.-> Diagnostics[SUB-004 诊断与错误分类]
+    Config -.不得记录凭证.-> Diagnostics
+```
+
+**异常路径**：原始响应不符合预期时只输出脱敏 Provider 错误；凭证不进入诊断流；图片和 prompt 不进入默认日志。
+
+## 8. 数据与安全
+
+- 凭证属于高敏感配置，只允许进入请求头或 SDK 规定的认证字段。
+- endpoint、deployment、model 和 task ID 可作为诊断上下文，但需避免把用户数据或完整 prompt 写入日志。
+- 图片输入只在请求需要时传给 Provider，不在适配器内部持久化。
+- Provider 原始响应先解析为 `unknown`，再通过运行时校验转为内部类型。
+
+## 9. 测试策略
+
+- Provider factory 单元测试：配置合并、默认值、缺失凭证和自定义 fetch。
+- 适配器契约测试：统一输入到 Provider 请求、响应到统一结果。
+- HTTP mock 集成测试：成功、认证失败、限流、超时、未知响应和任务查询。
+- 每个 Provider 使用录制/固定 fixture，不提交真实密钥和真实图片。
+- `SUB-002`、`SUB-003` 使用 Provider contract mock，不依赖真实外部服务。
+
+## 10. 第三方资料与依赖记录
+
+| 资料/依赖 | 版本 | 来源 | 结论 |
+|---|---|---|---|
+| AI SDK Azure Provider | 版本待确认 | https://ai-sdk.dev/providers/ai-sdk-providers/azure | 参考 `azure.image(deploymentName)` 和 Azure 图像选项；不作为运行时依赖 |
+| Google Gen AI JS SDK | 版本待确认 | https://googleapis.github.io/js-genai | 参考图像多模态输出；API/Vertex 选择待确认 |
+| Alibaba Bailian image models | API/版本待确认 | https://help.aliyun.com/zh/model-studio/text-to-image | 用户提供资料确定模型能力矩阵；Context7 确认 DashScope 无 JS/TS SDK，provider 纯 fetch 直连 REST |
+| DashScope ImageSynthesis 契约 | API 待确认 | Context7 `/dashscope/dashscope-sdk-python` | 异步任务契约：submit→task id→poll→`output.results[].url`；wan/qwen 文生图初步共用，编辑契约待 live 探查 |
+| Seedream v4 edit 参考 | 非官方托管参考 | https://fal.ai/models/fal-ai/bytedance/seedream/v4/edit | 参考队列和图片输入形态，不作为字节官方契约 |
+
+Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料补充，资料核对日期 2026-07-30。当前项目没有已安装的上述 SDK 依赖，技术方案只记录依赖，不安装包。
+
+## 11. 备选方案与决策
+
+- 方案 A：直接复用 AI SDK Provider。优点是实现较快；缺点是绑定其版本和契约，不符合产品独立运行时目标。
+- 方案 B：独立 Provider 契约，参考 AI SDK 使用习惯。优点是保持独立和图像任务演进空间；代价是需要维护适配器、错误和能力类型。
+- 选择：方案 B，符合总 PRD 的关键决策。
+
+## 12. 发布、兼容与回滚
+
+- 新增 Provider 以非破坏方式加入；Provider 配置字段在稳定前允许草稿标记。
+- 外部 API 变更由单个适配器吸收，不修改统一契约，除非公共能力实际改变。
+- Provider 接入失败可通过 feature export 或 package release 关闭该 Provider，不影响其他 Provider。
+- 依赖版本固定和 lockfile 变更应由实现阶段单独评审。
+
+## 13. 技术风险与待确认
+
+- Azure 图像模型路径、认证和 deployment 语义可能与普通 OpenAI 不同。
+- Google API 与 Vertex AI 的认证/输出差异可能导致两个 Provider 变体。
+- 阿里云百炼模型能力已明确，但官方 API endpoint、认证、任务和响应契约仍待确认；字节官方资料尚未在 Context7 中完整可用。
+- Provider 原生参数命名空间和能力类型需要避免过早锁死。
+
+## 14. 变更记录
+
+| 版本 | 日期 | 变更内容 |
+|---|---|---|
+| v1.0.0 | 2026-07-30 | 创建 Provider 适配体系技术方案，记录 Azure/Google/阿里云/Seedream 调研边界。 |
+| v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型能力、输出数量、分辨率和资料来源。 |
+| v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记代码库 submodule 与 shadcn 迁移事实。 |
