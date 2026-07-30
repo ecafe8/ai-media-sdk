@@ -4,7 +4,7 @@
 TBD - created by archiving change phase-0-sdk-foundation. Update Purpose after archive.
 ## Requirements
 ### Requirement: Core package exposes a modality-neutral alpha contract
-The `@ai-media/sdk` package SHALL expose TypeScript contracts for Provider/model identity, capabilities, transport, adapter requests/results, `GenerationResult<TContent>`, `TaskHandle<TContent>`, retry policy, and classified SDK errors.
+The `@ai-media/sdk` package SHALL expose TypeScript contracts for Provider/model identity, capabilities, transport, adapter requests/results, `GenerationResult<TContent>`, `TaskHandle<TContent>`, retry policy, and classified SDK errors. Image specialization SHALL use the array content form so a single generation result can carry multiple images.
 
 #### Scenario: Core package resolves through the workspace export
 - **WHEN** a workspace consumer imports `@ai-media/sdk`
@@ -12,7 +12,7 @@ The `@ai-media/sdk` package SHALL expose TypeScript contracts for Provider/model
 
 #### Scenario: Image content specializes the generic result contract
 - **WHEN** an image API type is declared in the core package
-- **THEN** it uses `GenerationResult<ImageContent>` or `TaskHandle<ImageContent>` rather than a separate non-generic task/result model
+- **THEN** it uses `GenerationResult<ImageContent[]>` or `TaskHandle<ImageContent[]>` for the image modality rather than a separate non-generic task/result model, keeping `GenerationResult<TContent>` generic for other modalities
 
 ### Requirement: Core package root exports are explicit
 The `@ai-media/sdk` root entry SHALL export the supported Phase 0 public contracts and image stubs; consumers SHALL NOT need to import implementation files through `src` paths.
@@ -35,17 +35,6 @@ The core package runtime TypeScript configuration SHALL use the shared Node libr
 #### Scenario: Bun test types remain isolated
 - **WHEN** core tests import from `bun:test`
 - **THEN** the test tsconfig SHALL provide Bun types without adding Bun runtime types to the production tsconfig
-
-### Requirement: Image API stubs preserve the planned public boundary
-The core package SHALL expose typed `generateImage` and `editImage` entry points as Phase 0 stubs that fail explicitly with the `NOT_IMPLEMENTED` error code.
-
-#### Scenario: Image generation is called before adapter implementation
-- **WHEN** `generateImage` is invoked during Phase 0
-- **THEN** it SHALL throw a classified SDK error with code `NOT_IMPLEMENTED`, `retryable: false`, and SHALL not perform a network request
-
-#### Scenario: Image editing is called before adapter implementation
-- **WHEN** `editImage` is invoked during Phase 0
-- **THEN** it SHALL throw a classified SDK error with code `NOT_IMPLEMENTED`, `retryable: false`, and SHALL not silently ignore the request
 
 ### Requirement: Core package has a passing Bun smoke test
 The core package SHALL contain at least one `bun:test` test that validates a stable error or contract behavior without network access.
