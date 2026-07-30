@@ -31,7 +31,6 @@ Every implementation task that changes files MUST end with a git commit before t
   bun run lint
   bun run typecheck
   bun run format
-  bun run submodule  # 初始化/更新只读参考 submodule
   ```
 
 - 只跑单个工作区：`turbo <task> --filter=web`（或 `--filter=@workspace/ui`）。每个工作区也有自己的 `lint` / `format` / `typecheck` 脚本。
@@ -46,8 +45,6 @@ Every implementation task that changes files MUST end with a git commit before t
 | `packages/ui` | `@workspace/ui` | 共享 shadcn 组件库、`cn` 工具函数、`globals.css`、PostCSS 配置 |
 | `packages/eslint-config` | `@workspace/eslint-config` | 共享 ESLint 配置：`base`、`next`、`react-internal` |
 | `packages/typescript-config` | `@workspace/typescript-config` | 共享 tsconfig：`base.json`、`nextjs.json`、`react-library.json` |
-
-- `.reference/zbx-template-monorepo` 是只读 git submodule，仅作组件/examples 页面参考；**不纳入 workspaces、turbo、ESLint ignore、Tailwind `@source` 与构建**。examples 页面布局可参考其 `examples/ui-blocks` 的 app-shell/preview 模式。
 
 ## 导入约定
 

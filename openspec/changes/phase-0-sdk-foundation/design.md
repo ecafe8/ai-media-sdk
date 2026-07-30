@@ -2,7 +2,7 @@
 
 The repository is a Bun 1.3.14 and Turborepo monorepo with `apps/web`, `packages/ui`, and shared TypeScript/ESLint configuration, but it has no SDK implementation package, Provider package, examples workspace, or test runner. The product direction is `@ai-media/*`: an image-first SDK whose core contracts are modality-neutral and can later support video and audio.
 
-Phase 0 must establish package boundaries without coupling runtime code to Bun, browser APIs, or Provider SDKs. Azure OpenAI will use API Key authentication and direct REST calls. Alibaba Bailian has no official JS/TS SDK, so its future adapter will also use direct REST calls. The existing `.reference/zbx-template-monorepo` submodule is read-only UI/examples reference and is outside the workspace.
+Phase 0 must establish package boundaries without coupling runtime code to Bun, browser APIs, or Provider SDKs. Azure OpenAI will use API Key authentication and direct REST calls. Alibaba Bailian has no official JS/TS SDK, so its future adapter will also use direct REST calls.
 
 ## Goals / Non-Goals
 

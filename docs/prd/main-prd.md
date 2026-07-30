@@ -517,7 +517,6 @@ flowchart LR
 | Azure OpenAI 仅支持 API Key 鉴权 | 同时支持 Entra ID/Azure AD bearer | 用户确认首期仅用 API Key（`api-key` 头），复杂度最低；Entra ID 后置 | 若未来需 Entra ID，仅 Azure provider 引 `@azure/identity` 做 token 获取，HTTP 仍走自有 fetch |
 | 包 scope 为 `@ai-media/*`，按平台拆独立 Provider 包 | 单包内分目录；保持图像单一 scope | 用户按需安装 Provider；外部依赖隔离；feat↔package 一一对应 | 新增 `@ai-media/sdk` + `@ai-media/provider-<name>` + `examples/<provider>` |
 | 测试基线采用 `bun:test` | 引入 Vitest/Jest；不配测试 | 与 Bun 工具链一致，零额外依赖；SUB tech 均假设有单元/契约测试 | 根加 `test` 脚本 + turbo `test` task；契约测试 mock 双 Provider |
-| 引入 `zbx-template-monorepo` 为只读 git submodule 作组件参考 | vendor 整库为 workspace；纯靠记忆 | 零侵入构建（`.reference/` 不进 workspaces/turbo/Tailwind `@source`）；examples 页面可直接参考其 `ui-blocks` | `packages/ui` 已迁移到 `shadcn/` 子目录约定，与参考仓库对齐 |
 
 ## 13. 版本规划
 
@@ -637,4 +636,4 @@ flowchart LR
 | v1.1.0 | 2026-07-30 | 将首批 OpenAI Provider 调整为 Azure OpenAI 图像 Provider；补充 Azure deployment、endpoint、API version、认证和 Provider 参数命名空间待确认项，并记录 AI SDK Azure 实现参考。 |
 | v1.2.0 | 2026-07-30 | 根据 SUB-005 需求澄清，将当前 Web 的受控 Playground 纳入范围，同时明确不建设管理控制台或公共多租户平台。 |
 | v1.3.0 | 2026-07-30 | 根据百炼模型资料补充阿里云推荐模型目录、模型级能力矩阵、分辨率/输出数和调研依据。 |
-| v1.4.0 | 2026-07-30 | 产品定位升级为多模态 umbrella SDK（AI Media SDK），MVP 仍仅图像但核心类型模态无关泛型化；确定包 scope `@ai-media/*` 与按平台拆分 Provider 包；确定 Provider 纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确定测试基线 `bun:test`；引入 `zbx-template-monorepo` 只读 submodule 并将 `packages/ui` 迁移到 `shadcn/` 约定；预留 SUB-006 视频生成、SUB-007 音频生成。 |
+| v1.4.0 | 2026-07-30 | 产品定位升级为多模态 umbrella SDK（AI Media SDK），MVP 仍仅图像但核心类型模态无关泛型化；确定包 scope `@ai-media/*` 与按平台拆分 Provider 包；确定 Provider 纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确定测试基线 `bun:test`；将 `packages/ui` 迁移到 `shadcn/` 约定；预留 SUB-006 视频生成、SUB-007 音频生成。 |

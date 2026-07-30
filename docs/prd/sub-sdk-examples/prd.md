@@ -143,7 +143,6 @@ flowchart TD
 - `SUB-003` 定义任务状态和结果读取。
 - 当前 Web 基于 Next.js 16.2.6、React 19.2.4、共享 `@workspace/ui`（shadcn 子目录约定）。
 - `examples/*` 纳入根 workspaces；测试基线 `bun:test`。
-- Playground 布局可参考 `.reference/zbx-template-monorepo/examples/ui-blocks` 的 app-shell/preview 视口切换模式（只读参考，不纳入构建）。
 - Web Playground 的具体 API 路由和图片上传策略需在实现阶段确认。
 
 ## 10. 分支验收标准
@@ -171,4 +170,4 @@ flowchart TD
 |---|---|---|
 | v1.0.0 | 2026-07-30 | 根据总 PRD 和需求澄清创建 SDK 示例与 Web Playground 分支草稿。 |
 | v1.1.0 | 2026-07-30 | 补充阿里云百炼推荐模型在 examples/Playground 中的选择和能力提示要求。 |
-| v1.2.0 | 2026-07-30 | 登记 `examples/*` workspace、`bun:test`、`@ai-media/*` 包 scope；Playground 布局参考 `.reference/.../ui-blocks`。 |
+| v1.2.0 | 2026-07-30 | 登记 `examples/*` workspace、`bun:test`、`@ai-media/*` 包 scope。 |

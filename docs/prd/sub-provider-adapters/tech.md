@@ -15,8 +15,7 @@
 
 - 根目录是 Bun workspace + Turborepo monorepo，根包名 `ai-media-sdk`（scope `@ai-media/*`）。工作区匹配 `apps/*`、`packages/*`，待加 `examples/*`。
 - 当前只有 `apps/web` 和 `packages/ui`，没有 SDK package、Provider package、examples workspace 或业务 API。
-- `.reference/zbx-template-monorepo` 为只读 git submodule，作为 examples 页面与组件参考；不纳入 workspaces、turbo、Tailwind `@source` 与构建。
-- `packages/ui` 已迁移到 shadcn 子目录约定（`@workspace/ui/components/shadcn/*`），与参考仓库对齐；本 sub 不直接依赖 UI。
+- `packages/ui` 已迁移到 shadcn 子目录约定（`@workspace/ui/components/shadcn/*`）；本 sub 不直接依赖 UI。
 - `apps/web` 使用 Next `16.2.6`、React `19.2.4`、TypeScript `^5`。
 - 根包要求 Node.js `>=20`，包管理器为 Bun `1.3.14`；测试基线待引入 `bun:test`（当前仓库无测试框架）。
 
@@ -301,4 +300,4 @@ Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料�
 |---|---|---|
 | v1.0.0 | 2026-07-30 | 创建 Provider 适配体系技术方案，记录 Azure/Google/阿里云/Seedream 调研边界。 |
 | v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型能力、输出数量、分辨率和资料来源。 |
-| v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记代码库 submodule 与 shadcn 迁移事实。 |
+| v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记 shadcn 迁移事实。 |

@@ -9,6 +9,5 @@ module.exports = {
     "**/dist/**",
     "**/.turbo/**",
     "**/coverage/**",
-    ".reference/**",
   ],
 }
