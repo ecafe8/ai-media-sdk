@@ -14,11 +14,15 @@ export type Modality = "image" | "video" | "audio";
 
 /**
  * Capability flags for a model. Reserved modalities are `false` in Phase 0.
+ *
+ * `maxEditImages` bounds how many reference images an edit request may carry
+ * (Qwen I2I accepts 1-3); it is undefined when the model does not edit.
  */
 export interface ModelCapability {
   readonly modality: Modality;
   readonly generate: boolean;
   readonly edit: boolean;
+  readonly maxEditImages?: number;
 }
 
 /**

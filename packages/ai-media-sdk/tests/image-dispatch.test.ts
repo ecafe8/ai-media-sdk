@@ -3,7 +3,6 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  SdkError,
   editImage,
   generateImage,
   type AdapterRequest,
@@ -16,9 +15,11 @@ import {
 function createFakeAdapter(): {
   adapter: ProviderAdapter<ImageContent[]>;
   getCount: () => number;
+  getEditCount: () => number;
   lastRequest: () => AdapterRequest | undefined;
 } {
   let count = 0;
+  let editCount = 0;
   let last: AdapterRequest | undefined;
   const adapter: ProviderAdapter<ImageContent[]> = {
     providerId: "fake",
@@ -34,25 +35,45 @@ function createFakeAdapter(): {
         requestId: "req-1",
       };
     },
-    async edit(): Promise<GenerationResult<ImageContent[]>> {
-      throw new SdkError({ code: "NOT_IMPLEMENTED", message: "no edit" });
+    async edit(
+      request: AdapterRequest
+    ): Promise<GenerationResult<ImageContent[]>> {
+      editCount += 1;
+      last = request;
+      return {
+        content: [{ url: "https://example.com/edited.png" }],
+        provider: "fake",
+        model: request.model,
+        requestId: "edit-1",
+      };
     },
   };
-  return { adapter, getCount: () => count, lastRequest: () => last };
+  return {
+    adapter,
+    getCount: () => count,
+    getEditCount: () => editCount,
+    lastRequest: () => last,
+  };
 }
 
 function createModel(
-  capabilities: { generate: boolean; edit: boolean } = {
-    generate: true,
-    edit: false,
-  }
+  capabilities: {
+    generate?: boolean;
+    edit?: boolean;
+    maxEditImages?: number;
+  } = {}
 ): { model: ImageModelInstance } & ReturnType<typeof createFakeAdapter> {
   const fake = createFakeAdapter();
   const model: ImageModelInstance = {
     providerId: "fake",
     modelId: "test-model",
     adapter: fake.adapter,
-    capabilities: { modality: "image", ...capabilities },
+    capabilities: {
+      modality: "image",
+      generate: capabilities.generate ?? true,
+      edit: capabilities.edit ?? false,
+      maxEditImages: capabilities.maxEditImages,
+    },
   };
   return { model, ...fake };
 }
@@ -109,11 +130,53 @@ describe("core image dispatch", () => {
     expect(getCount()).toBe(0);
   });
 
-  test("editImage rejects with NOT_IMPLEMENTED even when the model claims edit capability", async () => {
-    const { model } = createModel({ generate: true, edit: true });
+  test("editImage dispatches to the bound adapter and returns its result", async () => {
+    const { model, getEditCount, lastRequest } = createModel({
+      edit: true,
+      maxEditImages: 3,
+    });
+
+    const result = await editImage({
+      model,
+      prompt: "make it black and white",
+      images: [{ url: "https://example.com/input.png" }],
+    });
+
+    expect(getEditCount()).toBe(1);
+    const req = lastRequest();
+    expect(req?.modality).toBe("image");
+    expect(result.content[0]?.url).toBe("https://example.com/edited.png");
+    expect(result.model).toBe("test-model");
+  });
+
+  test("editImage rejects with INVALID_REQUEST for a non-editable model", async () => {
+    const { model, getEditCount } = createModel({
+      generate: true,
+      edit: false,
+    });
 
     await expect(
-      editImage({ model, prompt: "p", image: {} })
-    ).rejects.toMatchObject({ code: "NOT_IMPLEMENTED", retryable: false });
+      editImage({ model, prompt: "p", images: [{ url: "u" }] })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(getEditCount()).toBe(0);
+  });
+
+  test("editImage rejects with INVALID_REQUEST for an out-of-range image count", async () => {
+    const { model, getEditCount } = createModel({
+      edit: true,
+      maxEditImages: 3,
+    });
+
+    await expect(
+      editImage({ model, prompt: "p", images: [] })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    await expect(
+      editImage({
+        model,
+        prompt: "p",
+        images: [{ url: "a" }, { url: "b" }, { url: "c" }, { url: "d" }],
+      })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(getEditCount()).toBe(0);
   });
 });

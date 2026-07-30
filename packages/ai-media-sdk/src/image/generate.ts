@@ -3,18 +3,26 @@ import type { AdapterRequest } from "../contracts/adapter.js";
 import type { GenerationResult } from "../contracts/generation.js";
 import type { ImageContent } from "../contracts/content.js";
 import type {
+  ImageEditInput,
   ImageEditRequest,
   ImageGenerationInput,
   ImageGenerationRequest,
 } from "./request.js";
-import { isImageGenerationInput } from "./request.js";
+import { isImageEditInput, isImageGenerationInput } from "./request.js";
 
 /**
  * Image API entry points.
  *
- * `generateImage` dispatches through the provider-bound model instance;
- * `editImage` remains a `NOT_IMPLEMENTED` stub in this slice.
+ * `generateImage` and `editImage` both dispatch through the provider-bound
+ * model instance, validating public parameters against model capabilities
+ * before any network call.
  */
+
+/**
+ * Default maximum reference images for an editable model that does not declare
+ * `maxEditImages`. Qwen I2I accepts up to 3.
+ */
+const DEFAULT_MAX_EDIT_IMAGES = 3;
 
 /**
  * Supported public generation parameters per the image capability contract.
@@ -58,25 +66,48 @@ export async function generateImage(
 }
 
 /**
- * Edit an existing image from a prompt.
+ * Edit 1-3 existing images from a prompt via the bound model instance.
  *
- * Stays a `NOT_IMPLEMENTED` stub in this slice; image editing lands in a later
- * slice once the Azure `/images/edits` multipart contract is designed.
+ * Validates `model.capabilities.edit` and the image count against
+ * `maxEditImages`, builds a modality-neutral `AdapterRequest`, and dispatches
+ * to the adapter `edit`.
  */
 export async function editImage(
   request: ImageEditRequest
 ): Promise<GenerationResult<ImageContent[]>> {
-  if (!request.model.capabilities.edit) {
+  const { model, prompt, images, providerOptions } = request;
+
+  if (!model.capabilities.edit) {
     throw new SdkError({
       code: "INVALID_REQUEST",
-      message: `Model "${request.model.modelId}" does not support image editing`,
+      message: `Model "${model.modelId}" does not support image editing`,
     });
   }
-  throw new SdkError({
-    code: "NOT_IMPLEMENTED",
-    message: "editImage is not implemented in this slice",
-    retryable: false,
-  });
+
+  if (prompt.length === 0) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "prompt must not be empty",
+    });
+  }
+
+  const max = model.capabilities.maxEditImages ?? DEFAULT_MAX_EDIT_IMAGES;
+  if (images.length < 1 || images.length > max) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: `images must contain between 1 and ${max} entries`,
+    });
+  }
+
+  const input: ImageEditInput = { prompt, images, providerOptions };
+  const adapterRequest: AdapterRequest = {
+    provider: model.providerId,
+    model: model.modelId,
+    modality: "image",
+    input,
+  };
+
+  return model.adapter.edit(adapterRequest);
 }
 
 /**
@@ -112,4 +143,4 @@ function validatePublicParams(input: ImageGenerationInput): void {
   }
 }
 
-export { isImageGenerationInput };
+export { isImageEditInput, isImageGenerationInput };

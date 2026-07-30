@@ -34,13 +34,29 @@ export interface ImageGenerationRequest {
 }
 
 /**
- * Minimal image edit request. Image editing remains a `NOT_IMPLEMENTED` stub
- * in this slice; the shape is retained so later slices can evolve it.
+ * Provider-agnostic image edit payload carried in `AdapterRequest.input`.
+ *
+ * `prompt` and `images` are public; provider-native fields travel under
+ * `providerOptions.<provider>`. `images` carries 1-3 reference images (URL or
+ * base64) that the adapter maps to its native image-entry form.
+ */
+export interface ImageEditInput {
+  readonly prompt: string;
+  readonly images: readonly ImageContent[];
+  readonly providerOptions?: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * A complete image edit request bound to a provider model instance.
+ *
+ * Carries 1-3 input images (`images`); the model's `maxEditImages` bounds the
+ * maximum. The Phase 0 singular `image: ImageContent` shape is retired.
  */
 export interface ImageEditRequest {
   readonly model: ImageModelInstance;
   readonly prompt: string;
-  readonly image: ImageContent;
+  readonly images: readonly ImageContent[];
+  readonly providerOptions?: Readonly<Record<string, unknown>>;
 }
 
 /**
@@ -55,4 +71,14 @@ export function isImageGenerationInput(
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
   return typeof candidate.prompt === "string";
+}
+
+/**
+ * Type guard narrowing an `unknown` adapter input to `ImageEditInput`.
+ */
+export function isImageEditInput(value: unknown): value is ImageEditInput {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.prompt !== "string") return false;
+  return Array.isArray(candidate.images);
 }
