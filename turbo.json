@@ -16,6 +16,17 @@
     "typecheck": {
       "dependsOn": ["^typecheck"]
     },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**/*.ts",
+        "src/**/*.tsx",
+        "tests/**/*.ts",
+        "tsconfig.json",
+        "tsconfig.test.json",
+        "package.json"
+      ]
+    },
     "dev": {
       "cache": false,
       "persistent": true
