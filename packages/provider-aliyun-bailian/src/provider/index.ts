@@ -5,6 +5,7 @@ import {
   isImageEditInput,
   isImageGenerationInput,
   notImplemented,
+  toImageUrl,
   TransportError,
   type AdapterRequest,
   type GenerationResult,
@@ -252,11 +253,8 @@ function readAliyunOptions(
 }
 
 function mapImageContent(image: ImageContent): string {
-  if (image.url) return image.url;
-  if (image.base64) {
-    const mime = image.mimeType ?? "image/png";
-    return `data:${mime};base64,${image.base64}`;
-  }
+  const imageUrl = toImageUrl(image);
+  if (imageUrl) return imageUrl;
   throw new SdkError({
     code: "INVALID_REQUEST",
     message: "Edit input image must carry a url or base64",

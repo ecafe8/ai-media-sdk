@@ -11,5 +11,6 @@ export {
   isImageGenerationInput,
   generateImage,
   editImage,
+  toImageUrl,
 } from "./image/index.ts";
 export * from "./transport/index.ts";

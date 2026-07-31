@@ -3,6 +3,7 @@
 import { ImagePlus, LoaderCircle, Sparkles, WandSparkles } from "lucide-react";
 import { useState } from "react";
 
+import { toImageUrl } from "@ai-media/sdk";
 import { Button } from "@workspace/ui/components/shadcn/button";
 
 import { PLAYGROUND_PROVIDERS } from "@/lib/playground/registry";
@@ -17,7 +18,7 @@ interface PlaygroundProps {
   readonly models: readonly PlaygroundModel[];
 }
 
-const PROMPTS = ["竖版的王国保卫战游戏界面","一张可爱的人像摄影"];
+const PROMPTS = ["竖版的王国保卫战游戏界面", "一张可爱的人像摄影"];
 
 export function Playground({ models }: PlaygroundProps) {
   const configuredModels = models.filter((model) => model.configured);
@@ -438,9 +439,9 @@ function SuccessState({
             className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
           >
             <div className="flex aspect-square items-center justify-center bg-gradient-to-br from-emerald-300 via-teal-500 to-slate-800">
-              {getImageSource(image) ? (
+              {toImageUrl(image) ? (
                 <img
-                  src={getImageSource(image)}
+                  src={toImageUrl(image)}
                   alt={`生成结果 ${index + 1}`}
                   className="size-full object-cover"
                 />
@@ -455,9 +456,9 @@ function SuccessState({
                   ? `${image.width}×${image.height}`
                   : ""}
               </p>
-              {getImageSource(image) ? (
+              {toImageUrl(image) ? (
                 <a
-                  href={getImageSource(image)}
+                  href={toImageUrl(image)}
                   target="_blank"
                   rel="noreferrer"
                   className="block truncate text-emerald-700 hover:underline"
@@ -471,17 +472,6 @@ function SuccessState({
       </div>
     </div>
   );
-}
-
-function getImageSource(image: {
-  readonly url?: string;
-  readonly base64?: string;
-  readonly mimeType?: string;
-}): string | undefined {
-  if (image.url) return image.url;
-  if (!image.base64) return undefined;
-  if (image.base64.startsWith("data:")) return image.base64;
-  return `data:${image.mimeType ?? "image/png"};base64,${image.base64}`;
 }
 
 function isValidHttpUrl(value: string): boolean {
