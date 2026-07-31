@@ -2,6 +2,7 @@ import {
   editImage,
   generateImage,
   SdkError,
+  createTransport,
   type GenerationResult,
   type ImageContent,
   type ImageModelInstance,
@@ -75,25 +76,45 @@ export function createProviderSelection(
   }
 
   if (request.provider === "azure-openai") {
-    const provider: AzureOpenAIProvider = createAzureOpenAIProvider({
-      apiKey: config.AZURE_OPENAI_API_KEY!,
-      endpoint: config.AZURE_OPENAI_ENDPOINT!,
-      apiVersion: config.AZURE_OPENAI_API_VERSION!,
-    });
+    const provider: AzureOpenAIProvider = createAzureOpenAIProvider(
+      {
+        apiKey: config.AZURE_OPENAI_API_KEY!,
+        endpoint: config.AZURE_OPENAI_ENDPOINT!,
+        apiVersion: config.AZURE_OPENAI_API_VERSION!,
+      },
+      {
+        transport: createTransport({
+          defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+        }),
+      }
+    );
     return { model, instance: provider.image(request.model) };
   }
 
-  const provider: AliyunBailianProvider = createAliyunBailianProvider({
-    apiKey: config.ALIYUN_BAILIAN_API_KEY!,
-    baseUrl: config.ALIYUN_BAILIAN_BASE_URL!,
-  });
+  const provider: AliyunBailianProvider = createAliyunBailianProvider(
+    {
+      apiKey: config.ALIYUN_BAILIAN_API_KEY!,
+      baseUrl: config.ALIYUN_BAILIAN_BASE_URL!,
+    },
+    {
+      transport: createTransport({
+        defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+      }),
+    }
+  );
   return { model, instance: provider.image(request.model) };
 }
 
 export async function executePlaygroundRequest(
   request: PlaygroundRequest
 ): Promise<PlaygroundResponse> {
+  const startedAt = Date.now();
+
   try {
+    const config = loadConfig();
+    logPlaygroundEvent("start", request, {
+      timeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+    });
     const selection = createProviderSelection(request);
     let result: GenerationResult<ImageContent[]>;
 
@@ -112,7 +133,7 @@ export async function executePlaygroundRequest(
       });
     }
 
-    return {
+    const response: PlaygroundResponse = {
       status: "succeeded",
       images: result.content,
       metadata: {
@@ -122,9 +143,40 @@ export async function executePlaygroundRequest(
         ...readUsage(result.raw),
       },
     };
+    logPlaygroundEvent("success", request, {
+      durationMs: Date.now() - startedAt,
+      requestId: result.requestId,
+    });
+    return response;
   } catch (error) {
-    return { status: "failed", error: toSafeError(error) };
+    const safeError = toSafeError(error);
+    logPlaygroundEvent("failure", request, {
+      code: safeError.code,
+      durationMs: Date.now() - startedAt,
+      retryable: error instanceof SdkError ? error.retryable : false,
+    });
+    return { status: "failed", error: safeError };
   }
+}
+
+function logPlaygroundEvent(
+  event: "start" | "success" | "failure",
+  request: PlaygroundRequest,
+  details: Readonly<Record<string, unknown>>
+): void {
+  const payload = {
+    event: `playground.provider_request.${event}`,
+    provider: request.provider,
+    model: request.model,
+    mode: request.mode,
+    ...details,
+  };
+
+  if (event === "failure") {
+    console.error(JSON.stringify(payload));
+    return;
+  }
+  console.info(JSON.stringify(payload));
 }
 
 function readUsage(raw: unknown): {

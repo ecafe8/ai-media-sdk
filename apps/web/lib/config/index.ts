@@ -18,6 +18,12 @@ const configSchema = z.object({
   AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
   ALIYUN_BAILIAN_API_KEY: z.string().optional(),
   ALIYUN_BAILIAN_BASE_URL: z.string().url().optional(),
+  PLAYGROUND_PROVIDER_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(1_000)
+    .max(600_000)
+    .default(120_000),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;
