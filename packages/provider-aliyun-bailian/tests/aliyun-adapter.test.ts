@@ -66,6 +66,15 @@ describe("aliyun-bailian provider", () => {
     );
   });
 
+  test("binds the dated Qwen free-quota model", () => {
+    const { transport } = createFakeTransport([qwenResponse(["x"])]);
+    const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
+
+    expect(
+      provider.image("qwen-image-2.0-pro-2026-06-22").capabilities.generate
+    ).toBe(true);
+  });
+
   test("builds the T2I request URL, auth header, and body", async () => {
     const { transport, requests } = createFakeTransport([
       qwenResponse(["a.png"]),
@@ -77,7 +86,7 @@ describe("aliyun-bailian provider", () => {
       model,
       prompt: "一只红狐狸",
       n: 1,
-      size: "1024*1024",
+      size: "1024x1024",
       providerOptions: {
         aliyun: {
           negative_prompt: "低分辨率",

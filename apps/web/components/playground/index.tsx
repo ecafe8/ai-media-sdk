@@ -30,15 +30,13 @@ export function Playground({ models }: PlaygroundProps) {
   const [mode, setMode] = useState<PlaygroundMode>("generate");
   const [prompt, setPrompt] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
-  const [size, setSize] = useState("1024x1024");
+  const [size, setSize] = useState("1024*1024");
   const [n, setN] = useState("1");
   const [result, setResult] = useState<PlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
 
-  const providerModels = models.filter(
-    (model) => model.provider === provider && model.supportsGenerate
-  );
+  const providerModels = models.filter((model) => model.provider === provider);
   const currentModel = models.find(
     (model) => model.provider === provider && model.id === modelId
   );
@@ -191,8 +189,14 @@ export function Playground({ models }: PlaygroundProps) {
                 onChange={(event) => changeModel(event.target.value)}
               >
                 {providerModels.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
+                  <option
+                    key={item.id}
+                    value={item.id}
+                    disabled={!item.supportsGenerate}
+                  >
+                    {item.supportsGenerate
+                      ? item.label
+                      : `${item.label}（暂不支持）`}
                   </option>
                 ))}
               </select>
@@ -249,9 +253,9 @@ export function Playground({ models }: PlaygroundProps) {
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                   onChange={(event) => setSize(event.target.value)}
                 >
-                  <option value="1024x1024">1K</option>
-                  <option value="1536x1024">2K 横图</option>
-                  <option value="1024x1536">2K 竖图</option>
+                  <option value="1024*1024">1K</option>
+                  <option value="1536*1024">2K 横图</option>
+                  <option value="1024*1536">2K 竖图</option>
                 </select>
               </Field>
               <Field label="生成数量">

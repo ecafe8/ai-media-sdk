@@ -18,4 +18,18 @@ describe("Playground capability registry", () => {
     expect(model?.supportsGenerate).toBe(true);
     expect(model?.supportsEdit).toBe(false);
   });
+
+  test("registers the dated Qwen free-quota image model", () => {
+    const model = getPlaygroundModel(
+      "aliyun-bailian",
+      "qwen-image-2.0-pro-2026-06-22"
+    );
+    expect(model?.supportsGenerate).toBe(true);
+    expect(model?.supportsEdit).toBe(true);
+  });
+
+  test("lists video models as unavailable to the image Playground", () => {
+    const model = getPlaygroundModel("aliyun-bailian", "wan2.7-t2v-2026-06-12");
+    expect(model?.supportsGenerate).toBe(false);
+  });
 });

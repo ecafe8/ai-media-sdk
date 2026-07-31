@@ -62,6 +62,11 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     capabilities: QWEN_T2I_I2I_CAPABILITY,
     paramSupport: { n: true, size: true },
   },
+  "qwen-image-2.0-pro-2026-06-22": {
+    family: "qwen-multimodal",
+    capabilities: QWEN_T2I_I2I_CAPABILITY,
+    paramSupport: { n: true, size: true },
+  },
   "qwen-image-2.0": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,

@@ -8,7 +8,7 @@ describe("Alibaba Bailian example configuration", () => {
   });
 
   test("uses the recommended editable Qwen model by default", () => {
-    expect(readAliyunModel({})).toBe("qwen-image-2.0-pro");
+    expect(readAliyunModel({})).toBe("qwen-image-2.0-pro-2026-06-22");
   });
 
   test("builds a complete config from environment values", () => {

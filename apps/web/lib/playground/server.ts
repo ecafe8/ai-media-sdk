@@ -202,7 +202,7 @@ function toSafeError(error: unknown): NonNullable<PlaygroundResponse["error"]> {
   if (error instanceof SdkError) {
     return {
       code: error.code,
-      message: safeMessage(error.code),
+      message: safeMessage(error.code, error.message),
     };
   }
   return {
@@ -211,12 +211,14 @@ function toSafeError(error: unknown): NonNullable<PlaygroundResponse["error"]> {
   };
 }
 
-function safeMessage(code: SdkError["code"]): string {
+function safeMessage(code: SdkError["code"], detail?: string): string {
   switch (code) {
     case "AUTH_ERROR":
       return "Provider authentication failed. Check the server environment.";
     case "INVALID_REQUEST":
-      return "The request is not supported. Check the selected model and inputs.";
+      return detail
+        ? `The Provider rejected the request: ${detail}`
+        : "The request is not supported. Check the selected model and inputs.";
     case "RATE_LIMITED":
       return "The Provider is rate limiting requests. Try again later.";
     case "TIMEOUT":

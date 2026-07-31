@@ -203,7 +203,9 @@ function buildParameters(
 ): Record<string, unknown> {
   const parameters: Record<string, unknown> = {};
   if (entry.paramSupport.size && input.size !== undefined) {
-    parameters.size = input.size;
+    // DashScope Qwen image models use `*` between dimensions. Accept the
+    // playground's provider-neutral `x` form as well.
+    parameters.size = input.size.replace(/x/gi, "*");
   }
   if (entry.paramSupport.n && input.n !== undefined) {
     parameters.n = input.n;
@@ -295,7 +297,7 @@ async function sendQwenRequest(
   if (response.status < 200 || response.status >= 300) {
     throw classifyHttpError(
       response.status,
-      extractErrorMessage(response.data)
+      extractErrorMessage(response.data, config.apiKey)
     );
   }
 
@@ -326,11 +328,16 @@ function mapTransportError(error: unknown): SdkError {
 }
 
 function extractErrorMessage(
-  data: QwenImageResponse | undefined
+  data: QwenImageResponse | undefined,
+  apiKey: string
 ): string | undefined {
-  const message = data?.message;
-  if (typeof message === "string" && message.length > 0) {
-    return message;
+  const message = [data?.code, data?.message]
+    .filter(
+      (part): part is string => typeof part === "string" && part.length > 0
+    )
+    .join(": ");
+  if (message.length > 0) {
+    return message.replaceAll(apiKey, "[redacted]");
   }
   return undefined;
 }
