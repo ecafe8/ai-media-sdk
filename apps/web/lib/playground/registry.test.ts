@@ -70,4 +70,15 @@ describe("Playground capability registry", () => {
     const qwen = models.find((model) => model.id === "qwen-image-2.0-pro");
     expect(qwen?.configured).toBe(false);
   });
+
+  test("registers HappyHorse t2v/i2v as available video models", () => {
+    const t2v = getPlaygroundModel("aliyun-bailian", "happyhorse-1.1-t2v");
+    expect(t2v?.modality).toBe("video");
+    expect(t2v?.supportsVideo).toBe(true);
+    expect(t2v?.requiresFirstFrame).toBe(false);
+
+    const i2v = getPlaygroundModel("aliyun-bailian", "happyhorse-1.1-i2v");
+    expect(i2v?.supportsVideo).toBe(true);
+    expect(i2v?.requiresFirstFrame).toBe(true);
+  });
 });

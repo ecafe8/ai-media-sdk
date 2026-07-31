@@ -25,3 +25,19 @@ export interface ImageContent extends Content {
   readonly width?: number;
   readonly height?: number;
 }
+
+/**
+ * Video content produced by video generation.
+ *
+ * A result carries one or more videos; `url` is the download link (MP4 by
+ * default). `duration` is in seconds; `width`/`height` may be absent when the
+ * provider reports only a resolution tier. `mimeType` defaults to `video/mp4`.
+ */
+export interface VideoContent extends Content {
+  readonly url?: string;
+  readonly base64?: string;
+  readonly mimeType?: string;
+  readonly duration?: number;
+  readonly width?: number;
+  readonly height?: number;
+}

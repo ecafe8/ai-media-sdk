@@ -38,5 +38,29 @@ export interface TaskHandle<TContent> {
   readonly status: TaskStatus;
   readonly result?: GenerationResult<TContent>;
   readonly error?: SdkError;
-  wait(): Promise<GenerationResult<TContent>>;
+  wait(options?: TaskWaitOptions): Promise<GenerationResult<TContent>>;
+}
+
+/**
+ * Options for `TaskHandle.wait()`.
+ *
+ * `pollIntervalMs`/`timeoutMs` override the handle defaults; `signal` aborts
+ * polling between polls.
+ */
+export interface TaskWaitOptions {
+  readonly pollIntervalMs?: number;
+  readonly timeoutMs?: number;
+  readonly signal?: AbortSignal;
+}
+
+/**
+ * The outcome of one poll step, supplied by a Provider adapter.
+ *
+ * A non-terminal status keeps polling; a terminal status resolves (`succeeded`)
+ * or rejects (`failed`/`cancelled`) `wait()`.
+ */
+export interface TaskPollResult<TContent> {
+  readonly status: TaskStatus;
+  readonly result?: GenerationResult<TContent>;
+  readonly error?: SdkError;
 }

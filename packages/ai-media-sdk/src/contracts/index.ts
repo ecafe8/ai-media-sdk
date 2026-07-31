@@ -14,15 +14,22 @@ export type {
   TransportResponse,
   Transport,
 } from "./transport.ts";
-export type { Content, ImageContent } from "./content.ts";
+export type { Content, ImageContent, VideoContent } from "./content.ts";
 export type { RetryPolicy } from "./retry-policy.ts";
 export { DEFAULT_RETRY_POLICY } from "./retry-policy.ts";
-export type { GenerationResult, TaskStatus, TaskHandle } from "./generation.ts";
+export type {
+  GenerationResult,
+  TaskStatus,
+  TaskHandle,
+  TaskWaitOptions,
+  TaskPollResult,
+} from "./generation.ts";
 export type {
   AdapterModality,
   AdapterRequest,
   AdapterOptions,
   ProviderAdapter,
 } from "./adapter.ts";
+export type { ModelInstance } from "./model-instance.ts";
 export { SdkError, notImplemented, classifyHttpError } from "./error.ts";
 export type { SdkErrorCode, SdkErrorOptions } from "./error.ts";

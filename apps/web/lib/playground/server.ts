@@ -1,11 +1,13 @@
 import {
   editImage,
   generateImage,
+  submitVideoTask,
   SdkError,
   createTransport,
   type GenerationResult,
   type ImageContent,
   type ImageModelInstance,
+  type VideoModelInstance,
 } from "@ai-media/sdk";
 import {
   createAliyunBailianProvider,
@@ -31,7 +33,7 @@ import type {
 
 interface ProviderSelection {
   readonly model: PlaygroundModel;
-  readonly instance: ImageModelInstance;
+  readonly instance: ImageModelInstance | VideoModelInstance;
 }
 
 export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
@@ -79,6 +81,40 @@ export function createProviderSelection(
       code: "INVALID_REQUEST",
       message: "The selected model does not support image editing",
     });
+  }
+
+  if (request.mode === "video") {
+    if (!model.supportsVideo) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "The selected model does not support video generation",
+      });
+    }
+    if (model.requiresFirstFrame && !request.referenceImageUrl) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "This video model requires a first-frame image URL",
+      });
+    }
+    if (request.provider !== "aliyun-bailian") {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message:
+          "Video generation is only supported for the Aliyun Bailian provider",
+      });
+    }
+    const provider: AliyunBailianProvider = createAliyunBailianProvider(
+      {
+        apiKey: config.ALIYUN_BAILIAN_API_KEY!,
+        baseUrl: config.ALIYUN_BAILIAN_BASE_URL!,
+      },
+      {
+        transport: createTransport({
+          defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+        }),
+      }
+    );
+    return { model, instance: provider.video(request.model) };
   }
 
   if (request.provider === "azure-openai") {
@@ -137,17 +173,54 @@ export async function executePlaygroundRequest(
       timeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
     });
     const selection = createProviderSelection(request);
-    let result: GenerationResult<ImageContent[]>;
 
+    if (request.mode === "video") {
+      const task = await submitVideoTask({
+        model: selection.instance as VideoModelInstance,
+        prompt: request.prompt,
+        ...(request.referenceImageUrl
+          ? { firstFrame: { url: request.referenceImageUrl } }
+          : {}),
+        providerOptions: {
+          aliyun: {
+            ...(request.resolution ? { resolution: request.resolution } : {}),
+            ...(request.duration ? { duration: request.duration } : {}),
+            watermark: false,
+          },
+        },
+      });
+      const result = await task.wait({
+        pollIntervalMs: 15_000,
+        timeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+      });
+      const response: PlaygroundResponse = {
+        status: "succeeded",
+        modality: "video",
+        videos: result.content,
+        metadata: {
+          provider: result.provider,
+          model: result.model,
+          requestId: result.requestId,
+          ...readVideoUsage(result.raw),
+        },
+      };
+      logPlaygroundEvent("success", request, {
+        durationMs: Date.now() - startedAt,
+        requestId: result.requestId,
+      });
+      return response;
+    }
+
+    let result: GenerationResult<ImageContent[]>;
     if (request.mode === "edit") {
       result = await editImage({
-        model: selection.instance,
+        model: selection.instance as ImageModelInstance,
         prompt: request.prompt,
         images: [{ url: request.referenceImageUrl }],
       });
     } else {
       result = await generateImage({
-        model: selection.instance,
+        model: selection.instance as ImageModelInstance,
         prompt: request.prompt,
         n: request.n,
         size: request.size,
@@ -156,6 +229,7 @@ export async function executePlaygroundRequest(
 
     const response: PlaygroundResponse = {
       status: "succeeded",
+      modality: "image",
       images: result.content,
       metadata: {
         provider: result.provider,
@@ -215,6 +289,22 @@ function readUsage(raw: unknown): {
     imageCount:
       typeof candidate.image_count === "number"
         ? candidate.image_count
+        : undefined,
+  };
+}
+
+function readVideoUsage(raw: unknown): {
+  readonly duration?: number;
+  readonly imageCount?: number;
+} {
+  if (typeof raw !== "object" || raw === null) return {};
+  const candidate = raw as Record<string, unknown>;
+  return {
+    duration:
+      typeof candidate.duration === "number" ? candidate.duration : undefined,
+    imageCount:
+      typeof candidate.video_count === "number"
+        ? candidate.video_count
         : undefined,
   };
 }

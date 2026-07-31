@@ -17,12 +17,15 @@ export type Modality = "image" | "video" | "audio";
  *
  * `maxEditImages` bounds how many reference images an edit request may carry
  * (Qwen I2I accepts 1-3); it is undefined when the model does not edit.
+ * `async` marks models that submit asynchronous tasks (e.g. Aliyun video);
+ * `submitTask` rejects models without it. Sync-only models leave it undefined.
  */
 export interface ModelCapability {
   readonly modality: Modality;
   readonly generate: boolean;
   readonly edit: boolean;
   readonly maxEditImages?: number;
+  readonly async?: boolean;
 }
 
 /**

@@ -12,7 +12,8 @@ import type { ModelCapability, ModelId } from "@ai-media/sdk";
 /**
  * The endpoint family a model targets.
  */
-export type AliyunModelFamily = "qwen-multimodal" | "wan-image";
+export type AliyunModelFamily =
+  "qwen-multimodal" | "wan-image" | "happyhorse-video";
 
 /**
  * Supported public parameters per model (drives what the adapter forwards).
@@ -24,11 +25,15 @@ export interface AliyunParamSupport {
 
 /**
  * A registry entry for a single model id.
+ *
+ * `requiresFirstFrame` marks first-frame i2v video models that need a
+ * `firstFrame` input (t2v models set it false/undefined).
  */
 export interface AliyunModelEntry {
   readonly family: AliyunModelFamily;
   readonly capabilities: ModelCapability;
   readonly paramSupport: AliyunParamSupport;
+  readonly requiresFirstFrame?: boolean;
 }
 
 const QWEN_T2I_I2I_CAPABILITY: ModelCapability = {
@@ -86,5 +91,27 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     family: "wan-image",
     capabilities: { modality: "image", generate: true, edit: false },
     paramSupport: { size: true },
+  },
+  "happyhorse-1.1-t2v": {
+    family: "happyhorse-video",
+    capabilities: {
+      modality: "video",
+      generate: true,
+      edit: false,
+      async: true,
+    },
+    paramSupport: {},
+    requiresFirstFrame: false,
+  },
+  "happyhorse-1.1-i2v": {
+    family: "happyhorse-video",
+    capabilities: {
+      modality: "video",
+      generate: true,
+      edit: false,
+      async: true,
+    },
+    paramSupport: {},
+    requiresFirstFrame: true,
   },
 };

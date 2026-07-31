@@ -32,6 +32,8 @@ export function Playground({ models }: PlaygroundProps) {
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [size, setSize] = useState("1024*1024");
   const [n, setN] = useState("1");
+  const [resolution, setResolution] = useState("720P");
+  const [duration, setDuration] = useState("5");
   const [result, setResult] = useState<PlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
@@ -41,23 +43,35 @@ export function Playground({ models }: PlaygroundProps) {
     (model) => model.provider === provider && model.id === modelId
   );
   const canEdit = currentModel?.supportsEdit ?? false;
+  const canVideo = currentModel?.supportsVideo ?? false;
+  const isVideo = mode === "video";
+  const needsFirstFrame = currentModel?.requiresFirstFrame ?? false;
 
   function changeProvider(nextProvider: PlaygroundProvider) {
     const nextModels = models.filter(
-      (model) => model.provider === nextProvider && model.supportsGenerate
+      (model) => model.provider === nextProvider
     );
     setProvider(nextProvider);
-    setModelId(nextModels[0]?.id ?? "");
-    setMode("generate");
+    const next = nextModels[0];
+    setModelId(next?.id ?? "");
+    if (next?.supportsVideo) {
+      setMode("video");
+    } else {
+      setMode("generate");
+    }
     setReferenceImageUrl("");
   }
 
   function changeModel(nextModelId: string) {
     const nextModel = models.find((model) => model.id === nextModelId);
     setModelId(nextModelId);
-    if (!nextModel?.supportsEdit) {
+    if (nextModel?.supportsVideo) {
+      setMode("video");
+    } else if (!nextModel?.supportsEdit) {
       setMode("generate");
       setReferenceImageUrl("");
+    } else {
+      setMode("generate");
     }
   }
 
@@ -71,23 +85,35 @@ export function Playground({ models }: PlaygroundProps) {
       setValidationError("编辑模式需要一个有效的图片 URL。");
       return;
     }
+    if (isVideo && needsFirstFrame && !isValidHttpUrl(referenceImageUrl)) {
+      setValidationError("该视频模型需要一个有效的首帧图片 URL。");
+      return;
+    }
 
     setValidationError("");
     setIsSubmitting(true);
     setResult({ status: "processing" });
     try {
+      const body: Record<string, unknown> = {
+        provider,
+        model: modelId,
+        mode,
+        prompt: trimmedPrompt,
+      };
+      if (mode === "edit") {
+        body.referenceImageUrl = referenceImageUrl;
+      } else if (isVideo) {
+        if (referenceImageUrl) body.referenceImageUrl = referenceImageUrl;
+        body.resolution = resolution;
+        body.duration = Number(duration);
+      } else {
+        body.size = size;
+        body.n = Number(n);
+      }
       const response = await fetch("/api/playground/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          provider,
-          model: modelId,
-          mode,
-          prompt: trimmedPrompt,
-          referenceImageUrl: mode === "edit" ? referenceImageUrl : undefined,
-          size,
-          n: Number(n),
-        }),
+        body: JSON.stringify(body),
       });
       const payload = (await response.json()) as PlaygroundResponse;
       setResult(payload);
@@ -144,7 +170,7 @@ export function Playground({ models }: PlaygroundProps) {
           </div>
 
           <div className="space-y-5">
-            <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-sm">
+            <div className="grid grid-cols-3 rounded-lg bg-slate-100 p-1 text-sm">
               <button
                 type="button"
                 aria-pressed={mode === "generate"}
@@ -161,6 +187,15 @@ export function Playground({ models }: PlaygroundProps) {
                 onClick={() => setMode("edit")}
               >
                 图生图
+              </button>
+              <button
+                type="button"
+                aria-pressed={isVideo}
+                disabled={!canVideo}
+                className={`rounded-md px-3 py-2 transition ${isVideo ? "bg-white font-medium shadow-sm" : "text-slate-500"} disabled:cursor-not-allowed disabled:opacity-40`}
+                onClick={() => setMode("video")}
+              >
+                视频
               </button>
             </div>
 
@@ -188,17 +223,14 @@ export function Playground({ models }: PlaygroundProps) {
                 className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                 onChange={(event) => changeModel(event.target.value)}
               >
-                {providerModels.map((item) => (
-                  <option
-                    key={item.id}
-                    value={item.id}
-                    disabled={!item.supportsGenerate}
-                  >
-                    {item.supportsGenerate
-                      ? item.label
-                      : `${item.label}（暂不支持）`}
-                  </option>
-                ))}
+                {providerModels.map((item) => {
+                  const usable = item.supportsGenerate || item.supportsVideo;
+                  return (
+                    <option key={item.id} value={item.id} disabled={!usable}>
+                      {usable ? item.label : `${item.label}（暂不支持）`}
+                    </option>
+                  );
+                })}
               </select>
               <p className="mt-2 text-xs leading-5 text-slate-500">
                 {currentModel?.recommendation ?? "该 Provider 尚未配置"}
@@ -218,6 +250,21 @@ export function Playground({ models }: PlaygroundProps) {
                 <p id="reference-hint" className="mt-2 text-xs text-slate-500">
                   支持 1-{currentModel?.maxEditImages ?? 1} 张图片，首期使用公开
                   URL。
+                </p>
+              </Field>
+            ) : null}
+
+            {isVideo && needsFirstFrame ? (
+              <Field label="首帧图片 URL" required>
+                <input
+                  type="url"
+                  value={referenceImageUrl}
+                  placeholder="https://..."
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  onChange={(event) => setReferenceImageUrl(event.target.value)}
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  宽高比自动跟随首帧，i2v 不支持 ratio。
                 </p>
               </Field>
             ) : null}
@@ -245,32 +292,62 @@ export function Playground({ models }: PlaygroundProps) {
               </div>
             </Field>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="清晰度">
-                <select
-                  value={size}
-                  aria-label="清晰度"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  onChange={(event) => setSize(event.target.value)}
-                >
-                  <option value="1024*1024">1K</option>
-                  <option value="1536*1024">2K 横图</option>
-                  <option value="1024*1536">2K 竖图</option>
-                </select>
-              </Field>
-              <Field label="生成数量">
-                <select
-                  value={n}
-                  aria-label="生成数量"
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                  onChange={(event) => setN(event.target.value)}
-                >
-                  <option value="1">1 张</option>
-                  <option value="2">2 张</option>
-                  <option value="4">4 张</option>
-                </select>
-              </Field>
-            </div>
+            {isVideo ? (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="分辨率">
+                  <select
+                    value={resolution}
+                    aria-label="分辨率"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    onChange={(event) => setResolution(event.target.value)}
+                  >
+                    <option value="480P">480P</option>
+                    <option value="720P">720P</option>
+                    <option value="1080P">1080P</option>
+                  </select>
+                </Field>
+                <Field label="时长（秒）">
+                  <select
+                    value={duration}
+                    aria-label="时长"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    onChange={(event) => setDuration(event.target.value)}
+                  >
+                    <option value="3">3 秒</option>
+                    <option value="5">5 秒</option>
+                    <option value="10">10 秒</option>
+                    <option value="15">15 秒</option>
+                  </select>
+                </Field>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="清晰度">
+                  <select
+                    value={size}
+                    aria-label="清晰度"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    onChange={(event) => setSize(event.target.value)}
+                  >
+                    <option value="1024*1024">1K</option>
+                    <option value="1536*1024">2K 横图</option>
+                    <option value="1024*1536">2K 竖图</option>
+                  </select>
+                </Field>
+                <Field label="生成数量">
+                  <select
+                    value={n}
+                    aria-label="生成数量"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    onChange={(event) => setN(event.target.value)}
+                  >
+                    <option value="1">1 张</option>
+                    <option value="2">2 张</option>
+                    <option value="4">4 张</option>
+                  </select>
+                </Field>
+              </div>
+            )}
 
             {validationError ? (
               <p
@@ -425,6 +502,58 @@ function SuccessState({
   result: PlaygroundResponse;
   prompt: string;
 }) {
+  if (result.modality === "video") {
+    return (
+      <div>
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">
+            视频生成成功
+          </span>
+          <span>{result.metadata?.provider}</span>
+          <span>/</span>
+          <span>{result.metadata?.model}</span>
+        </div>
+        <p className="mb-5 text-sm text-slate-600">{prompt}</p>
+        <div className="grid gap-3">
+          {result.videos?.map((video, index) => (
+            <div
+              key={`${video.url ?? "video"}-${index}`}
+              className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+            >
+              <div className="flex items-center justify-center bg-slate-900">
+                {video.url ? (
+                  <video
+                    src={video.url}
+                    controls
+                    className="max-h-[480px] w-full object-contain"
+                  />
+                ) : (
+                  <ImagePlus className="size-8 text-white/80" />
+                )}
+              </div>
+              <div className="space-y-1 p-3 text-xs text-slate-500">
+                <p>
+                  {video.mimeType ?? "video/mp4"}{" "}
+                  {video.duration ? `${video.duration}s` : ""}
+                </p>
+                {video.url ? (
+                  <a
+                    href={video.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block truncate text-emerald-700 hover:underline"
+                  >
+                    {video.url}
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">

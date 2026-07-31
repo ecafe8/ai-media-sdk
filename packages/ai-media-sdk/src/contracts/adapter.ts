@@ -1,6 +1,6 @@
 import type { ProviderId, ModelId } from "./provider-identity.ts";
 import type { Transport } from "./transport.ts";
-import type { GenerationResult } from "./generation.ts";
+import type { GenerationResult, TaskHandle } from "./generation.ts";
 
 /**
  * Provider adapter request/result contracts.
@@ -37,9 +37,13 @@ export interface AdapterOptions {
 
 /**
  * The contract every Provider adapter implements.
+ *
+ * `submit` is optional: only async-capable Providers implement it. `submitTask`
+ * rejects models bound to an adapter that omits `submit`.
  */
 export interface ProviderAdapter<TContent = unknown> {
   readonly providerId: ProviderId;
   generate(request: AdapterRequest): Promise<GenerationResult<TContent>>;
   edit(request: AdapterRequest): Promise<GenerationResult<TContent>>;
+  submit?(request: AdapterRequest): Promise<TaskHandle<TContent>>;
 }

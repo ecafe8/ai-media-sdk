@@ -13,4 +13,16 @@ export {
   editImage,
   toImageUrl,
 } from "./image/index.ts";
+export type {
+  VideoGenerationInput,
+  VideoGenerationRequest,
+  VideoModelInstance,
+} from "./video/index.ts";
+export { submitVideoTask } from "./video/index.ts";
+export {
+  createTaskHandle,
+  submitTask,
+  type CreateTaskHandleOptions,
+  type TaskSubmissionRequest,
+} from "./async/index.ts";
 export * from "./transport/index.ts";

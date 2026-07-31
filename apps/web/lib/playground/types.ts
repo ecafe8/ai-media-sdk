@@ -1,15 +1,18 @@
-import type { ImageContent, SdkErrorCode } from "@ai-media/sdk";
+import type { ImageContent, SdkErrorCode, VideoContent } from "@ai-media/sdk";
 
 export type PlaygroundProvider =
   "azure-openai" | "aliyun-bailian" | "doubao-seedream";
-export type PlaygroundMode = "generate" | "edit";
+export type PlaygroundMode = "generate" | "edit" | "video";
 
 export interface PlaygroundModel {
   readonly id: string;
   readonly label: string;
   readonly provider: PlaygroundProvider;
+  readonly modality: "image" | "video";
   readonly supportsGenerate: boolean;
   readonly supportsEdit: boolean;
+  readonly supportsVideo: boolean;
+  readonly requiresFirstFrame?: boolean;
   readonly maxEditImages?: number;
   readonly recommendation: string;
   readonly configured: boolean;
@@ -23,6 +26,8 @@ export interface PlaygroundRequest {
   readonly referenceImageUrl?: string;
   readonly size?: string;
   readonly n?: number;
+  readonly resolution?: string;
+  readonly duration?: number;
 }
 
 export interface PlaygroundMetadata {
@@ -32,11 +37,14 @@ export interface PlaygroundMetadata {
   readonly width?: number;
   readonly height?: number;
   readonly imageCount?: number;
+  readonly duration?: number;
 }
 
 export interface PlaygroundResponse {
   readonly status: "succeeded" | "processing" | "failed";
+  readonly modality?: "image" | "video";
   readonly images?: readonly ImageContent[];
+  readonly videos?: readonly VideoContent[];
   readonly metadata?: PlaygroundMetadata;
   readonly error?: {
     readonly code: SdkErrorCode | "CONFIGURATION_ERROR" | "VALIDATION_ERROR";

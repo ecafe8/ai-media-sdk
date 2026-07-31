@@ -8,7 +8,7 @@ const PROVIDERS = new Set([
   "aliyun-bailian",
   "doubao-seedream",
 ]);
-const MODES = new Set(["generate", "edit"]);
+const MODES = new Set(["generate", "edit", "video"]);
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -67,6 +67,15 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   }
 
   if (
+    candidate.mode === "video" &&
+    candidate.referenceImageUrl !== undefined &&
+    (typeof candidate.referenceImageUrl !== "string" ||
+      !isPublicHttpUrl(candidate.referenceImageUrl))
+  ) {
+    return undefined;
+  }
+
+  if (
     candidate.n !== undefined &&
     (typeof candidate.n !== "number" ||
       !Number.isInteger(candidate.n) ||
@@ -76,6 +85,19 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
     return undefined;
   }
   if (candidate.size !== undefined && typeof candidate.size !== "string") {
+    return undefined;
+  }
+  if (
+    candidate.resolution !== undefined &&
+    typeof candidate.resolution !== "string"
+  ) {
+    return undefined;
+  }
+  if (
+    candidate.duration !== undefined &&
+    (typeof candidate.duration !== "number" ||
+      !Number.isInteger(candidate.duration))
+  ) {
     return undefined;
   }
 
@@ -90,6 +112,12 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
         : undefined,
     size: typeof candidate.size === "string" ? candidate.size : undefined,
     n: typeof candidate.n === "number" ? candidate.n : undefined,
+    resolution:
+      typeof candidate.resolution === "string"
+        ? candidate.resolution
+        : undefined,
+    duration:
+      typeof candidate.duration === "number" ? candidate.duration : undefined,
   };
 }
 
