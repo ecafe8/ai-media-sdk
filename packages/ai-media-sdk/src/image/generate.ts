@@ -1,14 +1,14 @@
-import { SdkError } from "../contracts/error.js";
-import type { AdapterRequest } from "../contracts/adapter.js";
-import type { GenerationResult } from "../contracts/generation.js";
-import type { ImageContent } from "../contracts/content.js";
+import { SdkError } from "../contracts/error.ts";
+import type { AdapterRequest } from "../contracts/adapter.ts";
+import type { GenerationResult } from "../contracts/generation.ts";
+import type { ImageContent } from "../contracts/content.ts";
 import type {
   ImageEditInput,
   ImageEditRequest,
   ImageGenerationInput,
   ImageGenerationRequest,
-} from "./request.js";
-import { isImageEditInput, isImageGenerationInput } from "./request.js";
+} from "./request.ts";
+import { isImageEditInput, isImageGenerationInput } from "./request.ts";
 
 /**
  * Image API entry points.

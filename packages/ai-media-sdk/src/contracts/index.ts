@@ -3,26 +3,26 @@ export type {
   ModelId,
   ProviderInfo,
   ModelInfo,
-} from "./provider-identity.js";
+} from "./provider-identity.ts";
 export type {
   Modality,
   ModelCapability,
   CapabilityEntry,
-} from "./capabilities.js";
+} from "./capabilities.ts";
 export type {
   TransportRequest,
   TransportResponse,
   Transport,
-} from "./transport.js";
-export type { Content, ImageContent } from "./content.js";
-export type { RetryPolicy } from "./retry-policy.js";
-export { DEFAULT_RETRY_POLICY } from "./retry-policy.js";
-export type { GenerationResult, TaskStatus, TaskHandle } from "./generation.js";
+} from "./transport.ts";
+export type { Content, ImageContent } from "./content.ts";
+export type { RetryPolicy } from "./retry-policy.ts";
+export { DEFAULT_RETRY_POLICY } from "./retry-policy.ts";
+export type { GenerationResult, TaskStatus, TaskHandle } from "./generation.ts";
 export type {
   AdapterModality,
   AdapterRequest,
   AdapterOptions,
   ProviderAdapter,
-} from "./adapter.js";
-export { SdkError, notImplemented, classifyHttpError } from "./error.js";
-export type { SdkErrorCode, SdkErrorOptions } from "./error.js";
+} from "./adapter.ts";
+export { SdkError, notImplemented, classifyHttpError } from "./error.ts";
+export type { SdkErrorCode, SdkErrorOptions } from "./error.ts";

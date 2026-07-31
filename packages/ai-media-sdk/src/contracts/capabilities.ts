@@ -1,4 +1,4 @@
-import type { ModelId } from "./provider-identity.js";
+import type { ModelId } from "./provider-identity.ts";
 
 /**
  * Modality and capability contracts.

@@ -1,5 +1,5 @@
-import type { ProviderId, ModelId } from "./provider-identity.js";
-import type { SdkError } from "./error.js";
+import type { ProviderId, ModelId } from "./provider-identity.ts";
+import type { SdkError } from "./error.ts";
 
 /**
  * Generation lifecycle contracts.

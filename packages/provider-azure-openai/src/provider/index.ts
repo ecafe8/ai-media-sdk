@@ -14,8 +14,8 @@ import {
   type Transport,
 } from "@ai-media/sdk";
 
-import type { AzureOpenAIConfig } from "../config/index.js";
-import type { AzureImageProviderOptions } from "./options.js";
+import type { AzureOpenAIConfig } from "../config/index.ts";
+import type { AzureImageProviderOptions } from "./options.ts";
 
 /**
  * Azure OpenAI Provider factory, model instance, and adapter.

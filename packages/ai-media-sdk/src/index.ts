@@ -1,15 +1,15 @@
-export * from "./contracts/index.js";
+export * from "./contracts/index.ts";
 export type {
   ImageGenerationInput,
   ImageGenerationRequest,
   ImageEditInput,
   ImageEditRequest,
   ImageModelInstance,
-} from "./image/index.js";
+} from "./image/index.ts";
 export {
   isImageEditInput,
   isImageGenerationInput,
   generateImage,
   editImage,
-} from "./image/index.js";
-export * from "./transport/index.js";
+} from "./image/index.ts";
+export * from "./transport/index.ts";

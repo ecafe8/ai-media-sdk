@@ -1,7 +1,7 @@
-export type { AzureOpenAIConfig } from "./config/index.js";
+export type { AzureOpenAIConfig } from "./config/index.ts";
 export type {
   AzureOpenAIProviderOptions,
   AzureOpenAIProvider,
-} from "./provider/index.js";
-export type { AzureImageProviderOptions } from "./provider/options.js";
-export { createAzureOpenAIProvider } from "./provider/index.js";
+} from "./provider/index.ts";
+export type { AzureImageProviderOptions } from "./provider/options.ts";
+export { createAzureOpenAIProvider } from "./provider/index.ts";

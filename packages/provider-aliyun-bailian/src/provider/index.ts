@@ -15,9 +15,9 @@ import {
   type Transport,
 } from "@ai-media/sdk";
 
-import type { AliyunBailianConfig } from "../config/index.js";
-import type { AliyunImageProviderOptions } from "./options.js";
-import { ALIYUN_MODEL_REGISTRY, type AliyunModelEntry } from "./registry.js";
+import type { AliyunBailianConfig } from "../config/index.ts";
+import type { AliyunImageProviderOptions } from "./options.ts";
+import { ALIYUN_MODEL_REGISTRY, type AliyunModelEntry } from "./registry.ts";
 
 /**
  * Alibaba Cloud Bailian (DashScope) Provider factory, model instance, and

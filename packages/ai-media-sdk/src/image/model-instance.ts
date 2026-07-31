@@ -1,8 +1,8 @@
-import type { ModelId } from "../contracts/provider-identity.js";
-import type { ProviderId } from "../contracts/provider-identity.js";
-import type { ModelCapability } from "../contracts/capabilities.js";
-import type { ProviderAdapter } from "../contracts/adapter.js";
-import type { ImageContent } from "../contracts/content.js";
+import type { ModelId } from "../contracts/provider-identity.ts";
+import type { ProviderId } from "../contracts/provider-identity.ts";
+import type { ModelCapability } from "../contracts/capabilities.ts";
+import type { ProviderAdapter } from "../contracts/adapter.ts";
+import type { ImageContent } from "../contracts/content.ts";
 
 /**
  * Image model instance contracts.

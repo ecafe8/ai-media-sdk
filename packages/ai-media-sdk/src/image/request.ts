@@ -1,5 +1,5 @@
-import type { ImageContent } from "../contracts/content.js";
-import type { ImageModelInstance } from "./model-instance.js";
+import type { ImageContent } from "../contracts/content.ts";
+import type { ImageModelInstance } from "./model-instance.ts";
 
 /**
  * Image generation request and input contracts.
