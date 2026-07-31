@@ -434,13 +434,13 @@ function SuccessState({
       <div className="grid gap-3 sm:grid-cols-2">
         {result.images?.map((image, index) => (
           <div
-            key={`${image.url ?? "image"}-${index}`}
+            key={`${image.url ?? image.base64?.slice(0, 16) ?? "image"}-${index}`}
             className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
           >
             <div className="flex aspect-square items-center justify-center bg-gradient-to-br from-emerald-300 via-teal-500 to-slate-800">
-              {image.url ? (
+              {getImageSource(image) ? (
                 <img
-                  src={image.url}
+                  src={getImageSource(image)}
                   alt={`生成结果 ${index + 1}`}
                   className="size-full object-cover"
                 />
@@ -455,14 +455,14 @@ function SuccessState({
                   ? `${image.width}×${image.height}`
                   : ""}
               </p>
-              {image.url ? (
+              {getImageSource(image) ? (
                 <a
-                  href={image.url}
+                  href={getImageSource(image)}
                   target="_blank"
                   rel="noreferrer"
                   className="block truncate text-emerald-700 hover:underline"
                 >
-                  {image.url}
+                  {image.url ?? "查看图片数据"}
                 </a>
               ) : null}
             </div>
@@ -471,6 +471,17 @@ function SuccessState({
       </div>
     </div>
   );
+}
+
+function getImageSource(image: {
+  readonly url?: string;
+  readonly base64?: string;
+  readonly mimeType?: string;
+}): string | undefined {
+  if (image.url) return image.url;
+  if (!image.base64) return undefined;
+  if (image.base64.startsWith("data:")) return image.base64;
+  return `data:${image.mimeType ?? "image/png"};base64,${image.base64}`;
 }
 
 function isValidHttpUrl(value: string): boolean {
