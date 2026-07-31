@@ -15,6 +15,7 @@ import {
   type AzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
 
+import { loadConfig } from "@/lib/config";
 import { getPlaygroundModel } from "./registry";
 import type {
   PlaygroundModel,
@@ -30,19 +31,17 @@ interface ProviderSelection {
 export function getConfiguredProviders(): ReadonlySet<
   "azure-openai" | "aliyun-bailian"
 > {
+  const config = loadConfig();
   const configured = new Set<"azure-openai" | "aliyun-bailian">();
   if (
-    process.env.AZURE_OPENAI_API_KEY &&
-    process.env.AZURE_OPENAI_ENDPOINT &&
-    process.env.AZURE_OPENAI_API_VERSION &&
-    process.env.AZURE_OPENAI_DEPLOYMENT
+    config.AZURE_OPENAI_API_KEY &&
+    config.AZURE_OPENAI_ENDPOINT &&
+    config.AZURE_OPENAI_API_VERSION &&
+    config.AZURE_OPENAI_DEPLOYMENT
   ) {
     configured.add("azure-openai");
   }
-  if (
-    process.env.ALIYUN_BAILIAN_API_KEY &&
-    process.env.ALIYUN_BAILIAN_BASE_URL
-  ) {
+  if (config.ALIYUN_BAILIAN_API_KEY && config.ALIYUN_BAILIAN_BASE_URL) {
     configured.add("aliyun-bailian");
   }
   return configured;
@@ -51,6 +50,7 @@ export function getConfiguredProviders(): ReadonlySet<
 export function createProviderSelection(
   request: PlaygroundRequest
 ): ProviderSelection {
+  const config = loadConfig();
   const configured = getConfiguredProviders();
   if (!configured.has(request.provider)) {
     throw new SdkError({
@@ -76,16 +76,16 @@ export function createProviderSelection(
 
   if (request.provider === "azure-openai") {
     const provider: AzureOpenAIProvider = createAzureOpenAIProvider({
-      apiKey: process.env.AZURE_OPENAI_API_KEY as string,
-      endpoint: process.env.AZURE_OPENAI_ENDPOINT as string,
-      apiVersion: process.env.AZURE_OPENAI_API_VERSION as string,
+      apiKey: config.AZURE_OPENAI_API_KEY!,
+      endpoint: config.AZURE_OPENAI_ENDPOINT!,
+      apiVersion: config.AZURE_OPENAI_API_VERSION!,
     });
     return { model, instance: provider.image(request.model) };
   }
 
   const provider: AliyunBailianProvider = createAliyunBailianProvider({
-    apiKey: process.env.ALIYUN_BAILIAN_API_KEY as string,
-    baseUrl: process.env.ALIYUN_BAILIAN_BASE_URL as string,
+    apiKey: config.ALIYUN_BAILIAN_API_KEY!,
+    baseUrl: config.ALIYUN_BAILIAN_BASE_URL!,
   });
   return { model, instance: provider.image(request.model) };
 }

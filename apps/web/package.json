@@ -17,11 +17,13 @@
     "@ai-media/provider-azure-openai": "workspace:*",
     "@ai-media/sdk": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "dotenv": "^16.4.5",
     "lucide-react": "^1.27.0",
     "next": "16.2.6",
     "next-themes": "^0.4.6",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
