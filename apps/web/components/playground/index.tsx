@@ -17,7 +17,7 @@ interface PlaygroundProps {
   readonly models: readonly PlaygroundModel[];
 }
 
-const PROMPTS = ["人像摄影", "产品场景", "二次元插画", "建筑设计"];
+const PROMPTS = ["竖版的王国保卫战游戏界面","一张可爱的人像摄影"];
 
 export function Playground({ models }: PlaygroundProps) {
   const configuredModels = models.filter((model) => model.configured);
