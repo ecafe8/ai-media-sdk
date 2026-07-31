@@ -149,9 +149,18 @@ flowchart LR
 
 ### 4.4 Doubao-Seedream
 
-- 当前 Context7 可获得 fal.ai 托管的 Seedream v4 edit 参考，展示 prompt、image URLs、队列提交、状态和结果查询。
-- 该资料不是字节官方 API 契约，不能直接作为字节 Provider 的最终实现依据。
-- 在官方资料确认前，只记录 Provider 边界和待确认接口，不把 fal.ai endpoint 或字段写入公共契约。
+- **Live 契约已确认（2026-07-31 火山方舟官方文档）**：官方入口为火山方舟（Volcengine Ark）OpenAI 兼容图像 API `POST https://ark.cn-beijing.volces.com/api/v3/images/generations`（地域 `ark+cn-beijing`），鉴权 `Authorization: Bearer {apiKey}`（与 Azure Global Standard、阿里云百炼一致，复用共享 transport）；**同步调用**，响应即含 `data[].url` 或 `data[].b64_json`，无需异步任务轮询（不被 `SUB-003` 阻塞）；图片 URL 有效期 24 小时；限流 500 IPM（张/分钟）。
+- **单端点承载全部模式**：文生图、单/多图生图（I2I）、多参考图融合、组图、交互编辑均走 `/images/generations`；"编辑"仅在请求体增加 `image` 字段，**不像 Azure 走独立 `/images/edits` multipart 端点**。
+- **首批 4 个模型**（Model ID 与能力矩阵）：
+  - `doubao-seedream-5-0-pro-260628`：文生图 ✓、单/多图生图 ✓、交互编辑 ✓、组图 ✗、流式 ✗、联网搜索 ✗；分辨率 `1K`/`2K`；输出格式 `png`/`jpeg`；提示词优化 `standard`/`fast`；最多 10 张参考图。
+  - `doubao-seedream-5-0-260128`（别名 `doubao-seedream-5-0-lite-260128`，Seedream 5.0 lite）：文生图 ✓、单/多图生图 ✓、交互编辑 ✗、组图 ✓、流式 ✓、联网搜索 ✓；分辨率 `2K`/`3K`/`4K`；`png`/`jpeg`；仅 `standard`；最多 14 张参考图。
+  - `doubao-seedream-4-5-251128`（Seedream 4.5）：文生图 ✓、单/多图生图 ✓、组图 ✓、流式 ✓；分辨率 `2K`/`4K`；仅 `jpeg`（不可自定义）；仅 `standard`；最多 14 张参考图。
+  - `doubao-seedream-4-0-250828`（Seedream 4.0）：文生图 ✓、单/多图生图 ✓、组图 ✓、流式 ✓；分辨率 `1K`/`2K`/`4K`；仅 `jpeg`；`standard`/`fast`；最多 14 张参考图。
+- **请求字段**：公共 `model`（必选）、`prompt`（必选，交互编辑可在其中含 `<point>`/`<bbox>` 坐标标签）、`image`（单个 string 或 string[]；URL 或 `data:image/<format>;base64,<base64>`，`<format>` 小写）、`size`（分辨率档位 `1K`/`2K`/`3K`/`4K` 或 `宽x高` 像素值，不可混用）、`response_format`（`url`/`b64_json`）。原生字段经 `providerOptions.seedream` 透传：`output_format`（`png`/`jpeg`，仅 5.0 系列）、`watermark`（bool）、`optimize_prompt_options.mode`（`standard`/`fast`）、`sequential_image_generation`（`auto`/`disabled`）+ `sequential_image_generation_options.max_images`、`tools`（`[{type:"web_search"}]`，仅 5.0 lite）。
+- **图片输入限制**：格式 jpeg/png/webp/bmp/tiff/gif/heic/heif；宽高比 [1/16, 16]；宽高长度 > 14px；单图 ≤ 30 MB；总像素 ≤ 6000x6000=36000000；参考图上限 10（5.0 pro）/14（其余）。
+- **首期切片范围**（本 Phase 3）：文生图（T2I）+ 单/多图生图（I2I/多参考图融合，`maxEditImages` 10/14）+ `providerOptions.seedream`（`watermark`/`output_format`/`response_format`/`optimize_prompt_options`）+ 错误分类 + 契约测试 + example + playground 注册。组图（`sequential_image_generation` 多图输出）、流式输出、联网搜索 `tools`、交互编辑坐标标签语义化均后置后续切片（交互编辑当前仅靠 prompt 内坐标标签 + 5.0 pro 能力门控，SDK 无需特殊处理）。
+- 适配器纯 fetch，不包装火山方舟官方 SDK；Provider 包 `@ai-media/provider-seedream`，`providerId` 为 `"doubao-seedream"`。
+- 资料来源：https://www.volcengine.com/docs/82379/1541523（Image generation API）、https://www.volcengine.com/docs/82379/2582774（5.0 pro 教程）、https://www.volcengine.com/docs/82379/1824121（Seedream 5.0 lite 基础使用）；日期 2026-07-31。
 
 ## 5. 关键时序图
 
@@ -268,15 +277,16 @@ flowchart TD
 
 ## 10. 第三方资料与依赖记录
 
-| 资料/依赖 | 版本 | 来源 | 结论 |
-|---|---|---|---|
-| AI SDK Azure Provider | 版本待确认 | https://ai-sdk.dev/providers/ai-sdk-providers/azure | 参考 `azure.image(deploymentName)` 和 Azure 图像选项；不作为运行时依赖 |
-| Google Gen AI JS SDK | 版本待确认 | https://googleapis.github.io/js-genai | 参考图像多模态输出；API/Vertex 选择待确认 |
-| Alibaba Bailian image models | API/版本待确认 | https://help.aliyun.com/zh/model-studio/text-to-image | 用户提供资料确定模型能力矩阵；Context7 确认 DashScope 无 JS/TS SDK，provider 纯 fetch 直连 REST |
-| DashScope ImageSynthesis 契约 | API 待确认 | Context7 `/dashscope/dashscope-sdk-python` | 异步任务契约：submit→task id→poll→`output.results[].url`；wan/qwen 文生图初步共用，编辑契约待 live 探查 |
-| Seedream v4 edit 参考 | 非官方托管参考 | https://fal.ai/models/fal-ai/bytedance/seedream/v4/edit | 参考队列和图片输入形态，不作为字节官方契约 |
+| 资料/依赖                         | 版本           | 来源                                                    | 结论                                                                                                                                                                        |
+| --------------------------------- | -------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AI SDK Azure Provider             | 版本待确认     | https://ai-sdk.dev/providers/ai-sdk-providers/azure     | 参考 `azure.image(deploymentName)` 和 Azure 图像选项；不作为运行时依赖                                                                                                      |
+| Google Gen AI JS SDK              | 版本待确认     | https://googleapis.github.io/js-genai                   | 参考图像多模态输出；API/Vertex 选择待确认                                                                                                                                   |
+| Alibaba Bailian image models      | API/版本待确认 | https://help.aliyun.com/zh/model-studio/text-to-image   | 用户提供资料确定模型能力矩阵；Context7 确认 DashScope 无 JS/TS SDK，provider 纯 fetch 直连 REST                                                                             |
+| DashScope ImageSynthesis 契约     | API 待确认     | Context7 `/dashscope/dashscope-sdk-python`              | 异步任务契约：submit→task id→poll→`output.results[].url`；wan/qwen 文生图初步共用，编辑契约待 live 探查                                                                     |
+| Seedream v4 edit 参考             | 非官方托管参考 | https://fal.ai/models/fal-ai/bytedance/seedream/v4/edit | 早期队列/图片输入参考，已被火山方舟官方契约取代，不再作为实现依据                                                                                                           |
+| 火山方舟 Ark Image generation API | API/版本待确认 | https://www.volcengine.com/docs/82379/1541523           | 官方契约确认：OpenAI 兼容 `/api/v3/images/generations`，`Authorization: Bearer`，同步 `data[]` 响应；4 个 Seedream 模型与能力矩阵见 §4.4；provider 纯 fetch，不包装官方 SDK |
 
-Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料补充，资料核对日期 2026-07-30。当前项目没有已安装的上述 SDK 依赖，技术方案只记录依赖，不安装包。
+Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料补充，资料核对日期 2026-07-30；火山方舟 Seedream 官方契约核对日期 2026-07-31。当前项目没有已安装的上述 SDK 依赖，技术方案只记录依赖，不安装包。
 
 ## 11. 备选方案与决策
 
@@ -295,15 +305,17 @@ Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料�
 
 - Azure 图像模型路径、认证和 deployment 语义可能与普通 OpenAI 不同。
 - Google API 与 Vertex AI 的认证/输出差异可能导致两个 Provider 变体。
-- 阿里云百炼模型能力已明确，但官方 API endpoint、认证、任务和响应契约仍待确认；字节官方资料尚未在 Context7 中完整可用。
+- 阿里云百炼文生图 live 契约已确认（v1.4.0）；Wan 异步编辑契约、wan/qwen 是否拆包留后续探查。
+- Doubao-Seedream 官方契约已确认（v1.5.0）；组图、流式、联网搜索与交互编辑坐标标签语义化留后续切片。
 - Provider 原生参数命名空间和能力类型需要避免过早锁死。
 
 ## 14. 变更记录
 
-| 版本 | 日期 | 变更内容 |
-|---|---|---|
-| v1.0.0 | 2026-07-30 | 创建 Provider 适配体系技术方案，记录 Azure/Google/阿里云/Seedream 调研边界。 |
-| v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型能力、输出数量、分辨率和资料来源。 |
-| v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记 shadcn 迁移事实。 |
-| v1.3.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权改为 `Authorization: Bearer`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头列为经典资源备选；确认 `2024-02-01` API 版本、直接 `images/generations` 路径、请求体公共/原生字段划分；编辑 `images/edits` multipart 后置。 |
-| v1.4.0 | 2026-07-30 | 阿里云百炼文生图 live 契约确认：鉴权 `Authorization: Bearer`；地域化 base_url；纠正"wan/qwen 共用契约"误判——万相走 `image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `multimodal-generation/generation`（同步）；参数按系列分化；编辑契约与 wan/qwen 拆包决策留 Phase 2。 |
+| 版本   | 日期       | 变更内容                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1.0.0 | 2026-07-30 | 创建 Provider 适配体系技术方案，记录 Azure/Google/阿里云/Seedream 调研边界。                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型能力、输出数量、分辨率和资料来源。                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| v1.2.0 | 2026-07-30 | 锁定纯 fetch、不包装官方 SDK；Azure 仅 API Key 且同步图像 API；Context7 确认 DashScope 无 JS SDK、异步任务契约；wan/qwen 拆分改探查后定；登记 shadcn 迁移事实。                                                                                                                                                                                                                                                                                                                                                   |
+| v1.3.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权改为 `Authorization: Bearer`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头列为经典资源备选；确认 `2024-02-01` API 版本、直接 `images/generations` 路径、请求体公共/原生字段划分；编辑 `images/edits` multipart 后置。                                                                                                                                                                                                                                           |
+| v1.4.0 | 2026-07-30 | 阿里云百炼文生图 live 契约确认：鉴权 `Authorization: Bearer`；地域化 base_url；纠正"wan/qwen 共用契约"误判——万相走 `image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `multimodal-generation/generation`（同步）；参数按系列分化；编辑契约与 wan/qwen 拆包决策留 Phase 2。                                                                                                                                                                                               |
+| v1.5.0 | 2026-07-31 | Doubao-Seedream live 契约确认：火山方舟官方 OpenAI 兼容 `POST /api/v3/images/generations`，`Authorization: Bearer`，**同步** `data[]` 响应（不被 `SUB-003` 阻塞）；单端点承载 T2I/I2I/多参考图融合/组图/交互编辑（编辑仅增 `image` 字段，非独立 multipart 端点）；登记 4 个模型（5.0 pro/5.0 lite/4.5/4.0）能力矩阵、请求字段、原生参数命名空间 `providerOptions.seedream`、图片输入限制、24h URL 与 500 IPM 限流；fal.ai 资料降级为历史参考；Phase 3 首期切片范围锁定 T2I+I2I/多图编辑，组图/流式/联网搜索后置。 |

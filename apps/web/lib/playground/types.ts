@@ -1,6 +1,7 @@
 import type { ImageContent, SdkErrorCode } from "@ai-media/sdk";
 
-export type PlaygroundProvider = "azure-openai" | "aliyun-bailian";
+export type PlaygroundProvider =
+  "azure-openai" | "aliyun-bailian" | "doubao-seedream";
 export type PlaygroundMode = "generate" | "edit";
 
 export interface PlaygroundModel {

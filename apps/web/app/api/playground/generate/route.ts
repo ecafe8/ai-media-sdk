@@ -3,7 +3,11 @@ import { NextResponse } from "next/server";
 import { executePlaygroundRequest } from "@/lib/playground/server";
 import type { PlaygroundRequest } from "@/lib/playground/types";
 
-const PROVIDERS = new Set(["azure-openai", "aliyun-bailian"]);
+const PROVIDERS = new Set([
+  "azure-openai",
+  "aliyun-bailian",
+  "doubao-seedream",
+]);
 const MODES = new Set(["generate", "edit"]);
 
 export async function POST(request: Request): Promise<Response> {

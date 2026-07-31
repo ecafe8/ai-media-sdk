@@ -15,11 +15,16 @@ import {
   createAzureOpenAIProvider,
   type AzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
+import {
+  createSeedreamProvider,
+  type SeedreamProvider,
+} from "@ai-media/provider-seedream";
 
 import { loadConfig } from "@/lib/config";
 import { getPlaygroundModel } from "./registry";
 import type {
   PlaygroundModel,
+  PlaygroundProvider,
   PlaygroundRequest,
   PlaygroundResponse,
 } from "./types";
@@ -29,11 +34,9 @@ interface ProviderSelection {
   readonly instance: ImageModelInstance;
 }
 
-export function getConfiguredProviders(): ReadonlySet<
-  "azure-openai" | "aliyun-bailian"
-> {
+export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
   const config = loadConfig();
-  const configured = new Set<"azure-openai" | "aliyun-bailian">();
+  const configured = new Set<PlaygroundProvider>();
   if (
     config.AZURE_OPENAI_API_KEY &&
     config.AZURE_OPENAI_ENDPOINT &&
@@ -44,6 +47,9 @@ export function getConfiguredProviders(): ReadonlySet<
   }
   if (config.ALIYUN_BAILIAN_API_KEY && config.ALIYUN_BAILIAN_BASE_URL) {
     configured.add("aliyun-bailian");
+  }
+  if (config.ARK_API_KEY) {
+    configured.add("doubao-seedream");
   }
   return configured;
 }
@@ -81,6 +87,21 @@ export function createProviderSelection(
         apiKey: config.AZURE_OPENAI_API_KEY!,
         endpoint: config.AZURE_OPENAI_ENDPOINT!,
         apiVersion: config.AZURE_OPENAI_API_VERSION!,
+      },
+      {
+        transport: createTransport({
+          defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+        }),
+      }
+    );
+    return { model, instance: provider.image(request.model) };
+  }
+
+  if (request.provider === "doubao-seedream") {
+    const provider: SeedreamProvider = createSeedreamProvider(
+      {
+        apiKey: config.ARK_API_KEY!,
+        ...(config.ARK_BASE_URL ? { baseUrl: config.ARK_BASE_URL } : {}),
       },
       {
         transport: createTransport({

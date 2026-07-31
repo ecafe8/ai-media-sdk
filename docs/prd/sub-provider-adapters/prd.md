@@ -6,7 +6,7 @@
 - 所属产品：AI Image SDK
 - 总 PRD：`docs/prd/main-prd.md`
 - Sub 目录：`docs/prd/sub-provider-adapters/`
-- 文档版本：v1.2.0
+- 文档版本：v1.3.0
 - 文档状态：草稿
 - UI 类型：纯后端型，不生成 `ui.md`
 - 来源说明：产品范围来自总 PRD；仓库事实来自当前 monorepo；Provider 能力来自外部官方/参考资料；Context7 已确认 DashScope 无官方 JS/TS SDK；未确认内容标记为待确认。
@@ -44,12 +44,12 @@
 
 ### 2.3 与其他 Sub 的边界与协作
 
-| 协作方 | 关系 |
-|---|---|
-| `SUB-002` | 消费 Provider 模型实例、能力声明和适配后的统一调用接口 |
-| `SUB-003` | Provider 提供任务提交/查询/取结果能力，任务 Sub 负责进程内生命周期 |
+| 协作方    | 关系                                                                     |
+| --------- | ------------------------------------------------------------------------ |
+| `SUB-002` | 消费 Provider 模型实例、能力声明和适配后的统一调用接口                   |
+| `SUB-003` | Provider 提供任务提交/查询/取结果能力，任务 Sub 负责进程内生命周期       |
 | `SUB-004` | Provider 报告原始错误、可重试信号和能力不支持信息，错误 Sub 负责统一分类 |
-| `SUB-005` | Examples 通过公开 Provider 工厂验证配置和最小调用路径 |
+| `SUB-005` | Examples 通过公开 Provider 工厂验证配置和最小调用路径                    |
 
 ## 3. 用户角色
 
@@ -112,14 +112,14 @@ flowchart TD
 
 功能目录由 `/oc-prd-feat` 后续创建；本次只在 sub PRD 中登记，不创建 `feat-*` 目录。
 
-| 功能 ID | 功能名称 | 目录 | 优先级 | 说明 |
-|---|---|---|---|---|
-| `FEAT-001` | Provider 工厂与模型实例 | `feat-provider-factory` | P0 | 创建 Provider、绑定配置并生成模型实例（核心包 `@ai-media/sdk`） |
-| `FEAT-002` | Azure OpenAI 图像 Provider | `feat-provider-azure-openai` | P0 | 适配 Azure deployment、图像模型请求和结果；包 `@ai-media/provider-azure-openai`；纯 fetch，仅 API Key 鉴权 |
-| `FEAT-003` | Google 图像 Provider | `feat-provider-google` | P0 | 适配 Google 图像模型请求和结果；包 `@ai-media/provider-google`；纯 fetch |
-| `FEAT-004` | 阿里云百炼 Provider | `feat-provider-aliyun-bailian` | P0 | 适配百炼图像生成/编辑接口和推荐模型能力矩阵；包 `@ai-media/provider-aliyun-bailian`；纯 fetch（DashScope 无 JS SDK）；wan/qwen 是否拆包待契约探查 |
-| `FEAT-005` | Doubao-Seedream Provider | `feat-provider-seedream` | P0 | 适配 Seedream 生成/编辑接口，官方入口待确认；包 `@ai-media/provider-seedream`；纯 fetch |
-| `FEAT-006` | Provider 能力与原生选项 | `feat-provider-capabilities` | P0 | 声明模型能力并隔离 `providerOptions` |
+| 功能 ID    | 功能名称                   | 目录                           | 优先级 | 说明                                                                                                                                              |
+| ---------- | -------------------------- | ------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FEAT-001` | Provider 工厂与模型实例    | `feat-provider-factory`        | P0     | 创建 Provider、绑定配置并生成模型实例（核心包 `@ai-media/sdk`）                                                                                   |
+| `FEAT-002` | Azure OpenAI 图像 Provider | `feat-provider-azure-openai`   | P0     | 适配 Azure deployment、图像模型请求和结果；包 `@ai-media/provider-azure-openai`；纯 fetch，仅 API Key 鉴权                                        |
+| `FEAT-003` | Google 图像 Provider       | `feat-provider-google`         | P0     | 适配 Google 图像模型请求和结果；包 `@ai-media/provider-google`；纯 fetch                                                                          |
+| `FEAT-004` | 阿里云百炼 Provider        | `feat-provider-aliyun-bailian` | P0     | 适配百炼图像生成/编辑接口和推荐模型能力矩阵；包 `@ai-media/provider-aliyun-bailian`；纯 fetch（DashScope 无 JS SDK）；wan/qwen 是否拆包待契约探查 |
+| `FEAT-005` | Doubao-Seedream Provider   | `feat-provider-seedream`       | P0     | 适配 Seedream 生成/编辑接口，官方入口待确认；包 `@ai-media/provider-seedream`；纯 fetch                                                           |
+| `FEAT-006` | Provider 能力与原生选项    | `feat-provider-capabilities`   | P0     | 声明模型能力并隔离 `providerOptions`                                                                                                              |
 
 ## 6. 用户故事
 
@@ -174,13 +174,14 @@ flowchart TD
 - Azure endpoint、API version、必要请求头和 `providerOptions.azure` vs 兼容 `openai` 命名空间的最终配置结构（鉴权已确认仅 API Key）。
 - Google 首期使用 Gemini Developer API、Vertex AI，或同时支持两者。
 - 阿里云百炼具体 REST endpoint、地域、异步任务/轮询接口字段、返回 URL 生命周期和邀测可用性；wan 与 qwen 编辑契约是否共用，决定是否拆 `provider-aliyun-bailian-wan` / `-qwen`。
-- Doubao-Seedream 首期官方 API 入口；当前参考资料包含第三方托管接口，不视为字节官方契约。
+- ~~Doubao-Seedream 首期官方 API 入口；当前参考资料包含第三方托管接口，不视为字节官方契约。~~ 已确认（2026-07-31）：官方入口为火山方舟 OpenAI 兼容 `POST https://ark.cn-beijing.volces.com/api/v3/images/generations`，`Authorization: Bearer {apiKey}`，同步 `data[]` 响应；单端点承载 T2I/I2I/多参考图融合/组图/交互编辑；4 个模型 `doubao-seedream-5-0-pro-260628`/`doubao-seedream-5-0-260128`/`doubao-seedream-4-5-251128`/`doubao-seedream-4-0-250828`；详见 `tech.md` v1.5.0 §4.4。
 - 各 Provider 是否真的支持统一范围内的图像编辑与异步查询。
 
 ## 12. 变更记录
 
-| 版本 | 日期 | 变更内容 |
-|---|---|---|
-| v1.0.0 | 2026-07-30 | 根据总 PRD 创建 Provider 适配分支草稿。 |
-| v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型目录和模型级能力验收要求。 |
-| v1.2.0 | 2026-07-30 | 锁定 `@ai-media/provider-*` 包名、纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确认 DashScope 无 JS SDK；wan/qwen 拆分改为探查后再定。 |
+| 版本   | 日期       | 变更内容                                                                                                                                                                          |
+| ------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1.0.0 | 2026-07-30 | 根据总 PRD 创建 Provider 适配分支草稿。                                                                                                                                           |
+| v1.1.0 | 2026-07-30 | 根据百炼资料补充阿里云推荐模型目录和模型级能力验收要求。                                                                                                                          |
+| v1.2.0 | 2026-07-30 | 锁定 `@ai-media/provider-*` 包名、纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确认 DashScope 无 JS SDK；wan/qwen 拆分改为探查后再定。                                             |
+| v1.3.0 | 2026-07-31 | Doubao-Seedream 官方 API 入口确认：火山方舟 OpenAI 兼容 `/api/v3/images/generations`，`Authorization: Bearer`，同步 `data[]`；4 个模型能力矩阵与请求字段登记于 `tech.md` v1.5.0。 |

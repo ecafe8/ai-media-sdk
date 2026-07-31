@@ -18,6 +18,8 @@ const configSchema = z.object({
   AZURE_OPENAI_DEPLOYMENT: z.string().optional(),
   ALIYUN_BAILIAN_API_KEY: z.string().optional(),
   ALIYUN_BAILIAN_BASE_URL: z.string().url().optional(),
+  ARK_API_KEY: z.string().optional(),
+  ARK_BASE_URL: z.string().url().optional(),
   PLAYGROUND_PROVIDER_TIMEOUT_MS: z.coerce
     .number()
     .int()

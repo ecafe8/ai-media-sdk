@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "bun"],
+    "paths": {
+      "@ai-media/sdk": ["../../ai-media-sdk/src/index.ts"],
+      "@ai-media/provider-seedream": ["./src/index.ts"]
+    }
+  },
+  "include": ["src", "tests"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -7,7 +7,9 @@
     "AZURE_OPENAI_API_VERSION",
     "AZURE_OPENAI_DEPLOYMENT",
     "ALIYUN_BAILIAN_API_KEY",
-    "ALIYUN_BAILIAN_BASE_URL"
+    "ALIYUN_BAILIAN_BASE_URL",
+    "ARK_API_KEY",
+    "ARK_BASE_URL"
   ],
   "tasks": {
     "build": {

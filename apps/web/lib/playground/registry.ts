@@ -6,6 +6,7 @@ export const PLAYGROUND_PROVIDERS: readonly {
 }[] = [
   { id: "azure-openai", label: "Azure OpenAI" },
   { id: "aliyun-bailian", label: "Alibaba Bailian" },
+  { id: "doubao-seedream", label: "Doubao Seedream" },
 ];
 
 export const PLAYGROUND_MODELS: readonly PlaygroundModel[] = [
@@ -118,6 +119,46 @@ export const PLAYGROUND_MODELS: readonly PlaygroundModel[] = [
     supportsGenerate: false,
     supportsEdit: false,
     recommendation: "视频模型；当前 Playground 仅支持图片生成",
+    configured: false,
+  },
+  {
+    id: "doubao-seedream-5-0-pro-260628",
+    label: "Doubao Seedream 5.0 Pro",
+    provider: "doubao-seedream",
+    supportsGenerate: true,
+    supportsEdit: true,
+    maxEditImages: 10,
+    recommendation: "高精度生成与交互编辑；组图/流式/联网搜索暂不支持",
+    configured: false,
+  },
+  {
+    id: "doubao-seedream-5-0-lite-260128",
+    label: "Doubao Seedream 5.0 Lite",
+    provider: "doubao-seedream",
+    supportsGenerate: true,
+    supportsEdit: true,
+    maxEditImages: 14,
+    recommendation: "平衡生成与编辑；组图/流式/联网搜索暂不支持",
+    configured: false,
+  },
+  {
+    id: "doubao-seedream-4-5-251128",
+    label: "Doubao Seedream 4.5",
+    provider: "doubao-seedream",
+    supportsGenerate: true,
+    supportsEdit: true,
+    maxEditImages: 14,
+    recommendation: "生成与编辑；仅 jpeg 输出",
+    configured: false,
+  },
+  {
+    id: "doubao-seedream-4-0-250828",
+    label: "Doubao Seedream 4.0",
+    provider: "doubao-seedream",
+    supportsGenerate: true,
+    supportsEdit: true,
+    maxEditImages: 14,
+    recommendation: "生成与编辑；仅 jpeg 输出",
     configured: false,
   },
 ];

@@ -3,7 +3,7 @@
 ## 0. 文档信息
 
 - 产品名称：AI Media SDK
-- 文档版本：v1.4.0
+- 文档版本：v1.7.0
 - 文档状态：草稿
 - 创建日期：2026-07-30
 - 最后更新：2026-07-30
@@ -69,12 +69,12 @@ MVP 达成以下结果时视为达到产品目标：
 
 ### 3.1 目标用户
 
-| 用户角色 | 需求 | 首期价值 |
-|---|---|---|
-| Node.js 后端开发者 | 在服务端集成一个或多个图像模型 Provider | 通过统一 API 减少平台分支代码 |
-| AI 应用开发者 | 快速切换模型、比较生成结果和保留平台能力 | 使用模型实例和 `providerOptions` 控制调用 |
-| 产品原型开发者 | 通过少量配置验证多个图像平台 | 使用 `examples/*` 和 `.env.example` 快速运行 |
-| SDK 维护者 | 扩展 Provider 且不破坏统一契约 | 使用清晰的 Provider 适配边界和能力声明 |
+| 用户角色           | 需求                                     | 首期价值                                     |
+| ------------------ | ---------------------------------------- | -------------------------------------------- |
+| Node.js 后端开发者 | 在服务端集成一个或多个图像模型 Provider  | 通过统一 API 减少平台分支代码                |
+| AI 应用开发者      | 快速切换模型、比较生成结果和保留平台能力 | 使用模型实例和 `providerOptions` 控制调用    |
+| 产品原型开发者     | 通过少量配置验证多个图像平台             | 使用 `examples/*` 和 `.env.example` 快速运行 |
+| SDK 维护者         | 扩展 Provider 且不破坏统一契约           | 使用清晰的 Provider 适配边界和能力声明       |
 
 ### 3.2 角色边界
 
@@ -278,14 +278,14 @@ flowchart LR
 
 阿里云百炼首期推荐模型目录（模型能力来自用户提供的百炼资料，具体 API 请求和认证仍由 Provider 技术方案确认）：
 
-| 模型 ID | 文生图 | 图片编辑 | 最大输出数 | 最大分辨率 | 推荐场景 |
-|---|---|---|---:|---|---|
-| `wan2.7-image-pro` | 支持 | 支持 | 4（连续生成 12） | 文生图 4096x4096；编辑 2048x2048 | 高质量、文字渲染、品牌色、角色一致性、多图编辑 |
-| `wan2.7-image` | 支持 | 支持 | 4（连续生成 12） | 2048x2048 | 平衡质量和速度 |
-| `z-image-turbo` | 支持 | 不支持 | 1 | 2048x2048 | 快速、低成本、写实人像和产品照片 |
-| `qwen-image-3.0-pro` | 支持 | 支持 | 6 | 2048x2048 | 复杂版面、小字渲染、多语言字体；邀测中 |
-| `qwen-image-2.0-pro` | 支持 | 支持 | 6 | 2048x2048 | 高质量生成/编辑、负向提示词 |
-| `qwen-image-2.0` | 支持 | 支持 | 6 | 2048x2048 | Qwen Image Pro 的快速版本 |
+| 模型 ID              | 文生图 | 图片编辑 |       最大输出数 | 最大分辨率                       | 推荐场景                                       |
+| -------------------- | ------ | -------- | ---------------: | -------------------------------- | ---------------------------------------------- |
+| `wan2.7-image-pro`   | 支持   | 支持     | 4（连续生成 12） | 文生图 4096x4096；编辑 2048x2048 | 高质量、文字渲染、品牌色、角色一致性、多图编辑 |
+| `wan2.7-image`       | 支持   | 支持     | 4（连续生成 12） | 2048x2048                        | 平衡质量和速度                                 |
+| `z-image-turbo`      | 支持   | 不支持   |                1 | 2048x2048                        | 快速、低成本、写实人像和产品照片               |
+| `qwen-image-3.0-pro` | 支持   | 支持     |                6 | 2048x2048                        | 复杂版面、小字渲染、多语言字体；邀测中         |
+| `qwen-image-2.0-pro` | 支持   | 支持     |                6 | 2048x2048                        | 高质量生成/编辑、负向提示词                    |
+| `qwen-image-2.0`     | 支持   | 支持     |                6 | 2048x2048                        | Qwen Image Pro 的快速版本                      |
 
 其他百炼模型（如 `wan2.6-*`、`wan2.5-*`、`wan2.2-*`、`wan2.1-*`、Qwen Image legacy/edit 变体）由模型能力注册表按需扩展，不作为首期推荐默认值。
 
@@ -336,29 +336,29 @@ flowchart LR
 
 本产品不使用 domain 层，采用 `sub → feat` 两级结构。总 PRD 只维护 Sub，不维护 Feat 列表；具体 Feat 由对应 sub 级 `prd.md` 维护。
 
-| Sub ID | 分支名称 | 目录 | 目标与范围 | 与其他 Sub 的边界 | 优先级 |
-|---|---|---|---|---|---|
-| `SUB-001` | Provider 适配体系 | `sub-provider-adapters` | Provider 工厂、模型实例、凭证配置、平台请求适配和首批平台接入 | 不定义统一业务调用语义；由 `SUB-002` 消费适配能力 | P0 |
-| `SUB-002` | 统一图像生成与编辑 | `sub-image-generation` | 文生图、图生图/图片编辑、公共参数、图片输入和 `providerOptions` | 不负责 Provider 认证细节和任务持久化 | P0 |
-| `SUB-003` | 异步任务与结果契约 | `sub-task-result-contract` | 进程内任务句柄、状态、等待、结果格式、元数据 | 不负责外部队列、长期存储和 Webhook | P0 |
-| `SUB-004` | 能力检查与错误处理 | `sub-capability-error-handling` | 能力声明、参数校验、错误分类、有限重试 | 不负责智能路由和业务级 fallback | P0 |
-| `SUB-005` | SDK 体验与示例应用 | `sub-sdk-examples` | 包入口、类型导出、Node.js 示例、受控 Web Playground、环境模板和基础文档 | 不负责 Web 管理控制台和产品运营能力 | P1 |
-| `SUB-006` | 视频生成（预留） | `sub-video-generation` | 视频生成调用入口与任务生命周期，复用核心契约（`TaskHandle<T>`/`GenerationResult<T>`） | MVP 不实现；P1 评估，依赖 Provider 视频能力与官方资料齐备 | P1 |
-| `SUB-007` | 音频/音乐生成（预留） | `sub-audio-generation` | 语音合成与音乐生成调用入口，复用核心契约 | MVP 不实现；P1/P2 评估 | P1 |
+| Sub ID    | 分支名称              | 目录                            | 目标与范围                                                                            | 与其他 Sub 的边界                                         | 优先级 |
+| --------- | --------------------- | ------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------ |
+| `SUB-001` | Provider 适配体系     | `sub-provider-adapters`         | Provider 工厂、模型实例、凭证配置、平台请求适配和首批平台接入                         | 不定义统一业务调用语义；由 `SUB-002` 消费适配能力         | P0     |
+| `SUB-002` | 统一图像生成与编辑    | `sub-image-generation`          | 文生图、图生图/图片编辑、公共参数、图片输入和 `providerOptions`                       | 不负责 Provider 认证细节和任务持久化                      | P0     |
+| `SUB-003` | 异步任务与结果契约    | `sub-task-result-contract`      | 进程内任务句柄、状态、等待、结果格式、元数据                                          | 不负责外部队列、长期存储和 Webhook                        | P0     |
+| `SUB-004` | 能力检查与错误处理    | `sub-capability-error-handling` | 能力声明、参数校验、错误分类、有限重试                                                | 不负责智能路由和业务级 fallback                           | P0     |
+| `SUB-005` | SDK 体验与示例应用    | `sub-sdk-examples`              | 包入口、类型导出、Node.js 示例、受控 Web Playground、环境模板和基础文档               | 不负责 Web 管理控制台和产品运营能力                       | P1     |
+| `SUB-006` | 视频生成（预留）      | `sub-video-generation`          | 视频生成调用入口与任务生命周期，复用核心契约（`TaskHandle<T>`/`GenerationResult<T>`） | MVP 不实现；P1 评估，依赖 Provider 视频能力与官方资料齐备 | P1     |
+| `SUB-007` | 音频/音乐生成（预留） | `sub-audio-generation`          | 语音合成与音乐生成调用入口，复用核心契约                                              | MVP 不实现；P1/P2 评估                                    | P1     |
 
 ## 7. 用户故事
 
-| ID | 用户故事 | 验收关注点 | 对应 Sub |
-|---|---|---|---|
-| `US-001` | 作为 Node.js 开发者，我希望通过 Provider 工厂配置平台凭证，以便不用在业务代码中拼接平台请求。 | 能创建 Provider 并安全传递凭证；不要求中心化密钥服务。 | `SUB-001` |
-| `US-002` | 作为 AI 应用开发者，我希望通过模型实例选择具体模型，以便明确控制生成目标。 | Provider 和模型显式可见；不依赖统一模型别名。 | `SUB-001`、`SUB-002` |
-| `US-003` | 作为调用方，我希望用统一函数执行文生图，以便切换 Provider 时保留主要业务代码。 | 公共输入和结果契约稳定。 | `SUB-002` |
-| `US-004` | 作为调用方，我希望按模型能力执行图生图或图片编辑，以便使用平台支持的高级能力。 | 不支持的能力显式报错，不静默忽略。 | `SUB-002`、`SUB-004` |
-| `US-005` | 作为调用方，我希望通过 Buffer/Blob、URL 和元数据获取结果，以便接入不同的服务端图片处理流程。 | 结果格式统一，平台元数据可追溯。 | `SUB-003` |
-| `US-006` | 作为调用方，我希望等待异步任务完成或查询任务状态，以便适配不同平台的处理时长。 | 任务句柄在当前进程内可查询和等待。 | `SUB-003` |
-| `US-007` | 作为调用方，我希望错误区分认证、参数、能力、限流和 Provider 失败，以便决定是否修正请求或重试。 | 错误分类稳定且不泄漏敏感信息。 | `SUB-004` |
-| `US-008` | 作为 SDK 维护者，我希望通过 Provider 独有参数扩展能力，以便不被跨平台最低公约数限制。 | `providerOptions` 有清晰边界，原生参数不污染公共契约。 | `SUB-001`、`SUB-002` |
-| `US-009` | 作为首次试用者，我希望复制 `.env.example` 并运行 example，以便快速验证一个 Provider。 | 示例配置清晰，仓库不包含真实密钥。 | `SUB-005` |
+| ID       | 用户故事                                                                                       | 验收关注点                                             | 对应 Sub             |
+| -------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ | -------------------- |
+| `US-001` | 作为 Node.js 开发者，我希望通过 Provider 工厂配置平台凭证，以便不用在业务代码中拼接平台请求。  | 能创建 Provider 并安全传递凭证；不要求中心化密钥服务。 | `SUB-001`            |
+| `US-002` | 作为 AI 应用开发者，我希望通过模型实例选择具体模型，以便明确控制生成目标。                     | Provider 和模型显式可见；不依赖统一模型别名。          | `SUB-001`、`SUB-002` |
+| `US-003` | 作为调用方，我希望用统一函数执行文生图，以便切换 Provider 时保留主要业务代码。                 | 公共输入和结果契约稳定。                               | `SUB-002`            |
+| `US-004` | 作为调用方，我希望按模型能力执行图生图或图片编辑，以便使用平台支持的高级能力。                 | 不支持的能力显式报错，不静默忽略。                     | `SUB-002`、`SUB-004` |
+| `US-005` | 作为调用方，我希望通过 Buffer/Blob、URL 和元数据获取结果，以便接入不同的服务端图片处理流程。   | 结果格式统一，平台元数据可追溯。                       | `SUB-003`            |
+| `US-006` | 作为调用方，我希望等待异步任务完成或查询任务状态，以便适配不同平台的处理时长。                 | 任务句柄在当前进程内可查询和等待。                     | `SUB-003`            |
+| `US-007` | 作为调用方，我希望错误区分认证、参数、能力、限流和 Provider 失败，以便决定是否修正请求或重试。 | 错误分类稳定且不泄漏敏感信息。                         | `SUB-004`            |
+| `US-008` | 作为 SDK 维护者，我希望通过 Provider 独有参数扩展能力，以便不被跨平台最低公约数限制。          | `providerOptions` 有清晰边界，原生参数不污染公共契约。 | `SUB-001`、`SUB-002` |
+| `US-009` | 作为首次试用者，我希望复制 `.env.example` 并运行 example，以便快速验证一个 Provider。          | 示例配置清晰，仓库不包含真实密钥。                     | `SUB-005`            |
 
 ## 8. 全局业务规则
 
@@ -442,16 +442,16 @@ flowchart LR
 
 ## 10. 外部系统与数据依赖
 
-| 外部系统/数据 | 用途 | 数据方向 | 依赖边界 | 首期状态 |
-|---|---|---|---|---|
-| Azure OpenAI 图像 API | 图像生成/编辑 | SDK → Provider | 由 Azure OpenAI Provider 适配；模型以 Azure deployment name 标识，具体部署和 API version 待确认 | MVP |
-| Google 图像 API | 图像生成/编辑 | SDK → Provider | 由 Google Provider 适配，按模型能力开放 | MVP |
-| 阿里云百炼图像 API | 图像生成/编辑 | SDK → Provider | 由阿里云 Provider 适配；首期模型目录和能力矩阵已确定，具体 API 产品、请求格式和认证待确认 | MVP |
-| Doubao-Seedream API | 图像生成/编辑 | SDK → Provider | 由字节 Provider 适配，具体模型和任务接口待确认 | MVP |
-| 调用方 API Key | Provider 认证 | 调用方 → SDK → Provider | SDK 仅运行时使用，不托管 | MVP |
-| 调用方图片输入 | 生成/编辑参考图 | 调用方 → SDK → Provider | 可能包含个人或商业敏感数据 | MVP |
-| Provider 图片 URL/二进制结果 | 生成结果 | Provider → SDK → 调用方 | URL 生命周期由 Provider/调用方负责 | MVP |
-| 当前 monorepo `examples/*` | 快速体验和回归验证 | 用户 → 示例应用 → SDK | 不构成统一平台代理 | MVP |
+| 外部系统/数据                | 用途               | 数据方向                | 依赖边界                                                                                                                  | 首期状态 |
+| ---------------------------- | ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Azure OpenAI 图像 API        | 图像生成/编辑      | SDK → Provider          | 由 Azure OpenAI Provider 适配；模型以 Azure deployment name 标识，具体部署和 API version 待确认                           | MVP      |
+| Google 图像 API              | 图像生成/编辑      | SDK → Provider          | 由 Google Provider 适配，按模型能力开放                                                                                   | MVP      |
+| 阿里云百炼图像 API           | 图像生成/编辑      | SDK → Provider          | 由阿里云 Provider 适配；首期模型目录和能力矩阵已确定，具体 API 产品、请求格式和认证待确认                                 | MVP      |
+| Doubao-Seedream API          | 图像生成/编辑      | SDK → Provider          | 由火山方舟 Ark Provider 适配；OpenAI 兼容 `/api/v3/images/generations`，`Authorization: Bearer`，同步；4 个 Seedream 模型 | MVP      |
+| 调用方 API Key               | Provider 认证      | 调用方 → SDK → Provider | SDK 仅运行时使用，不托管                                                                                                  | MVP      |
+| 调用方图片输入               | 生成/编辑参考图    | 调用方 → SDK → Provider | 可能包含个人或商业敏感数据                                                                                                | MVP      |
+| Provider 图片 URL/二进制结果 | 生成结果           | Provider → SDK → 调用方 | URL 生命周期由 Provider/调用方负责                                                                                        | MVP      |
+| 当前 monorepo `examples/*`   | 快速体验和回归验证 | 用户 → 示例应用 → SDK   | 不构成统一平台代理                                                                                                        | MVP      |
 
 ## 11. 类似产品与开源方案调研
 
@@ -498,25 +498,25 @@ flowchart LR
 
 ## 12. 关键决策记录
 
-| 决策 | 备选方案 | 选择理由 | 影响 |
-|---|---|---|---|
-| 独立定义图像 SDK 契约，但保持 AI SDK 风格 | 直接复用 AI SDK；完全自定义非 AI SDK 风格 | 保持产品独立性，同时降低用户学习成本 | 需要维护自己的 Provider、任务、错误和结果类型 |
-| 首发语言为 TypeScript/JavaScript | 同时提供 Python；先做语言无关 HTTP API | 与当前 monorepo 和 npm 生态匹配，降低首期交付成本 | MVP 先聚焦 Node.js 服务端 |
-| 首批接入 Azure OpenAI、Google、阿里云、Doubao-Seedream | 首期接入普通 OpenAI 公网 API；只接入单一平台；尽量全量接入 | 优先满足 Azure 部署场景，同时验证多平台统一抽象并控制首批 Provider 数量 | 需要处理 Azure deployment、API version、认证方式以及多个 Provider 的异步、图片输入和错误差异 |
-| 使用 Provider 工厂和模型实例 | 一个全局 SDK 客户端配置所有模型 | 接近 AI SDK 使用习惯，便于显式选择平台和模型 | Provider 创建和凭证配置需要清晰文档 |
-| 统一函数支持文生图与图生图/编辑 | 只做文生图；为每个平台分别暴露 API | 用户明确需要图像生成和编辑，统一体验是核心价值 | 只能对模型明确支持的编辑能力做承诺 |
-| 公共参数 + `providerOptions` | 只保留公共最低公约数；完全暴露原生 API | 同时保持可移植性和平台能力 | 需要 Provider 命名空间、能力检查和类型约束 |
-| 进程内任务句柄 | 数据库/Redis 持久化；只提供阻塞式 await | 适合 SDK 首期且不引入服务端基础设施 | 进程重启后任务不可恢复 |
-| 调用方自行提供 API Key | SDK 平台托管密钥；统一平台代理密钥 | 保持纯 SDK 和最小信任边界 | 调用方负责密钥生命周期和权限控制 |
-| SDK 不长期保存结果 | 内置对象存储；可插拔存储适配 | 避免扩大数据合规和基础设施范围 | 调用方负责结果持久化和 URL 生命周期 |
-| 显式能力检查和有限重试 | 静默忽略/自动降级；智能 fallback | 防止请求语义被悄悄改变，并控制成本 | 调用方需要处理能力错误和最终重试失败 |
-| 只锁定 Provider，同时维护 Provider 内推荐模型目录 | 固定一组跨平台模型别名；完全不提供模型建议 | 模型变化快，但用户仍需要可操作的模型选择依据 | 推荐模型目录需标注能力、分辨率、输出数、邀测和版本风险 |
-| 当前 Web 提供受控 Playground，但不建设管理控制台 | 仅提供 Node.js examples；或同期建设公共 Playground/管理控制台 | 保留直观验证体验，同时避免平台化范围膨胀 | 需要服务端保护密钥；不承诺公共多租户能力 |
-| 产品定位为多模态 umbrella SDK，MVP 仅图像但类型预留多模态 | 三模态各起独立 SDK；MVP 直接做视频/音频 | 同批 Provider 跨多模态，共享 transport/任务/错误核心；先发图像避免范围膨胀 | 核心类型泛型化（`TaskHandle<T>`/`GenerationResult<T>`）；后续加 `generateVideo`/`generateAudio` |
-| Provider 适配器纯 fetch，不包装官方 SDK | Azure 用官方 openai SDK；阿里云等无 SDK 才 fetch | 契约统一（共用可注入 transport + 单一错误/重试路径）；Azure 图像 API 极简无需 SDK；避免版本耦合与传递依赖 | 两 Provider 零外部 SDK 依赖；错误分类直接拿 HTTP 状态码 |
-| Azure OpenAI 仅支持 API Key 鉴权 | 同时支持 Entra ID/Azure AD bearer | 用户确认首期仅用 API Key，复杂度最低；Entra ID 后置 | Phase 1 live 确认：Global Standard `gpt-image-2` 等 Serverless 部署使用 `Authorization: Bearer {apiKey}` 头；经典 Azure OpenAI 资源亦支持 `api-key` 头，作为备选评估。若未来需 Entra ID，仅 Azure provider 引 `@azure/identity` 做 token 获取，HTTP 仍走自有 fetch |
-| 包 scope 为 `@ai-media/*`，按平台拆独立 Provider 包 | 单包内分目录；保持图像单一 scope | 用户按需安装 Provider；外部依赖隔离；feat↔package 一一对应 | 新增 `@ai-media/sdk` + `@ai-media/provider-<name>` + `examples/<provider>` |
-| 测试基线采用 `bun:test` | 引入 Vitest/Jest；不配测试 | 与 Bun 工具链一致，零额外依赖；SUB tech 均假设有单元/契约测试 | 根加 `test` 脚本 + turbo `test` task；契约测试 mock 双 Provider |
+| 决策                                                      | 备选方案                                                      | 选择理由                                                                                                  | 影响                                                                                                                                                                                                                                                               |
+| --------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 独立定义图像 SDK 契约，但保持 AI SDK 风格                 | 直接复用 AI SDK；完全自定义非 AI SDK 风格                     | 保持产品独立性，同时降低用户学习成本                                                                      | 需要维护自己的 Provider、任务、错误和结果类型                                                                                                                                                                                                                      |
+| 首发语言为 TypeScript/JavaScript                          | 同时提供 Python；先做语言无关 HTTP API                        | 与当前 monorepo 和 npm 生态匹配，降低首期交付成本                                                         | MVP 先聚焦 Node.js 服务端                                                                                                                                                                                                                                          |
+| 首批接入 Azure OpenAI、Google、阿里云、Doubao-Seedream    | 首期接入普通 OpenAI 公网 API；只接入单一平台；尽量全量接入    | 优先满足 Azure 部署场景，同时验证多平台统一抽象并控制首批 Provider 数量                                   | 需要处理 Azure deployment、API version、认证方式以及多个 Provider 的异步、图片输入和错误差异                                                                                                                                                                       |
+| 使用 Provider 工厂和模型实例                              | 一个全局 SDK 客户端配置所有模型                               | 接近 AI SDK 使用习惯，便于显式选择平台和模型                                                              | Provider 创建和凭证配置需要清晰文档                                                                                                                                                                                                                                |
+| 统一函数支持文生图与图生图/编辑                           | 只做文生图；为每个平台分别暴露 API                            | 用户明确需要图像生成和编辑，统一体验是核心价值                                                            | 只能对模型明确支持的编辑能力做承诺                                                                                                                                                                                                                                 |
+| 公共参数 + `providerOptions`                              | 只保留公共最低公约数；完全暴露原生 API                        | 同时保持可移植性和平台能力                                                                                | 需要 Provider 命名空间、能力检查和类型约束                                                                                                                                                                                                                         |
+| 进程内任务句柄                                            | 数据库/Redis 持久化；只提供阻塞式 await                       | 适合 SDK 首期且不引入服务端基础设施                                                                       | 进程重启后任务不可恢复                                                                                                                                                                                                                                             |
+| 调用方自行提供 API Key                                    | SDK 平台托管密钥；统一平台代理密钥                            | 保持纯 SDK 和最小信任边界                                                                                 | 调用方负责密钥生命周期和权限控制                                                                                                                                                                                                                                   |
+| SDK 不长期保存结果                                        | 内置对象存储；可插拔存储适配                                  | 避免扩大数据合规和基础设施范围                                                                            | 调用方负责结果持久化和 URL 生命周期                                                                                                                                                                                                                                |
+| 显式能力检查和有限重试                                    | 静默忽略/自动降级；智能 fallback                              | 防止请求语义被悄悄改变，并控制成本                                                                        | 调用方需要处理能力错误和最终重试失败                                                                                                                                                                                                                               |
+| 只锁定 Provider，同时维护 Provider 内推荐模型目录         | 固定一组跨平台模型别名；完全不提供模型建议                    | 模型变化快，但用户仍需要可操作的模型选择依据                                                              | 推荐模型目录需标注能力、分辨率、输出数、邀测和版本风险                                                                                                                                                                                                             |
+| 当前 Web 提供受控 Playground，但不建设管理控制台          | 仅提供 Node.js examples；或同期建设公共 Playground/管理控制台 | 保留直观验证体验，同时避免平台化范围膨胀                                                                  | 需要服务端保护密钥；不承诺公共多租户能力                                                                                                                                                                                                                           |
+| 产品定位为多模态 umbrella SDK，MVP 仅图像但类型预留多模态 | 三模态各起独立 SDK；MVP 直接做视频/音频                       | 同批 Provider 跨多模态，共享 transport/任务/错误核心；先发图像避免范围膨胀                                | 核心类型泛型化（`TaskHandle<T>`/`GenerationResult<T>`）；后续加 `generateVideo`/`generateAudio`                                                                                                                                                                    |
+| Provider 适配器纯 fetch，不包装官方 SDK                   | Azure 用官方 openai SDK；阿里云等无 SDK 才 fetch              | 契约统一（共用可注入 transport + 单一错误/重试路径）；Azure 图像 API 极简无需 SDK；避免版本耦合与传递依赖 | 两 Provider 零外部 SDK 依赖；错误分类直接拿 HTTP 状态码                                                                                                                                                                                                            |
+| Azure OpenAI 仅支持 API Key 鉴权                          | 同时支持 Entra ID/Azure AD bearer                             | 用户确认首期仅用 API Key，复杂度最低；Entra ID 后置                                                       | Phase 1 live 确认：Global Standard `gpt-image-2` 等 Serverless 部署使用 `Authorization: Bearer {apiKey}` 头；经典 Azure OpenAI 资源亦支持 `api-key` 头，作为备选评估。若未来需 Entra ID，仅 Azure provider 引 `@azure/identity` 做 token 获取，HTTP 仍走自有 fetch |
+| 包 scope 为 `@ai-media/*`，按平台拆独立 Provider 包       | 单包内分目录；保持图像单一 scope                              | 用户按需安装 Provider；外部依赖隔离；feat↔package 一一对应                                                | 新增 `@ai-media/sdk` + `@ai-media/provider-<name>` + `examples/<provider>`                                                                                                                                                                                         |
+| 测试基线采用 `bun:test`                                   | 引入 Vitest/Jest；不配测试                                    | 与 Bun 工具链一致，零额外依赖；SUB tech 均假设有单元/契约测试                                             | 根加 `test` 脚本 + turbo `test` task；契约测试 mock 双 Provider                                                                                                                                                                                                    |
 
 ## 13. 版本规划
 
@@ -618,7 +618,7 @@ flowchart LR
 - ~~阿里云百炼首期推荐模型和文生图/编辑能力已依据用户提供资料记录；具体 API 产品、endpoint、请求格式和认证方式待确认~~ 已确认（2026-07-30 live 文档）：鉴权 `Authorization: Bearer`；万相走 `/services/aigc/image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `/services/aigc/multimodal-generation/generation`（同步）；地域化 base_url。
 - ~~阿里云百炼模型的异步任务/轮询、URL 生命周期、地域限制、价格和邀测可用性待接入前核实~~ 部分确认：URL 有效期 24h；`task_id` 查询有效期 24h；轮询建议前 30s 每 3s、最终超时 2min；地域 `cn-beijing`/`ap-southeast-1`，各地域 API Key 不同；价格/邀测待核实。
 - 阿里云编辑契约（wan/qwen 是否共用）待后续 live 探查；是否拆 wan/qwen Provider 包由 Phase 2 架构决策定。
-- Doubao-Seedream 首期具体模型、任务接口和认证方式待确认。
+- ~~Doubao-Seedream 首期具体模型、任务接口和认证方式待确认。~~ 已确认（2026-07-31 live 文档）：火山方舟 OpenAI 兼容 `POST /api/v3/images/generations`，`Authorization: Bearer`，同步 `data[]`；单端点承载 T2I/I2I/多参考图融合/组图/交互编辑；4 个模型 `doubao-seedream-5-0-pro-260628`/`5-0-260128`/`4-5-251128`/`4-0-250828`；详见 `docs/prd/sub-provider-adapters/tech.md` v1.5.0。
 - Azure OpenAI、Google 首期验证的具体模型或 Azure deployment name 待确认；模型版本和 deployment 不作为总 PRD 固定范围。
 - ~~Azure OpenAI 的 API Key 与 Entra ID 认证方式~~ 已确认：首期仅支持 API Key（`api-key` 头）；Entra ID 后置评估。（Phase 1 live 修订：Global Standard Serverless 部署用 `Authorization: Bearer`，`api-key` 为经典资源备选。）
 - ~~Azure OpenAI 的 endpoint、API version、是否需兼容 Azure 特定请求头、`providerOptions.azure` 与兼容 `openai` 图像选项命名空间的取舍，待 Provider 接入探查确认~~ 已确认：直接 `images/generations` 路径、API 版本 `2024-02-01`、`providerOptions.azure` 透传 `quality/output_format/output_compression`。
@@ -631,12 +631,13 @@ flowchart LR
 
 ## 16. 变更记录
 
-| 版本 | 日期 | 变更内容 |
-|---|---|---|
-| v1.0.0 | 2026-07-30 | 根据产品讨论创建总 PRD；确定独立契约、AI SDK 风格、多 Provider 图像生成 SDK、MVP 范围和需求分支地图。 |
-| v1.1.0 | 2026-07-30 | 将首批 OpenAI Provider 调整为 Azure OpenAI 图像 Provider；补充 Azure deployment、endpoint、API version、认证和 Provider 参数命名空间待确认项，并记录 AI SDK Azure 实现参考。 |
-| v1.2.0 | 2026-07-30 | 根据 SUB-005 需求澄清，将当前 Web 的受控 Playground 纳入范围，同时明确不建设管理控制台或公共多租户平台。 |
-| v1.3.0 | 2026-07-30 | 根据百炼模型资料补充阿里云推荐模型目录、模型级能力矩阵、分辨率/输出数和调研依据。 |
-| v1.4.0 | 2026-07-30 | 产品定位升级为多模态 umbrella SDK（AI Media SDK），MVP 仍仅图像但核心类型模态无关泛型化；确定包 scope `@ai-media/*` 与按平台拆分 Provider 包；确定 Provider 纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确定测试基线 `bun:test`；将 `packages/ui` 迁移到 `shadcn/` 约定；预留 SUB-006 视频生成、SUB-007 音频生成。 |
+| 版本   | 日期       | 变更内容                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v1.0.0 | 2026-07-30 | 根据产品讨论创建总 PRD；确定独立契约、AI SDK 风格、多 Provider 图像生成 SDK、MVP 范围和需求分支地图。                                                                                                                                                                                                                                                                                                                                                                     |
+| v1.1.0 | 2026-07-30 | 将首批 OpenAI Provider 调整为 Azure OpenAI 图像 Provider；补充 Azure deployment、endpoint、API version、认证和 Provider 参数命名空间待确认项，并记录 AI SDK Azure 实现参考。                                                                                                                                                                                                                                                                                              |
+| v1.2.0 | 2026-07-30 | 根据 SUB-005 需求澄清，将当前 Web 的受控 Playground 纳入范围，同时明确不建设管理控制台或公共多租户平台。                                                                                                                                                                                                                                                                                                                                                                  |
+| v1.3.0 | 2026-07-30 | 根据百炼模型资料补充阿里云推荐模型目录、模型级能力矩阵、分辨率/输出数和调研依据。                                                                                                                                                                                                                                                                                                                                                                                         |
+| v1.4.0 | 2026-07-30 | 产品定位升级为多模态 umbrella SDK（AI Media SDK），MVP 仍仅图像但核心类型模态无关泛型化；确定包 scope `@ai-media/*` 与按平台拆分 Provider 包；确定 Provider 纯 fetch 零外部 SDK 依赖、Azure 仅 API Key；确定测试基线 `bun:test`；将 `packages/ui` 迁移到 `shadcn/` 约定；预留 SUB-006 视频生成、SUB-007 音频生成。                                                                                                                                                        |
 | v1.5.0 | 2026-07-30 | Phase 1 Azure live 契约确认：鉴权由 `api-key` 头修订为 `Authorization: Bearer {apiKey}`（Global Standard `gpt-image-2` Serverless 部署），`api-key` 头保留为经典资源备选；确认 API 版本 `2024-02-01`、直接 `images/generations` 路径、请求体公共字段（`prompt/size/n`）与 Azure 原生字段（`quality/output_format/output_compression`，经 `providerOptions.azure` 透传）；编辑契约 `images/edits`（multipart）后置。详见 `docs/prd/sub-provider-adapters/tech.md` v1.3.0。 |
-| v1.6.0 | 2026-07-30 | 阿里云百炼文生图 live 契约确认：鉴权 `Authorization: Bearer`；地域化 base_url；纠正"wan/qwen 共用契约"误判——万相走 `image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `multimodal-generation/generation`（同步）；参数按系列分化；URL/`task_id` 均为 24h 有效。详见 `docs/prd/sub-provider-adapters/tech.md` v1.4.0。 |
+| v1.6.0 | 2026-07-30 | 阿里云百炼文生图 live 契约确认：鉴权 `Authorization: Bearer`；地域化 base_url；纠正"wan/qwen 共用契约"误判——万相走 `image-generation/generation`（异步 `X-DashScope-Async` + 轮询 `/tasks/{task_id}`），千问走 `multimodal-generation/generation`（同步）；参数按系列分化；URL/`task_id` 均为 24h 有效。详见 `docs/prd/sub-provider-adapters/tech.md` v1.4.0。                                                                                                            |
+| v1.7.0 | 2026-07-31 | Doubao-Seedream live 契约确认：火山方舟官方 OpenAI 兼容 `POST /api/v3/images/generations`，`Authorization: Bearer`，同步 `data[]` 响应（不被异步任务契约阻塞）；单端点承载 T2I/I2I/多参考图融合/组图/交互编辑；4 个模型（5.0 pro/5.0 lite/4.5/4.0）能力矩阵、请求字段、`providerOptions.seedream` 命名空间登记；Phase 3 首期切片锁定 T2I+I2I/多图编辑，组图/流式/联网搜索后置。详见 `docs/prd/sub-provider-adapters/tech.md` v1.5.0。                                     |
