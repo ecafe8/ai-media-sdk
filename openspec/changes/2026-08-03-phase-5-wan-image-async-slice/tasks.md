@@ -1,0 +1,33 @@
+## 1. Core Image Async Entry
+
+- [ ] 1.1 Add `packages/ai-media-sdk/src/image/submit.ts` exporting `submitImageTask(request: ImageGenerationRequest): Promise<TaskHandle<ImageContent[]>>`. Mirror `submitVideoTask` (`video/submit.ts`): validate `model.capabilities.async` (reject with `INVALID_REQUEST` before dispatch if false/undefined), validate `model.capabilities.modality === "image"` (reject with `INVALID_REQUEST`), validate a non-empty `prompt` (reject with `INVALID_REQUEST`), build an `ImageGenerationInput` payload `{ prompt, n, size, providerOptions }`, and dispatch via `submitTask<ImageContent[]>({ model, modality: "image", input })`.
+- [ ] 1.2 Export `submitImageTask` from `packages/ai-media-sdk/src/image/index.ts` and from the package root `packages/ai-media-sdk/src/index.ts`. No new public type is exported — `ImageGenerationRequest` / `ImageGenerationInput` are already exported from Phase 0/1.
+
+## 2. Aliyun Wan Image Async Adapter and Registry Flip
+
+- [ ] 2.1 Flip the `wan-image` registry entries (`wan2.7-image-pro`, `wan2.7-image`, `z-image-turbo`) in `packages/provider-aliyun-bailian/src/provider/registry.ts` to add `async: true` to their `capabilities` (keep `modality: "image"`, `generate: true`, `edit: false` as-is). Update the registry docstring comment to reflect that Wan models now run the async `image-generation/generation` path via `submit()`, with `generate()`/`edit()` still `NOT_IMPLEMENTED` pending the sync path.
+- [ ] 2.2 Add a `wan-image` branch to the Aliyun adapter `submit()` in `packages/provider-aliyun-bailian/src/provider/index.ts` (alongside the existing `happyhorse-video` branch). The `wan-image` branch SHALL: validate the input via `isImageGenerationInput`, build the body `{ model, input: { prompt }, parameters: { size?, n?, seed? } }` (public `size`/`n` from the input, `seed` and other Aliyun-native fields from `providerOptions.aliyun`), and post to `POST {baseUrl}/services/aigc/image-generation/generation` with `X-DashScope-Async: enable` + `Authorization: Bearer` + `Content-Type: application/json` via the shared transport.
+- [ ] 2.3 Read `output.task_id` + `output.task_status` from the submit response and build a `TaskHandle<ImageContent[]>` via `createTaskHandle` whose poll closure calls the existing shared `getTask(taskId)` (`GET /tasks/{task_id}`), then on `SUCCEEDED` maps `output.results[].url` → `ImageContent[]` (one entry per result URL; carries `requestId` from `request_id` and non-sensitive `usage`/`metrics` into `raw`). On `FAILED`/`CANCELED`/`UNKNOWN`, build a sanitized `SdkError` (`PROVIDER_ERROR` for FAILED; cancelled/unknown → terminal failure) carrying `output.code`/`output.message` redacted of the API key.
+- [ ] 2.4 Keep the existing `generate()`/`edit()` throwing `NOT_IMPLEMENTED` for the `wan-image` family (sync paths stay stubs); only `submit()` runs the async image path. The `happyhorse-video` branch in `submit()` stays unchanged.
+- [ ] 2.5 Update the `provider.image(modelId)` binding path: when binding a `wan-image` family model, cast `provider as unknown as ProviderAdapter<ImageContent[]>` (mirroring the Phase 4 video binding cast at `index.ts:160`), so the bound `ImageModelInstance` exposes `adapter.submit` returning `TaskHandle<ImageContent[]>`.
+
+## 3. Contract Tests with Fake Transport
+
+- [ ] 3.1 Add a `wan-image` async submit contract test file in `packages/provider-aliyun-bailian/tests/` reusing the existing fake-transport helper pattern (supporting async poll sequences).
+- [ ] 3.2 Add submit request contract tests: assert the built request targets `/services/aigc/image-generation/generation`, carries `X-DashScope-Async: enable` + `Authorization: Bearer` headers, and the body fields (`model`, `input.prompt`, `parameters.size`/`n` from public input, `parameters.seed` from `providerOptions.aliyun`). Assert no `media` field.
+- [ ] 3.3 Add poll/result tests: a `PENDING` → `PROCESSING` → `SUCCEEDED` sequence resolves `wait()` with an `ImageContent[]` carrying each `output.results[].url` (cover `n=1` and `n>1` multi-element results); a `FAILED`/`CANCELED`/`UNKNOWN` sequence rejects with `PROVIDER_ERROR`; assert `provider`/`model` ids and `requestId`.
+- [ ] 3.4 Add error classification tests: submit 401 → `AUTH_ERROR` (non-retryable, no key in message), 429 → `RATE_LIMITED`, 400 → `INVALID_REQUEST`, 5xx → `PROVIDER_ERROR`, transport timeout → `TIMEOUT`.
+- [ ] 3.5 Add core dispatch tests in `packages/ai-media-sdk/tests/`: `submitImageTask` dispatches to `adapter.submit` for an async image model; rejects a non-async model (sync-only) with `INVALID_REQUEST` before dispatch; rejects a non-image modality model (e.g. video) with `INVALID_REQUEST`; rejects an empty `prompt` with `INVALID_REQUEST`.
+
+## 4. Example, Environment Template, and Playground Registration
+
+- [ ] 4.1 Extend `examples/aliyun-bailian-image/` (or add a dedicated `examples/aliyun-wan-image/` if cleaner) with a Wan async example using `submitImageTask` + `TaskHandle.wait()`, a `.env.example` entry for `ALIYUN_BAILIAN_VIDEO_MODEL` or `ALIYUN_BAILIAN_IMAGE_MODEL=wan2.7-image-pro`, and a documented run command; ensure no live calls in default verification.
+- [ ] 4.2 Register the Wan models (`wan2.7-image-pro`/`wan2.7-image`/`z-image-turbo`) in the `apps/web` playground capability registry as available image-async models (flip from unavailable to available); add an image-async form path (provider/model select, prompt, optional `n`/`size`, submit → poll → render `output.results[].url` as `ImageContent[]`). Gate the form to async-capable Wan image models.
+
+## 5. Verification and Integration
+
+- [ ] 5.1 Run `bun run lint` and resolve new errors without changing existing unrelated warnings.
+- [ ] 5.2 Run `bun run typecheck` across affected workspaces and verify strict/`noUncheckedIndexedAccess` boundaries for the new core `submitImageTask` and the Aliyun Wan image adapter/tests.
+- [ ] 5.3 Run `bun run test` and verify all core image-async + Aliyun Wan image contract tests pass without Provider credentials or external network access.
+- [ ] 5.4 Run `bun run build` and confirm the browser bundle contains no Provider credentials or server-only Provider construction imports.
+- [ ] 5.5 Run the repository formatter for all changed files, inspect the final diff, and confirm no durable storage, user-system, fallback, batch-generation, Webhook, new Provider SDK dependency, or Wan sync `generate`/`edit` implementation was introduced.
