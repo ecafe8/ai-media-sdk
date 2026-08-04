@@ -343,7 +343,7 @@ flowchart LR
 | `SUB-003` | 异步任务与结果契约    | `sub-task-result-contract`      | 进程内任务句柄、状态、等待、结果格式、元数据                                          | 不负责外部队列、长期存储和 Webhook                                                                                              | P0            |
 | `SUB-004` | 能力检查与错误处理    | `sub-capability-error-handling` | 能力声明、参数校验、错误分类、有限重试                                                | 不负责智能路由和业务级 fallback                                                                                                 | P0            |
 | `SUB-005` | SDK 体验与示例应用    | `sub-sdk-examples`              | 包入口、类型导出、Node.js 示例、受控 Web Playground、环境模板和基础文档               | 不负责 Web 管理控制台和产品运营能力                                                                                             | P1            |
-| `SUB-006` | 视频生成（预留）      | `sub-video-generation`          | 视频生成调用入口与任务生命周期，复用核心契约（`TaskHandle<T>`/`GenerationResult<T>`） | ~~MVP 不实现~~ 提前至 Phase 4：因与图像异步共用核心任务契约，首期接入 HappyHorse `t2v`/`i2v`；r2v/video-edit/animate 留后续切片 | P1→MVP 后阶段 |
+| `SUB-006` | 视频生成              | `sub-video-generation`          | 视频生成/编辑调用入口与任务生命周期，复用核心契约（`TaskHandle<T>`/`GenerationResult<T>`） | Phase 4 已实现 HappyHorse `t2v`/`i2v`；`r2v`/`video-edit` live 契约已确认（2026-08-04）待实现；Wan 视频/`animate-*` 资料过时，不推进 | P1→MVP 后阶段 |
 | `SUB-007` | 音频/音乐生成（预留） | `sub-audio-generation`          | 语音合成与音乐生成调用入口，复用核心契约                                              | MVP 不实现；P1/P2 评估                                                                                                          | P1            |
 
 ## 7. 用户故事
