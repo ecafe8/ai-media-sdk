@@ -28,13 +28,17 @@ export interface AliyunParamSupport {
  * A registry entry for a single model id.
  *
  * `requiresFirstFrame` marks first-frame i2v video models that need a
- * `firstFrame` input (t2v models set it false/undefined).
+ * `firstFrame` input (t2v models set it false/undefined). `requiresInputVideo`
+ * marks video-edit models that need a public `inputVideo` URL. `maxReferenceImages`
+ * caps the ordered `referenceImages` array for r2v/video-edit models.
  */
 export interface AliyunModelEntry {
   readonly family: AliyunModelFamily;
   readonly capabilities: ModelCapability;
   readonly paramSupport: AliyunParamSupport;
   readonly requiresFirstFrame?: boolean;
+  readonly requiresInputVideo?: boolean;
+  readonly maxReferenceImages?: number;
 }
 
 const QWEN_T2I_I2I_CAPABILITY: ModelCapability = {
@@ -119,5 +123,28 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     },
     paramSupport: {},
     requiresFirstFrame: true,
+  },
+  "happyhorse-1.1-r2v": {
+    family: "happyhorse-video",
+    capabilities: {
+      modality: "video",
+      generate: true,
+      edit: false,
+      async: true,
+    },
+    paramSupport: {},
+    maxReferenceImages: 9,
+  },
+  "happyhorse-1.0-video-edit": {
+    family: "happyhorse-video",
+    capabilities: {
+      modality: "video",
+      generate: true,
+      edit: false,
+      async: true,
+    },
+    paramSupport: {},
+    requiresInputVideo: true,
+    maxReferenceImages: 5,
   },
 };

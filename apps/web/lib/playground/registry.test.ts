@@ -83,6 +83,22 @@ describe("Playground capability registry", () => {
     expect(i2v?.requiresFirstFrame).toBe(true);
   });
 
+  test("registers HappyHorse r2v and video-edit as available video models", () => {
+    const r2v = getPlaygroundModel("aliyun-bailian", "happyhorse-1.1-r2v");
+    expect(r2v?.modality).toBe("video");
+    expect(r2v?.supportsVideo).toBe(true);
+    expect(r2v?.maxReferenceImages).toBe(9);
+    expect(r2v?.requiresInputVideo).toBeFalsy();
+
+    const edit = getPlaygroundModel(
+      "aliyun-bailian",
+      "happyhorse-1.0-video-edit"
+    );
+    expect(edit?.supportsVideo).toBe(true);
+    expect(edit?.requiresInputVideo).toBe(true);
+    expect(edit?.maxReferenceImages).toBe(5);
+  });
+
   test("registers supported Wan image models as async image models", () => {
     for (const id of ["wan2.7-image-pro", "wan2.7-image"]) {
       const model = getPlaygroundModel("aliyun-bailian", id);

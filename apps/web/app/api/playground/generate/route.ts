@@ -100,6 +100,31 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   ) {
     return undefined;
   }
+  if (
+    candidate.audioSetting !== undefined &&
+    typeof candidate.audioSetting !== "string"
+  ) {
+    return undefined;
+  }
+  if (
+    candidate.inputVideoUrl !== undefined &&
+    (typeof candidate.inputVideoUrl !== "string" ||
+      !isPublicHttpUrl(candidate.inputVideoUrl))
+  ) {
+    return undefined;
+  }
+  let referenceImageUrls: string[] | undefined;
+  if (candidate.referenceImageUrls !== undefined) {
+    if (
+      !Array.isArray(candidate.referenceImageUrls) ||
+      !candidate.referenceImageUrls.every(
+        (item) => typeof item === "string" && isPublicHttpUrl(item)
+      )
+    ) {
+      return undefined;
+    }
+    referenceImageUrls = candidate.referenceImageUrls as string[];
+  }
 
   return {
     provider: candidate.provider as PlaygroundRequest["provider"],
@@ -110,6 +135,11 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
       typeof candidate.referenceImageUrl === "string"
         ? candidate.referenceImageUrl
         : undefined,
+    referenceImageUrls,
+    inputVideoUrl:
+      typeof candidate.inputVideoUrl === "string"
+        ? candidate.inputVideoUrl
+        : undefined,
     size: typeof candidate.size === "string" ? candidate.size : undefined,
     n: typeof candidate.n === "number" ? candidate.n : undefined,
     resolution:
@@ -118,6 +148,10 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
         : undefined,
     duration:
       typeof candidate.duration === "number" ? candidate.duration : undefined,
+    audioSetting:
+      typeof candidate.audioSetting === "string"
+        ? candidate.audioSetting
+        : undefined,
   };
 }
 

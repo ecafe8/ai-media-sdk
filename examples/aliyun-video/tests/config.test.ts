@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { readAliyunVideoConfig, readAliyunVideoModels } from "../src/config.js";
+import {
+  readAliyunVideoConfig,
+  readAliyunVideoExampleInputs,
+  readAliyunVideoModels,
+} from "../src/config.js";
 
 describe("Aliyun HappyHorse video example configuration", () => {
   test("reports missing variables without making a request", () => {
@@ -28,6 +32,23 @@ describe("Aliyun HappyHorse video example configuration", () => {
     ).toEqual({
       apiKey: "test-key",
       baseUrl: "https://workspace.example/api/v1",
+    });
+  });
+
+  test("reads example inputs for r2v and video-edit", () => {
+    expect(readAliyunVideoExampleInputs({})).toEqual({
+      referenceImageUrls: [],
+      inputVideoUrl: undefined,
+    });
+    expect(
+      readAliyunVideoExampleInputs({
+        ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS:
+          "https://x/a.png, https://x/b.png",
+        ALIYUN_BAILIAN_INPUT_VIDEO_URL: "https://x/source.mp4",
+      })
+    ).toEqual({
+      referenceImageUrls: ["https://x/a.png", "https://x/b.png"],
+      inputVideoUrl: "https://x/source.mp4",
     });
   });
 });

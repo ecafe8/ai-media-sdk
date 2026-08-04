@@ -513,6 +513,8 @@ function mapQwenResponse(
 interface AliyunVideoInput {
   readonly prompt: string;
   readonly firstFrame?: ImageContent;
+  readonly referenceImages?: readonly ImageContent[];
+  readonly inputVideo?: { readonly url: string };
   readonly providerOptions?: Readonly<Record<string, unknown>>;
 }
 
@@ -525,6 +527,7 @@ interface AliyunVideoOptions {
   readonly duration?: number;
   readonly watermark?: boolean;
   readonly seed?: number;
+  readonly audio_setting?: string;
 }
 
 /**
@@ -560,6 +563,9 @@ interface AliyunTaskSubmitResponse {
 
 /**
  * Type guard narrowing an `unknown` adapter input to the video input shape.
+ *
+ * Demonstrates structural shape only; per-model media/prompt validation is
+ * performed by `validateVideoInput` before any transport call.
  */
 function isVideoGenerationInput(value: unknown): value is AliyunVideoInput {
   if (typeof value !== "object" || value === null) return false;
@@ -579,6 +585,7 @@ function readAliyunVideoOptions(
     duration?: number;
     watermark?: boolean;
     seed?: number;
+    audio_setting?: string;
   } = {};
   if (typeof candidate.resolution === "string") {
     options.resolution = candidate.resolution;
@@ -591,6 +598,9 @@ function readAliyunVideoOptions(
     options.watermark = candidate.watermark;
   }
   if (typeof candidate.seed === "number") options.seed = candidate.seed;
+  if (typeof candidate.audio_setting === "string") {
+    options.audio_setting = candidate.audio_setting;
+  }
   return options;
 }
 
@@ -604,44 +614,178 @@ function buildTaskUrl(config: AliyunBailianConfig, taskId: string): string {
   return `${base}${TASK_PATH_PREFIX}${encodeURIComponent(taskId)}`;
 }
 
-function buildVideoBody(
-  input: AliyunVideoInput,
-  modelId: string,
-  entry: AliyunModelEntry
-): Record<string, unknown> {
-  const body: Record<string, unknown> = { model: modelId };
-  const inputObj: Record<string, unknown> = { prompt: input.prompt };
+const VIDEO_RESOLUTIONS = ["480P", "720P", "1080P"] as const;
+const VIDEO_EDIT_RESOLUTIONS = ["720P", "1080P"] as const;
 
-  if (entry.requiresFirstFrame) {
+/**
+ * Validate model-specific media combination, prompt requirement, reference
+ * counts, and input-video URL protocol before any transport call. The adapter
+ * is the sole authority for these rules.
+ */
+function validateVideoInput(
+  input: AliyunVideoInput,
+  entry: AliyunModelEntry
+): void {
+  const isVideoEdit = entry.requiresInputVideo === true;
+  const isR2v = entry.maxReferenceImages !== undefined && !isVideoEdit;
+  const isI2v = entry.requiresFirstFrame === true;
+  const isT2v = !isI2v && !isR2v && !isVideoEdit;
+
+  if (isT2v) {
+    if (input.firstFrame || input.referenceImages || input.inputVideo) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "This video model does not accept media inputs",
+      });
+    }
+  }
+
+  if (isI2v) {
     if (!input.firstFrame) {
       throw new SdkError({
         code: "INVALID_REQUEST",
         message: "First-frame image input is required for this video model",
       });
     }
+    if (input.referenceImages || input.inputVideo) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message:
+          "This video model does not accept reference images or input video",
+      });
+    }
+  }
+
+  if (isR2v) {
+    if (!input.referenceImages || input.referenceImages.length === 0) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "Reference images are required for this video model",
+      });
+    }
+    const max = entry.maxReferenceImages ?? 9;
+    if (input.referenceImages.length > max) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `This video model accepts at most ${max} reference images`,
+      });
+    }
+    if (input.firstFrame || input.inputVideo) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message:
+          "This video model does not accept a first frame or input video",
+      });
+    }
+  }
+
+  if (isVideoEdit) {
+    if (!input.inputVideo) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "An input video URL is required for this video model",
+      });
+    }
+    const url = input.inputVideo.url;
+    if (!url || (!url.startsWith("http:") && !url.startsWith("https:"))) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "The input video URL must be a public http or https URL",
+      });
+    }
+    const max = entry.maxReferenceImages ?? 5;
+    if (input.referenceImages && input.referenceImages.length > max) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `This video model accepts at most ${max} reference images`,
+      });
+    }
+    if (input.firstFrame) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "This video model does not accept a first-frame image",
+      });
+    }
+  }
+
+  if (!isI2v && input.prompt.length === 0) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "prompt must not be empty for this video model",
+    });
+  }
+}
+
+function buildVideoBody(
+  input: AliyunVideoInput,
+  modelId: string,
+  entry: AliyunModelEntry
+): Record<string, unknown> {
+  validateVideoInput(input, entry);
+
+  const isVideoEdit = entry.requiresInputVideo === true;
+  const isR2v = entry.maxReferenceImages !== undefined && !isVideoEdit;
+  const isI2v = entry.requiresFirstFrame === true;
+
+  const body: Record<string, unknown> = { model: modelId };
+  const inputObj: Record<string, unknown> = {};
+
+  if (isI2v && input.firstFrame) {
+    inputObj.prompt = input.prompt;
     inputObj.media = [
       { type: "first_frame", url: mapImageContent(input.firstFrame) },
     ];
-  } else if (input.firstFrame) {
-    throw new SdkError({
-      code: "INVALID_REQUEST",
-      message: "This video model does not accept a first-frame image",
-    });
+  } else if (isR2v && input.referenceImages) {
+    inputObj.prompt = input.prompt;
+    inputObj.media = input.referenceImages.map((image) => ({
+      type: "reference_image",
+      url: mapImageContent(image),
+    }));
+  } else if (isVideoEdit) {
+    inputObj.prompt = input.prompt;
+    const media: Array<{ type: string; url: string }> = [
+      { type: "video", url: input.inputVideo!.url },
+    ];
+    for (const image of input.referenceImages ?? []) {
+      media.push({ type: "reference_image", url: mapImageContent(image) });
+    }
+    inputObj.media = media;
+  } else {
+    inputObj.prompt = input.prompt;
   }
   body.input = inputObj;
 
   const aliyun = readAliyunVideoOptions(input.providerOptions);
   const parameters: Record<string, unknown> = {};
   if (aliyun.resolution !== undefined) {
+    const allowed: readonly string[] = isVideoEdit
+      ? VIDEO_EDIT_RESOLUTIONS
+      : VIDEO_RESOLUTIONS;
+    if (!allowed.includes(aliyun.resolution)) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `resolution must be one of ${allowed.join(", ")}`,
+      });
+    }
     parameters.resolution = aliyun.resolution;
   }
-  // i2v follows the first-frame aspect ratio; `ratio` is not forwarded.
-  if (aliyun.ratio !== undefined && !entry.requiresFirstFrame) {
+  if (aliyun.ratio !== undefined && !isI2v && !isVideoEdit) {
     parameters.ratio = aliyun.ratio;
   }
-  if (aliyun.duration !== undefined) parameters.duration = aliyun.duration;
+  if (aliyun.duration !== undefined && !isVideoEdit) {
+    parameters.duration = aliyun.duration;
+  }
   if (aliyun.watermark !== undefined) parameters.watermark = aliyun.watermark;
   if (aliyun.seed !== undefined) parameters.seed = aliyun.seed;
+  if (aliyun.audio_setting !== undefined && isVideoEdit) {
+    if (aliyun.audio_setting !== "auto" && aliyun.audio_setting !== "origin") {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: 'audio_setting must be "auto" or "origin"',
+      });
+    }
+    parameters.audio_setting = aliyun.audio_setting;
+  }
   if (Object.keys(parameters).length > 0) body.parameters = parameters;
   return body;
 }

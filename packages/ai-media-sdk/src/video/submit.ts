@@ -9,17 +9,25 @@ import type {
 /**
  * Video API entry point.
  *
- * `submitVideoTask` is the video twin of a future `submitImageTask`: it
- * validates the video modality, the model's `async` capability, and the
- * prompt, builds a modality-neutral `AdapterRequest`, and dispatches to the
- * bound adapter `submit()`, returning a `TaskHandle<VideoContent[]>`. First-
- * frame (i2v) presence and provider-native parameter validation are enforced
- * by the adapter, not the core.
+ * `submitVideoTask` is the video twin of `submitImageTask`: it validates the
+ * video modality and the model's `async` capability, builds a modality-neutral
+ * `AdapterRequest`, and dispatches to the bound adapter `submit()`, returning a
+ * `TaskHandle<VideoContent[]>`. Model-specific media presence, prompt
+ * requirement, and provider-native parameter validation are enforced by the
+ * adapter, not the core (prompt is optional for i2v, required for t2v/r2v/
+ * video-edit).
  */
 export async function submitVideoTask(
   request: VideoGenerationRequest
 ): Promise<TaskHandle<VideoContent[]>> {
-  const { model, prompt, firstFrame, providerOptions } = request;
+  const {
+    model,
+    prompt,
+    firstFrame,
+    referenceImages,
+    inputVideo,
+    providerOptions,
+  } = request;
 
   if (!model.capabilities.async) {
     throw new SdkError({
@@ -35,13 +43,12 @@ export async function submitVideoTask(
     });
   }
 
-  if (prompt.length === 0) {
-    throw new SdkError({
-      code: "INVALID_REQUEST",
-      message: "prompt must not be empty",
-    });
-  }
-
-  const input: VideoGenerationInput = { prompt, firstFrame, providerOptions };
+  const input: VideoGenerationInput = {
+    prompt,
+    firstFrame,
+    referenceImages,
+    inputVideo,
+    providerOptions,
+  };
   return submitTask<VideoContent[]>({ model, modality: "video", input });
 }

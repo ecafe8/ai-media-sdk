@@ -43,4 +43,40 @@ describe("Playground generate route", () => {
     expect(response.status).toBe(422);
     expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
   });
+
+  test("rejects a non-HTTP input video URL before Provider dispatch", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "aliyun-bailian",
+          model: "happyhorse-1.0-video-edit",
+          mode: "video",
+          prompt: "edit",
+          inputVideoUrl: "ftp://x/source.mp4",
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("rejects malformed reference image URLs before Provider dispatch", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "aliyun-bailian",
+          model: "happyhorse-1.1-r2v",
+          mode: "video",
+          prompt: "p",
+          referenceImageUrls: ["https://x/a.png", "not-a-url"],
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+  });
 });

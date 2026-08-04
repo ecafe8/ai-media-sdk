@@ -176,20 +176,44 @@ export async function executePlaygroundRequest(
     const selection = createProviderSelection(request);
 
     if (request.mode === "video") {
-      const task = await submitVideoTask({
+      const model = selection.model;
+      const videoRequest: Parameters<typeof submitVideoTask>[0] = {
         model: selection.instance as VideoModelInstance,
         prompt: request.prompt,
         ...(request.referenceImageUrl
           ? { firstFrame: { url: request.referenceImageUrl } }
           : {}),
+        ...(request.referenceImageUrls?.length
+          ? {
+              referenceImages: request.referenceImageUrls.map((url) => ({
+                url,
+              })),
+            }
+          : {}),
+        ...(request.inputVideoUrl
+          ? { inputVideo: { url: request.inputVideoUrl } }
+          : {}),
         providerOptions: {
           aliyun: {
             ...(request.resolution ? { resolution: request.resolution } : {}),
             ...(request.duration ? { duration: request.duration } : {}),
+            ...(request.audioSetting
+              ? { audio_setting: request.audioSetting }
+              : {}),
             watermark: false,
           },
         },
-      });
+      };
+      // video-edit does not support duration; drop it when the model requires
+      // an input video (the provider derives duration from the source).
+      if (model.requiresInputVideo && videoRequest.providerOptions?.aliyun) {
+        const opts = videoRequest.providerOptions.aliyun as Record<
+          string,
+          unknown
+        >;
+        delete opts.duration;
+      }
+      const task = await submitVideoTask(videoRequest);
       const result = await task.wait({
         pollIntervalMs: 15_000,
         timeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,

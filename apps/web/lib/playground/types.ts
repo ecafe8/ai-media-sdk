@@ -14,6 +14,8 @@ export interface PlaygroundModel {
   readonly supportsVideo: boolean;
   readonly supportsAsync?: boolean;
   readonly requiresFirstFrame?: boolean;
+  readonly requiresInputVideo?: boolean;
+  readonly maxReferenceImages?: number;
   readonly maxEditImages?: number;
   readonly recommendation: string;
   readonly configured: boolean;
@@ -25,10 +27,13 @@ export interface PlaygroundRequest {
   readonly mode: PlaygroundMode;
   readonly prompt: string;
   readonly referenceImageUrl?: string;
+  readonly referenceImageUrls?: readonly string[];
+  readonly inputVideoUrl?: string;
   readonly size?: string;
   readonly n?: number;
   readonly resolution?: string;
   readonly duration?: number;
+  readonly audioSetting?: string;
 }
 
 export interface PlaygroundMetadata {

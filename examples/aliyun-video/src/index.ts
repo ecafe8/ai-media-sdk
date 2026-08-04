@@ -1,12 +1,17 @@
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import { submitVideoTask } from "@ai-media/sdk";
 
-import { readAliyunVideoConfig, readAliyunVideoModels } from "./config.js";
+import {
+  readAliyunVideoConfig,
+  readAliyunVideoExampleInputs,
+  readAliyunVideoModels,
+} from "./config.js";
 import { saveBatchSummary, saveResult } from "./save.js";
 
 const prompt =
   process.argv.slice(2).join(" ") || "一座由硬纸板搭建的微型城市在夜晚焕发生机";
 const models = readAliyunVideoModels();
+const exampleInputs = readAliyunVideoExampleInputs();
 const batchStartedAt = Date.now();
 const results: Array<Record<string, unknown>> = [];
 
@@ -17,14 +22,26 @@ try {
     const startedAt = Date.now();
     console.log(`[${modelId}] starting; submitting async task`);
     try {
+      const isVideoEdit = modelId.includes("video-edit");
+      const isR2v = modelId.includes("r2v");
       const task = await submitVideoTask({
         model: provider.video(modelId),
         prompt,
+        ...(isVideoEdit && exampleInputs.inputVideoUrl
+          ? { inputVideo: { url: exampleInputs.inputVideoUrl } }
+          : {}),
+        ...(isR2v && exampleInputs.referenceImageUrls.length > 0
+          ? {
+              referenceImages: exampleInputs.referenceImageUrls.map(
+                (url) => ({ url })
+              ),
+            }
+          : {}),
         providerOptions: {
           aliyun: {
             resolution: "720P",
-            ratio: "16:9",
-            duration: 5,
+            ...(isR2v ? { ratio: "16:9" } : {}),
+            ...(isVideoEdit ? {} : { duration: 5 }),
             watermark: false,
           },
         },

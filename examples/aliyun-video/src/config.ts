@@ -36,3 +36,28 @@ export function readAliyunVideoModels(
         .filter(Boolean)
     : ["happyhorse-1.1-t2v"];
 }
+
+/**
+ * Read optional example inputs for r2v/video-edit modes.
+ *
+ * - `ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS`: comma-separated reference image URLs.
+ * - `ALIYUN_BAILIAN_INPUT_VIDEO_URL`: a public source video URL for video-edit.
+ */
+export interface AliyunVideoExampleInputs {
+  readonly referenceImageUrls: string[];
+  readonly inputVideoUrl?: string;
+}
+
+export function readAliyunVideoExampleInputs(
+  env: NodeJS.ProcessEnv = process.env
+): AliyunVideoExampleInputs {
+  const raw = env.ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS;
+  const referenceImageUrls = raw
+    ? raw
+        .split(",")
+        .map((url) => url.trim())
+        .filter(Boolean)
+    : [];
+  const inputVideoUrl = env.ALIYUN_BAILIAN_INPUT_VIDEO_URL?.trim() || undefined;
+  return { referenceImageUrls, inputVideoUrl };
+}

@@ -30,10 +30,13 @@ export function Playground({ models }: PlaygroundProps) {
   const [mode, setMode] = useState<PlaygroundMode>("generate");
   const [prompt, setPrompt] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
+  const [referenceImageUrlsText, setReferenceImageUrlsText] = useState("");
+  const [inputVideoUrl, setInputVideoUrl] = useState("");
   const [size, setSize] = useState("1024*1024");
   const [n, setN] = useState("1");
   const [resolution, setResolution] = useState("720P");
   const [duration, setDuration] = useState("5");
+  const [audioSetting, setAudioSetting] = useState("auto");
   const [result, setResult] = useState<PlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
@@ -46,6 +49,8 @@ export function Playground({ models }: PlaygroundProps) {
   const canVideo = currentModel?.supportsVideo ?? false;
   const isVideo = mode === "video";
   const needsFirstFrame = currentModel?.requiresFirstFrame ?? false;
+  const needsInputVideo = currentModel?.requiresInputVideo ?? false;
+  const maxRefs = currentModel?.maxReferenceImages;
 
   function changeProvider(nextProvider: PlaygroundProvider) {
     const nextModels = models.filter(
@@ -60,6 +65,8 @@ export function Playground({ models }: PlaygroundProps) {
       setMode("generate");
     }
     setReferenceImageUrl("");
+    setReferenceImageUrlsText("");
+    setInputVideoUrl("");
   }
 
   function changeModel(nextModelId: string) {
@@ -89,6 +96,22 @@ export function Playground({ models }: PlaygroundProps) {
       setValidationError("该视频模型需要一个有效的首帧图片 URL。");
       return;
     }
+    if (isVideo && needsInputVideo && !isValidHttpUrl(inputVideoUrl)) {
+      setValidationError("该视频模型需要一个有效的公网视频 URL。");
+      return;
+    }
+    if (
+      isVideo &&
+      maxRefs &&
+      !needsFirstFrame &&
+      !needsInputVideo &&
+      !referenceImageUrlsText.trim()
+    ) {
+      setValidationError(
+        `该视频模型需要至少 1 张参考图 URL（最多 ${maxRefs} 张，逗号分隔）。`
+      );
+      return;
+    }
 
     setValidationError("");
     setIsSubmitting(true);
@@ -103,9 +126,28 @@ export function Playground({ models }: PlaygroundProps) {
       if (mode === "edit") {
         body.referenceImageUrl = referenceImageUrl;
       } else if (isVideo) {
-        if (referenceImageUrl) body.referenceImageUrl = referenceImageUrl;
+        if (needsFirstFrame && referenceImageUrl) {
+          body.referenceImageUrl = referenceImageUrl;
+        }
+        if (needsInputVideo) {
+          body.inputVideoUrl = inputVideoUrl;
+          if (referenceImageUrlsText.trim()) {
+            body.referenceImageUrls = referenceImageUrlsText
+              .split(/[,\n]/)
+              .map((s) => s.trim())
+              .filter(Boolean);
+          }
+        }
+        if (maxRefs && !needsFirstFrame && !needsInputVideo) {
+          body.referenceImageUrls = referenceImageUrlsText
+            .split(/[,\n]/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
         body.resolution = resolution;
-        body.duration = Number(duration);
+        if (!needsInputVideo) {
+          body.duration = Number(duration);
+        }
       } else {
         body.size = size;
         body.n = Number(n);
@@ -134,6 +176,8 @@ export function Playground({ models }: PlaygroundProps) {
     setMode("generate");
     setPrompt("");
     setReferenceImageUrl("");
+    setReferenceImageUrlsText("");
+    setInputVideoUrl("");
     setResult(undefined);
     setValidationError("");
   }
@@ -269,6 +313,47 @@ export function Playground({ models }: PlaygroundProps) {
               </Field>
             ) : null}
 
+            {isVideo && needsInputVideo ? (
+              <Field label="源视频 URL" required>
+                <input
+                  type="url"
+                  value={inputVideoUrl}
+                  placeholder="https://.../source.mp4"
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  onChange={(event) => setInputVideoUrl(event.target.value)}
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  仅公网 http/https URL；不支持 base64 或本地文件。
+                </p>
+              </Field>
+            ) : null}
+
+            {isVideo && maxRefs && !needsFirstFrame ? (
+              <Field
+                label={
+                  needsInputVideo
+                    ? `参考图 URL（可选，最多 ${maxRefs} 张）`
+                    : `参考图 URL（最多 ${maxRefs} 张，逗号分隔）`
+                }
+                required={!needsInputVideo}
+              >
+                <textarea
+                  value={referenceImageUrlsText}
+                  rows={3}
+                  placeholder="https://.../ref1.png, https://.../ref2.png"
+                  className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                  onChange={(event) =>
+                    setReferenceImageUrlsText(event.target.value)
+                  }
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  {needsInputVideo
+                    ? "可选参考图，按顺序对应 prompt 中的 [Image N]。"
+                    : "按顺序对应 prompt 中的 [Image N]；宽高比跟随参数。"}
+                </p>
+              </Field>
+            ) : null}
+
             <Field label="提示词" required>
               <textarea
                 value={prompt}
@@ -301,24 +386,40 @@ export function Playground({ models }: PlaygroundProps) {
                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                     onChange={(event) => setResolution(event.target.value)}
                   >
-                    <option value="480P">480P</option>
+                    {needsInputVideo ? null : (
+                      <option value="480P">480P</option>
+                    )}
                     <option value="720P">720P</option>
                     <option value="1080P">1080P</option>
                   </select>
                 </Field>
-                <Field label="时长（秒）">
-                  <select
-                    value={duration}
-                    aria-label="时长"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
-                    onChange={(event) => setDuration(event.target.value)}
-                  >
-                    <option value="3">3 秒</option>
-                    <option value="5">5 秒</option>
-                    <option value="10">10 秒</option>
-                    <option value="15">15 秒</option>
-                  </select>
-                </Field>
+                {needsInputVideo ? (
+                  <Field label="声音设置">
+                    <select
+                      value={audioSetting}
+                      aria-label="声音设置"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                      onChange={(event) => setAudioSetting(event.target.value)}
+                    >
+                      <option value="auto">auto（模型控制）</option>
+                      <option value="origin">origin（保留原声）</option>
+                    </select>
+                  </Field>
+                ) : (
+                  <Field label="时长（秒）">
+                    <select
+                      value={duration}
+                      aria-label="时长"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                      onChange={(event) => setDuration(event.target.value)}
+                    >
+                      <option value="3">3 秒</option>
+                      <option value="5">5 秒</option>
+                      <option value="10">10 秒</option>
+                      <option value="15">15 秒</option>
+                    </select>
+                  </Field>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">

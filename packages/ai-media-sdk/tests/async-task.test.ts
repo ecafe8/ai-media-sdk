@@ -193,17 +193,62 @@ describe("submitVideoTask", () => {
     expect(requests).toHaveLength(0);
   });
 
-  test("rejects an empty prompt before dispatch", async () => {
+  test("dispatches r2v with ordered reference images", async () => {
     const stubHandle = { taskId: "t" } as unknown as TaskHandle<VideoContent[]>;
     const { adapter, requests } = createFakeVideoAdapter(
       async () => stubHandle
     );
     const model = videoModel(adapter);
 
-    await expect(submitVideoTask({ model, prompt: "" })).rejects.toMatchObject({
-      code: "INVALID_REQUEST",
+    const task = await submitVideoTask({
+      model,
+      prompt: "[Image 1] 中的角色",
+      referenceImages: [{ url: "https://x/a.png" }, { url: "https://x/b.png" }],
     });
-    expect(requests).toHaveLength(0);
+
+    expect(task).toBe(stubHandle);
+    expect(requests).toHaveLength(1);
+    const input = requests[0]!.input as {
+      referenceImages?: readonly { url?: string }[];
+    };
+    expect(input.referenceImages).toHaveLength(2);
+    expect(input.referenceImages?.[0]?.url).toBe("https://x/a.png");
+  });
+
+  test("dispatches video-edit with an input video", async () => {
+    const stubHandle = { taskId: "t" } as unknown as TaskHandle<VideoContent[]>;
+    const { adapter, requests } = createFakeVideoAdapter(
+      async () => stubHandle
+    );
+    const model = videoModel(adapter);
+
+    const task = await submitVideoTask({
+      model,
+      prompt: "换风格",
+      inputVideo: { url: "https://x/source.mp4" },
+    });
+
+    expect(task).toBe(stubHandle);
+    expect(requests).toHaveLength(1);
+    const input = requests[0]!.input as { inputVideo?: { url?: string } };
+    expect(input.inputVideo?.url).toBe("https://x/source.mp4");
+  });
+
+  test("dispatches an i2v model with an empty prompt (prompt is adapter-validated)", async () => {
+    const stubHandle = { taskId: "t" } as unknown as TaskHandle<VideoContent[]>;
+    const { adapter, requests } = createFakeVideoAdapter(
+      async () => stubHandle
+    );
+    const model = videoModel(adapter);
+
+    const task = await submitVideoTask({
+      model,
+      prompt: "",
+      firstFrame: { url: "https://x/first.png" },
+    });
+
+    expect(task).toBe(stubHandle);
+    expect(requests).toHaveLength(1);
   });
 });
 
