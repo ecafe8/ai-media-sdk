@@ -12,6 +12,7 @@
     "@ai-media/sdk": "workspace:*"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.0"
+    "@types/bun": "^1.2.0",
+    "@types/node": "^26.1.2"
   }
 }
