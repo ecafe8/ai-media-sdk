@@ -8,7 +8,8 @@ Phase 4 provides a working HappyHorse t2v/i2v path, but the current video contra
 - Add Aliyun registry entries and capability metadata for `happyhorse-1.1-r2v` and `happyhorse-1.0-video-edit`.
 - Add r2v request mapping: 1-9 ordered `reference_image` media entries and t2v-compatible video parameters.
 - Add video-edit request mapping: one public video URL followed by 0-5 `reference_image` entries, plus `audio_setting`; omit unsupported `ratio` and `duration` fields.
-- Gate incompatible media combinations and media counts before transport dispatch with `INVALID_REQUEST`.
+- Gate incompatible media combinations, media counts, and prompt requirements before transport dispatch with `INVALID_REQUEST`. Validation SHALL live in the adapter (which owns the provider registry), not the core package.
+- Allow i2v with an empty prompt (the provider treats prompt as optional for i2v), while t2v/r2v/video-edit require a non-empty prompt.
 - Preserve the existing shared HappyHorse submission, polling, result mapping, transport, and error-classification behavior for t2v/i2v.
 - Add fake-transport contract coverage for request bodies, media ordering, capability gating, polling results, and HTTP/transport failures.
 - Register the supported modes in the Playground and extend the Aliyun video example without adding real-network calls to default tests.
@@ -22,9 +23,10 @@ Phase 4 provides a working HappyHorse t2v/i2v path, but the current video contra
 
 ### Modified Capabilities
 
-- `sdk-package-foundation`: Extend video request/input contracts and require media-combination validation for the unified `submitVideoTask` entry point.
-- `aliyun-video-generation`: Add r2v and video-edit model registration, media mappings, native parameter rules, and capability gating.
-- `provider-package-foundation`: Extend the Aliyun video adapter while retaining the shared transport, task polling, and error classification boundaries.
+Existing capabilities that gain new requirements without changing their existing behavior. Each delta uses `ADDED Requirements`; no existing requirement is rewritten.
+
+- `sdk-package-foundation`: Extend video request/input contracts with `referenceImages` and `inputVideo`, and clarify that the core validates only async/modality while the adapter validates model-specific media combination and prompt requirements.
+- `provider-package-foundation`: Extend the Aliyun video adapter with a shared transport and registry surface for the new modes, retaining the existing transport, task polling, and error classification boundaries.
 - `playground-form`: Expose the new video modes and their required media inputs without changing the existing image flow.
 - `sdk-usage-docs`: Document r2v and video-edit invocation, media constraints, and provider-specific options.
 
@@ -36,3 +38,4 @@ Phase 4 provides a working HappyHorse t2v/i2v path, but the current video contra
 - Example workspace: `examples/aliyun-video/` configuration, invocation, and offline tests.
 - OpenSpec delta specs and implementation documentation under `openspec/changes/2026-08-04-happyhorse-video-r2v-edit/`.
 - No new runtime dependency, external SDK, persistent task store, webhook, or real-network CI test.
+- `inputVideo` is modeled as a public URL reference (`{ readonly url: string }`); the adapter SHALL require an `http:`/`https:` URL and reject missing or non-HTTP URLs before transport.

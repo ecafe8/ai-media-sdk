@@ -18,3 +18,22 @@ The Playground SHALL expose configured HappyHorse r2v and video-edit models with
 
 - **WHEN** the user submits r2v without references or video-edit without a source video
 - **THEN** the form SHALL show an associated validation message and SHALL not call the server route
+
+### Requirement: Playground presents extended video results and errors
+
+The Playground SHALL present r2v/video-edit task status (processing, succeeded, failed), render the returned `VideoContent[]` (video playback plus download link), and surface sanitized Provider errors without leaking credentials or internal stack traces. During a running task, the primary action SHALL be disabled to prevent duplicate submission.
+
+#### Scenario: Render a successful video-edit result
+
+- **WHEN** a video-edit task succeeds and returns a `VideoContent` URL
+- **THEN** the Playground SHALL render the video and expose a download link, and the processing state SHALL clear
+
+#### Scenario: Surface a sanitized Provider error
+
+- **WHEN** a video-edit task fails with a Provider error
+- **THEN** the Playground SHALL show a stable error message and SHALL not expose API keys, full request headers, or internal stack traces
+
+#### Scenario: Prevent duplicate submission while processing
+
+- **WHEN** an r2v or video-edit task is submitting or processing
+- **THEN** the primary action SHALL be disabled or otherwise prevent duplicate generation and communicate the current status in text

@@ -37,6 +37,30 @@ The provider SHALL submit `happyhorse-1.0-video-edit` requests with exactly one 
 - **WHEN** a caller omits the source video URL
 - **THEN** the request SHALL fail with `INVALID_REQUEST` before any provider request is sent
 
+#### Scenario: video-edit rejects a non-HTTP source video URL
+
+- **WHEN** a caller supplies a source video URL that is missing, empty, or uses a non-`http:`/`https:` protocol
+- **THEN** the request SHALL fail with `INVALID_REQUEST` before any provider request is sent
+
+### Requirement: HappyHorse prompt requirement is per mode
+
+The provider SHALL require a non-empty `prompt` for `happyhorse-1.1-r2v` and `happyhorse-1.0-video-edit`, and SHALL allow an empty `prompt` for `happyhorse-1.1-i2v` (first-frame image-to-video), matching the provider contract.
+
+#### Scenario: r2v rejects an empty prompt
+
+- **WHEN** a caller submits an r2v request with an empty prompt
+- **THEN** the request SHALL fail with `INVALID_REQUEST` before any provider request is sent
+
+#### Scenario: video-edit rejects an empty prompt
+
+- **WHEN** a caller submits a video-edit request with an empty prompt
+- **THEN** the request SHALL fail with `INVALID_REQUEST` before any provider request is sent
+
+#### Scenario: i2v accepts an empty prompt
+
+- **WHEN** a caller submits an i2v request with an empty prompt and one first frame
+- **THEN** the request SHALL proceed and not fail on prompt presence
+
 ### Requirement: HappyHorse extended video tasks use the shared async lifecycle
 
 The r2v and video-edit modes SHALL use the existing async submission header, task polling endpoint, status mapping, error classification, and `output.video_url` result mapping. They SHALL not introduce a runtime provider SDK or persistent task storage.
