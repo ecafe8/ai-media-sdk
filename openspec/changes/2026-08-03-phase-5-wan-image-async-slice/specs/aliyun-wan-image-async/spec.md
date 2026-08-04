@@ -16,12 +16,17 @@ The Aliyun adapter `submit()` SHALL route `wan-image`-family requests to `POST {
 
 ### Requirement: Wan image body builds a prompt and parameters input
 
-For a Wan text-to-image model, the adapter SHALL build the body `{ model, input: { prompt }, parameters: { size?, n?, seed? } }` where `size` and `n` are sourced from the public `ImageGenerationInput` and `seed` (and other Aliyun-native fields) are sourced from `providerOptions.aliyun`. No `media` field SHALL be present.
+For a Wan text-to-image model, the adapter SHALL build the body `{ model, input: { prompt }, parameters: { size?, n?, watermark?, seed? } }` where `size` and `n` are sourced from the public `ImageGenerationInput` (gated by `entry.paramSupport` — `z-image-turbo` supports only `size`, not `n`) and Aliyun-native fields (`watermark`, `seed`, and Wan2.7-specific `thinking_mode`/`color_palette`/`enable_sequential`) are sourced from `providerOptions.aliyun`. Qwen-only fields (`negative_prompt`, `prompt_extend`) SHALL NOT be forwarded. The adapter SHALL use a dedicated `buildWanImageParameters` (not the Qwen `buildParameters`). No `media` field SHALL be present.
 
 #### Scenario: Wan body carries prompt and ali-native parameters
 
-- **WHEN** `submit()` builds a Wan request with public `size`/`n` and `providerOptions.aliyun` carrying `seed`
-- **THEN** the body `input.prompt` SHALL carry the prompt, `parameters.size`/`n` SHALL carry the public values, `parameters.seed` SHALL carry the aliyun-native value, and `input.media` SHALL be absent
+- **WHEN** `submit()` builds a Wan request with public `size`/`n` and `providerOptions.aliyun` carrying `watermark` and `seed`
+- **THEN** the body `input.prompt` SHALL carry the prompt, `parameters.size`/`n` SHALL carry the public values, `parameters.watermark`/`seed` SHALL carry the aliyun-native values, and `input.media` SHALL be absent
+
+#### Scenario: z-image-turbo omits n from parameters
+
+- **WHEN** `submit()` builds a request for `z-image-turbo` (whose `paramSupport` lacks `n`)
+- **THEN** `parameters.n` SHALL be absent and `parameters.size` SHALL carry the public `size` value if provided
 
 ### Requirement: Shared getTask polls the tasks endpoint and maps task status for Wan image
 
@@ -50,6 +55,11 @@ Unlike HappyHorse video (fixed `video_count: 1`), Wan image async SHALL map each
 
 - **WHEN** `getTask` reads a `SUCCEEDED` status with `output.results` containing multiple URL entries
 - **THEN** the `result.content` SHALL be an `ImageContent[]` with one entry per URL, preserving order
+
+#### Scenario: SUCCEEDED with empty or missing results maps to PROVIDER_ERROR
+
+- **WHEN** `getTask` reads a `SUCCEEDED` status where `output.results` is absent, an empty array, or contains entries without `url`
+- **THEN** the poll closure SHALL return `{ status: "failed", error }` with an `SdkError` of code `PROVIDER_ERROR` (mirroring the video path's handling of a missing `video_url` at `index.ts:688-695`)
 
 ### Requirement: Aliyun Wan image HTTP failures classify to stable SDK error codes
 
