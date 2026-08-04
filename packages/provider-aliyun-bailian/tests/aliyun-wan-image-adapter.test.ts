@@ -82,7 +82,9 @@ describe("aliyun-bailian Wan image async adapter", () => {
     const body = request.body as Record<string, unknown>;
     expect(body.model).toBe(WAN_PRO);
     const input = body.input as Record<string, unknown>;
-    expect(input.prompt).toBe("一只猫");
+    expect(input.messages).toEqual([
+      { role: "user", content: [{ text: "一只猫" }] },
+    ]);
     expect(input.media).toBeUndefined();
     const parameters = body.parameters as Record<string, unknown>;
     expect(parameters.size).toBe("1024*1024");
@@ -93,24 +95,14 @@ describe("aliyun-bailian Wan image async adapter", () => {
     expect(parameters.prompt_extend).toBeUndefined();
   });
 
-  test("omits n for z-image-turbo", async () => {
-    const { transport, requests } = createFakeTransport([
-      submitResponse(),
-      taskResponse("SUCCEEDED", { results: [{ url: "https://x/1.png" }] }),
-    ]);
+  test("rejects z-image-turbo async submission before transport", async () => {
+    const { transport, requests } = createFakeTransport([submitResponse()]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
 
-    const task = await submitImageTask({
-      model: provider.image(Z_IMAGE),
-      prompt: "一只猫",
-      n: 2,
-      size: "2K",
-    });
-    await task.wait(WAIT_OPTS);
-
-    const body = requests[0]!.body as { parameters: Record<string, unknown> };
-    expect(body.parameters.n).toBeUndefined();
-    expect(body.parameters.size).toBe("2K");
+    await expect(
+      submitImageTask({ model: provider.image(Z_IMAGE), prompt: "一只猫" })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(requests).toHaveLength(0);
   });
 
   test("polls PENDING -> PROCESSING -> SUCCEEDED and maps multiple image urls", async () => {

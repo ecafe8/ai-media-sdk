@@ -12,8 +12,10 @@ const results: Array<Record<string, unknown>> = [];
 
 try {
   const provider = createAliyunBailianProvider(readAliyunVideoConfig());
+  console.log(`Starting batch: ${models.length} model(s)`);
   for (const modelId of models) {
     const startedAt = Date.now();
+    console.log(`[${modelId}] starting; submitting async task`);
     try {
       const task = await submitVideoTask({
         model: provider.video(modelId),
@@ -27,10 +29,12 @@ try {
           },
         },
       });
+      console.log(`[${modelId}] task submitted; polling provider`);
       const result = await task.wait({
         pollIntervalMs: 15_000,
         timeoutMs: 600_000,
       });
+      console.log(`[${modelId}] generation succeeded; saving result(s)`);
       const outputDir = await saveResult(result.content, {
         provider: result.provider,
         model: result.model,
@@ -54,7 +58,7 @@ try {
       const message =
         error instanceof Error ? error.message : "Video generation failed";
       results.push({ model: modelId, status: "failed", error: message });
-      console.error(`[${modelId}] ${message}`);
+      console.error(`[${modelId}] failed: ${message}`);
     }
   }
   console.log(JSON.stringify({ prompt, results }, null, 2));

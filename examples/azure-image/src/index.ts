@@ -11,8 +11,11 @@ const results: Array<Record<string, unknown>> = [];
 
 try {
   const provider = createAzureOpenAIProvider(readAzureConfig());
-  for (const deployment of readAzureDeployments()) {
+  const deployments = readAzureDeployments();
+  console.log(`Starting batch: ${deployments.length} deployment(s)`);
+  for (const deployment of deployments) {
     const startedAt = Date.now();
+    console.log(`[${deployment}] starting; submitting sync request`);
     try {
       const result = await generateImage({
         model: provider.image(deployment),
@@ -31,6 +34,9 @@ try {
           .slice(11, 23)
           .replace(/[:.]/g, ""),
       });
+      console.log(
+        `[${deployment}] generation succeeded; saved to ${outputDir}`
+      );
       results.push({ model: deployment, status: "succeeded", outputDir });
       console.log(
         JSON.stringify(
@@ -43,7 +49,7 @@ try {
       const message =
         error instanceof Error ? error.message : "Image generation failed";
       results.push({ model: deployment, status: "failed", error: message });
-      console.error(`[${deployment}] ${message}`);
+      console.error(`[${deployment}] failed: ${message}`);
     }
   }
   console.log(JSON.stringify({ prompt, results }, null, 2));

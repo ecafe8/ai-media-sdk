@@ -17,7 +17,7 @@ describe("Playground capability registry", () => {
     const model = getPlaygroundModel("aliyun-bailian", "z-image-turbo");
     expect(model?.supportsGenerate).toBe(true);
     expect(model?.supportsEdit).toBe(false);
-    expect(model?.supportsAsync).toBe(true);
+    expect(model?.supportsAsync).toBe(false);
   });
 
   test("registers the dated Qwen free-quota image model", () => {
@@ -83,11 +83,14 @@ describe("Playground capability registry", () => {
     expect(i2v?.requiresFirstFrame).toBe(true);
   });
 
-  test("registers Wan image models as async image models", () => {
-    for (const id of ["wan2.7-image-pro", "wan2.7-image", "z-image-turbo"]) {
+  test("registers supported Wan image models as async image models", () => {
+    for (const id of ["wan2.7-image-pro", "wan2.7-image"]) {
       const model = getPlaygroundModel("aliyun-bailian", id);
       expect(model?.modality).toBe("image");
       expect(model?.supportsAsync).toBe(true);
     }
+    expect(
+      getPlaygroundModel("aliyun-bailian", "z-image-turbo")?.supportsAsync
+    ).toBe(false);
   });
 });

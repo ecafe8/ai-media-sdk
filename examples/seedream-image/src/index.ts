@@ -10,8 +10,11 @@ const results: Array<Record<string, unknown>> = [];
 
 try {
   const provider = createSeedreamProvider(readSeedreamConfig());
-  for (const modelId of readSeedreamModels()) {
+  const models = readSeedreamModels();
+  console.log(`Starting batch: ${models.length} model(s)`);
+  for (const modelId of models) {
     const startedAt = Date.now();
+    console.log(`[${modelId}] starting; submitting sync request`);
     try {
       const result = await generateImage({
         model: provider.image(modelId),
@@ -25,6 +28,7 @@ try {
           },
         },
       });
+      console.log(`[${modelId}] generation succeeded; saved result(s)`);
       const outputDir = await saveResult(result.content, {
         provider: result.provider,
         model: result.model,
@@ -48,7 +52,7 @@ try {
       const message =
         error instanceof Error ? error.message : "Image generation failed";
       results.push({ model: modelId, status: "failed", error: message });
-      console.error(`[${modelId}] ${message}`);
+      console.error(`[${modelId}] failed: ${message}`);
     }
   }
   console.log(JSON.stringify({ prompt, results }, null, 2));

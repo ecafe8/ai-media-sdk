@@ -67,7 +67,7 @@ export const PLAYGROUND_MODELS: readonly PlaygroundModel[] = [
     supportsGenerate: true,
     supportsEdit: false,
     supportsVideo: false,
-    supportsAsync: true,
+    supportsAsync: false,
     recommendation: "Fast, lower-cost generation; editing is not supported",
     configured: false,
   },

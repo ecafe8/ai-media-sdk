@@ -36,7 +36,7 @@ Provider packages SHALL route external calls exclusively through the shared `Tra
 
 #### Scenario: Aliyun Wan image async submits and polls through the transport
 
-- **WHEN** the Aliyun adapter `submit` is invoked for a `wan-image`-family model (`wan2.7-image-pro` / `wan2.7-image` / `z-image-turbo`) with valid configuration and an injected transport
+- **WHEN** the Aliyun adapter `submit` is invoked for a supported `wan-image`-family model (`wan2.7-image-pro` / `wan2.7-image`) with valid configuration and an injected transport
 - **THEN** it SHALL send an `image-generation/generation` request with the `X-DashScope-Async: enable` header through the transport and return a `TaskHandle<ImageContent[]>` whose poll closure polls the shared `/tasks/{task_id}` endpoint through the same transport and maps `output.results[].url` → `ImageContent[]`
 
 #### Scenario: Provider stub does not invoke injected transport before implementation

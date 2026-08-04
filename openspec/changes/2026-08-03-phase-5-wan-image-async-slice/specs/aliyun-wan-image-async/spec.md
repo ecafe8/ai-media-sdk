@@ -16,17 +16,12 @@ The Aliyun adapter `submit()` SHALL route `wan-image`-family requests to `POST {
 
 ### Requirement: Wan image body builds a prompt and parameters input
 
-For a Wan text-to-image model, the adapter SHALL build the body `{ model, input: { prompt }, parameters: { size?, n?, watermark?, seed? } }` where `size` and `n` are sourced from the public `ImageGenerationInput` (gated by `entry.paramSupport` — `z-image-turbo` supports only `size`, not `n`) and Aliyun-native fields (`watermark`, `seed`, and Wan2.7-specific `thinking_mode`/`color_palette`/`enable_sequential`) are sourced from `providerOptions.aliyun`. Qwen-only fields (`negative_prompt`, `prompt_extend`) SHALL NOT be forwarded. The adapter SHALL use a dedicated `buildWanImageParameters` (not the Qwen `buildParameters`). No `media` field SHALL be present.
+For a Wan text-to-image model, the adapter SHALL build the body `{ model, input: { messages: [{ role: "user", content: [{ text: prompt }] }] }, parameters: { size?, n?, watermark?, seed? } }` where `size` and `n` are sourced from the public `ImageGenerationInput` and Aliyun-native fields (`watermark`, `seed`, and Wan2.7-specific `thinking_mode`/`color_palette`/`enable_sequential`) are sourced from `providerOptions.aliyun`. Qwen-only fields (`negative_prompt`, `prompt_extend`) SHALL NOT be forwarded. The adapter SHALL use a dedicated `buildWanImageParameters` (not the Qwen `buildParameters`). No `media` field SHALL be present.
 
 #### Scenario: Wan body carries prompt and ali-native parameters
 
 - **WHEN** `submit()` builds a Wan request with public `size`/`n` and `providerOptions.aliyun` carrying `watermark` and `seed`
-- **THEN** the body `input.prompt` SHALL carry the prompt, `parameters.size`/`n` SHALL carry the public values, `parameters.watermark`/`seed` SHALL carry the aliyun-native values, and `input.media` SHALL be absent
-
-#### Scenario: z-image-turbo omits n from parameters
-
-- **WHEN** `submit()` builds a request for `z-image-turbo` (whose `paramSupport` lacks `n`)
-- **THEN** `parameters.n` SHALL be absent and `parameters.size` SHALL carry the public `size` value if provided
+- **THEN** the body `input.messages` SHALL carry the prompt, `parameters.size`/`n` SHALL carry the public values, `parameters.watermark`/`seed` SHALL carry the aliyun-native values, and `input.media` SHALL be absent
 
 ### Requirement: Shared getTask polls the tasks endpoint and maps task status for Wan image
 
@@ -82,12 +77,17 @@ The adapter SHALL classify non-2xx submit and poll responses via the shared `cla
 
 ### Requirement: Aliyun Wan image config and registry declare async image capability
 
-The Wan image adapter SHALL reuse the existing `AliyunBailianConfig` (`apiKey` + region-scoped `baseUrl`) and the same `Authorization: Bearer` transport. The in-package model registry SHALL register `wan2.7-image-pro`, `wan2.7-image`, and `z-image-turbo` with `modality: "image"`, `generate: true`, `edit: false`, and `async: true`.
+The Wan image adapter SHALL reuse the existing `AliyunBailianConfig` (`apiKey` + region-scoped `baseUrl`) and the same `Authorization: Bearer` transport. The in-package model registry SHALL register `wan2.7-image-pro` and `wan2.7-image` with `modality: "image"`, `generate: true`, `edit: false`, and `async: true`. `z-image-turbo` SHALL remain generation-only until its synchronous contract is implemented and account capability is confirmed.
 
 #### Scenario: Wan image models bind with image and async capabilities
 
-- **WHEN** `provider.image("wan2.7-image-pro")`, `provider.image("wan2.7-image")`, or `provider.image("z-image-turbo")` is called
+- **WHEN** `provider.image("wan2.7-image-pro")` or `provider.image("wan2.7-image")` is called
 - **THEN** each SHALL return an `ImageModelInstance`-shaped instance whose `capabilities.modality` is `"image"` and `capabilities.async` is `true`
+
+#### Scenario: z-image-turbo is not submitted as an async task
+
+- **WHEN** `provider.image("z-image-turbo")` is called
+- **THEN** its `capabilities.async` SHALL be absent or false, and `submitImageTask` SHALL reject before making a network request
 
 ### Requirement: Wan sync generate and edit remain not implemented
 

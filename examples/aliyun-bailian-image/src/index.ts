@@ -11,10 +11,16 @@ const results: Array<Record<string, unknown>> = [];
 
 try {
   const provider = createAliyunBailianProvider(readAliyunConfig());
+  console.log(`Starting batch: ${models.length} model(s)`);
   for (const modelId of models) {
     const startedAt = Date.now();
+    console.log(`[${modelId}] starting`);
     try {
+      if (modelId === "z-image-turbo") {
+        throw new Error("async generation is not supported for z-image-turbo");
+      }
       const model = provider.image(modelId);
+      console.log(`[${modelId}] submitting request`);
       const result =
         modelId.startsWith("wan") || modelId === "z-image-turbo"
           ? await (
@@ -37,6 +43,7 @@ try {
           .slice(11, 23)
           .replace(/[:.]/g, ""),
       });
+      console.log(`[${modelId}] generation succeeded; saved to ${outputDir}`);
       results.push({ model: modelId, status: "succeeded", outputDir });
       console.log(
         JSON.stringify(
@@ -49,7 +56,7 @@ try {
       const message =
         error instanceof Error ? error.message : "Image generation failed";
       results.push({ model: modelId, status: "failed", error: message });
-      console.error(`[${modelId}] ${message}`);
+      console.error(`[${modelId}] failed: ${message}`);
     }
   }
   console.log(

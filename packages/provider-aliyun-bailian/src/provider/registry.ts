@@ -95,7 +95,6 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
       modality: "image",
       generate: true,
       edit: false,
-      async: true,
     },
     paramSupport: { size: true },
   },

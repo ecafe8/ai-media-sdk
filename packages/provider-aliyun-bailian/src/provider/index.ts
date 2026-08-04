@@ -806,7 +806,9 @@ async function submitWanImageTask(
   };
   const body: Record<string, unknown> = {
     model: modelId,
-    input: { prompt: input.prompt },
+    input: {
+      messages: [{ role: "user", content: [{ text: input.prompt }] }],
+    },
   };
   const parameters = buildWanImageParameters(input, entry);
   if (Object.keys(parameters).length > 0) body.parameters = parameters;
