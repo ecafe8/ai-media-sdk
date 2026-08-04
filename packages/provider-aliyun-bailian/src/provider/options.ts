@@ -2,8 +2,8 @@
  * Aliyun-native image generation/editing options.
  *
  * These fields travel under the `providerOptions.aliyun` namespace and never
- * enter the public image contract. Field names mirror the live DashScope
- * `multimodal-generation/generation` API for Qwen-Image models.
+ * enter the public image contract. Qwen-only fields are forwarded only by the
+ * Qwen request builder; Wan uses its own supported-parameter allowlist.
  */
 
 /**
@@ -19,4 +19,10 @@ export interface AliyunImageProviderOptions {
   readonly watermark?: boolean;
   /** Random seed for reproducible generation, `[0, 2147483647]`. */
   readonly seed?: number;
+  /** Wan 2.7 reasoning mode. */
+  readonly thinking_mode?: string;
+  /** Wan 2.7 color palette configuration. */
+  readonly color_palette?: unknown;
+  /** Wan 2.7 sequential multi-image generation configuration. */
+  readonly enable_sequential?: boolean;
 }

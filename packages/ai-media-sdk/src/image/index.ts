@@ -7,4 +7,5 @@ export type {
 } from "./request.ts";
 export { isImageEditInput, isImageGenerationInput } from "./request.ts";
 export { generateImage, editImage } from "./generate.ts";
+export { submitImageTask } from "./submit.ts";
 export { toImageUrl } from "./content.ts";

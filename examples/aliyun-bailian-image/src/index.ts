@@ -1,5 +1,5 @@
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
-import { generateImage } from "@ai-media/sdk";
+import { generateImage, submitImageTask } from "@ai-media/sdk";
 
 import { readAliyunConfig, readAliyunModel } from "./config";
 
@@ -7,12 +7,24 @@ const prompt = process.argv.slice(2).join(" ") || "江南小镇的清晨，水�
 
 try {
   const provider = createAliyunBailianProvider(readAliyunConfig());
-  const result = await generateImage({
-    model: provider.image(readAliyunModel()),
-    prompt,
-    n: 1,
-    size: "1024*1024",
-  });
+  const modelId = readAliyunModel();
+  const model = provider.image(modelId);
+  const result =
+    modelId.startsWith("wan") || modelId === "z-image-turbo"
+      ? await (
+          await submitImageTask({
+            model,
+            prompt,
+            n: 1,
+            size: "1024*1024",
+          })
+        ).wait()
+      : await generateImage({
+          model,
+          prompt,
+          n: 1,
+          size: "1024*1024",
+        });
   console.log(
     JSON.stringify(
       {

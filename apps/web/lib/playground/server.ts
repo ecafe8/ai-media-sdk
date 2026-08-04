@@ -1,6 +1,7 @@
 import {
   editImage,
   generateImage,
+  submitImageTask,
   submitVideoTask,
   SdkError,
   createTransport,
@@ -217,6 +218,17 @@ export async function executePlaygroundRequest(
         model: selection.instance as ImageModelInstance,
         prompt: request.prompt,
         images: [{ url: request.referenceImageUrl }],
+      });
+    } else if (selection.model.supportsAsync) {
+      const task = await submitImageTask({
+        model: selection.instance as ImageModelInstance,
+        prompt: request.prompt,
+        n: request.n,
+        size: request.size,
+      });
+      result = await task.wait({
+        pollIntervalMs: 15_000,
+        timeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
       });
     } else {
       result = await generateImage({

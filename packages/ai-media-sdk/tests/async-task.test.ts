@@ -5,9 +5,12 @@ import { describe, expect, test } from "bun:test";
 import {
   SdkError,
   createTaskHandle,
+  submitImageTask,
   submitVideoTask,
   type AdapterRequest,
   type GenerationResult,
+  type ImageContent,
+  type ImageModelInstance,
   type ProviderAdapter,
   type TaskHandle,
   type VideoContent,
@@ -200,6 +203,110 @@ describe("submitVideoTask", () => {
     await expect(submitVideoTask({ model, prompt: "" })).rejects.toMatchObject({
       code: "INVALID_REQUEST",
     });
+    expect(requests).toHaveLength(0);
+  });
+});
+
+function createFakeImageAdapter(
+  submitImpl: (request: AdapterRequest) => Promise<TaskHandle<ImageContent[]>>
+): { adapter: ProviderAdapter<ImageContent[]>; requests: AdapterRequest[] } {
+  const requests: AdapterRequest[] = [];
+  const adapter: ProviderAdapter<ImageContent[]> = {
+    providerId: "fake",
+    async generate(): Promise<GenerationResult<ImageContent[]>> {
+      throw new SdkError({ code: "NOT_IMPLEMENTED", message: "no sync" });
+    },
+    async edit(): Promise<GenerationResult<ImageContent[]>> {
+      throw new SdkError({ code: "NOT_IMPLEMENTED", message: "no sync" });
+    },
+    async submit(request: AdapterRequest): Promise<TaskHandle<ImageContent[]>> {
+      requests.push({ ...request });
+      return submitImpl(request);
+    },
+  };
+  return { adapter, requests };
+}
+
+function imageModel(
+  adapter: ProviderAdapter<ImageContent[]>,
+  overrides: Partial<ImageModelInstance["capabilities"]> = {}
+): ImageModelInstance {
+  return {
+    providerId: "fake",
+    modelId: "wan2.7-image-pro",
+    adapter,
+    capabilities: {
+      modality: "image",
+      generate: true,
+      edit: false,
+      async: true,
+      ...overrides,
+    },
+  };
+}
+
+describe("submitImageTask", () => {
+  test("dispatches to adapter.submit for an async image model", async () => {
+    const stubHandle = {
+      taskId: "t",
+      status: "pending",
+    } as unknown as TaskHandle<ImageContent[]>;
+    const { adapter, requests } = createFakeImageAdapter(
+      async () => stubHandle
+    );
+
+    const task = await submitImageTask({
+      model: imageModel(adapter),
+      prompt: "p",
+      n: 2,
+      size: "2K",
+    });
+
+    expect(task).toBe(stubHandle);
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.modality).toBe("image");
+    expect(requests[0]!.model).toBe("wan2.7-image-pro");
+  });
+
+  test("rejects a non-async model before dispatch", async () => {
+    const stubHandle = { taskId: "t" } as unknown as TaskHandle<ImageContent[]>;
+    const { adapter, requests } = createFakeImageAdapter(
+      async () => stubHandle
+    );
+
+    await expect(
+      submitImageTask({
+        model: imageModel(adapter, { async: false }),
+        prompt: "p",
+      })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(requests).toHaveLength(0);
+  });
+
+  test("rejects a non-image modality model before dispatch", async () => {
+    const stubHandle = { taskId: "t" } as unknown as TaskHandle<ImageContent[]>;
+    const { adapter, requests } = createFakeImageAdapter(
+      async () => stubHandle
+    );
+
+    await expect(
+      submitImageTask({
+        model: imageModel(adapter, { modality: "video" }),
+        prompt: "p",
+      })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(requests).toHaveLength(0);
+  });
+
+  test("rejects an empty prompt before dispatch", async () => {
+    const stubHandle = { taskId: "t" } as unknown as TaskHandle<ImageContent[]>;
+    const { adapter, requests } = createFakeImageAdapter(
+      async () => stubHandle
+    );
+
+    await expect(
+      submitImageTask({ model: imageModel(adapter), prompt: "" })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(requests).toHaveLength(0);
   });
 });

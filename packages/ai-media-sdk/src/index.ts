@@ -11,6 +11,7 @@ export {
   isImageGenerationInput,
   generateImage,
   editImage,
+  submitImageTask,
   toImageUrl,
 } from "./image/index.ts";
 export type {

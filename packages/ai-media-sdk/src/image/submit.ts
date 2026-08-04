@@ -1,0 +1,43 @@
+import { SdkError, type TaskHandle } from "../contracts/index.ts";
+import type { ImageContent } from "../contracts/content.ts";
+import { submitTask } from "../async/index.ts";
+import type {
+  ImageGenerationInput,
+  ImageGenerationRequest,
+} from "./request.ts";
+
+/**
+ * Submit an asynchronous image generation task via the bound model instance.
+ *
+ * The public request shape intentionally matches `generateImage`; only the
+ * dispatch method and asynchronous return contract differ.
+ */
+export async function submitImageTask(
+  request: ImageGenerationRequest
+): Promise<TaskHandle<ImageContent[]>> {
+  const { model, prompt, n, size, providerOptions } = request;
+
+  if (!model.capabilities.async) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: `Model "${model.modelId}" does not support asynchronous task submission`,
+    });
+  }
+
+  if (model.capabilities.modality !== "image") {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: `Model "${model.modelId}" is not an image model`,
+    });
+  }
+
+  if (prompt.length === 0) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "prompt must not be empty",
+    });
+  }
+
+  const input: ImageGenerationInput = { prompt, n, size, providerOptions };
+  return submitTask<ImageContent[]>({ model, modality: "image", input });
+}

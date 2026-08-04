@@ -12,6 +12,7 @@ export interface PlaygroundModel {
   readonly supportsGenerate: boolean;
   readonly supportsEdit: boolean;
   readonly supportsVideo: boolean;
+  readonly supportsAsync?: boolean;
   readonly requiresFirstFrame?: boolean;
   readonly maxEditImages?: number;
   readonly recommendation: string;

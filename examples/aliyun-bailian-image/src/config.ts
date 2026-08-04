@@ -18,5 +18,9 @@ export function readAliyunConfig(
 }
 
 export function readAliyunModel(env: NodeJS.ProcessEnv = process.env): string {
-  return env.ALIYUN_BAILIAN_MODEL || "qwen-image-2.0-pro-2026-06-22";
+  return (
+    env.ALIYUN_BAILIAN_IMAGE_MODEL ||
+    env.ALIYUN_BAILIAN_MODEL ||
+    "qwen-image-2.0-pro-2026-06-22"
+  );
 }

@@ -6,7 +6,8 @@ import type { ModelCapability, ModelId } from "@ai-media/sdk";
  * Each entry binds a model id to its endpoint family, capabilities, supported
  * public parameters, and edit-image limits. `provider.image(modelId)` looks up
  * the registry to build a bound model instance; the adapter switches on
- * `family` to route Qwen (sync `multimodal-generation`) vs Wan (async, stub).
+ * `family` to route Qwen (sync `multimodal-generation`) vs Wan (async
+ * `image-generation`).
  */
 
 /**
@@ -47,12 +48,13 @@ const WAN_GENERATE_CAPABILITY: ModelCapability = {
   modality: "image",
   generate: true,
   edit: false,
+  async: true,
 };
 
 /**
  * The model registry. Qwen models run the synchronous `multimodal-generation`
- * path now; Wan models are reserved as `NOT_IMPLEMENTED` stubs pending the
- * Phase 3 async `image-generation` task contract.
+ * path now; Wan models use the async `image-generation` path through submit.
+ * Their synchronous generate/edit paths remain `NOT_IMPLEMENTED`.
  */
 export const ALIYUN_MODEL_REGISTRY: Readonly<
   Record<ModelId, AliyunModelEntry>
@@ -89,7 +91,12 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
   },
   "z-image-turbo": {
     family: "wan-image",
-    capabilities: { modality: "image", generate: true, edit: false },
+    capabilities: {
+      modality: "image",
+      generate: true,
+      edit: false,
+      async: true,
+    },
     paramSupport: { size: true },
   },
   "happyhorse-1.1-t2v": {

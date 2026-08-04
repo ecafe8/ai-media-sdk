@@ -39,6 +39,7 @@ import { ALIYUN_MODEL_REGISTRY, type AliyunModelEntry } from "./registry.ts";
 
 const ALIYUN_PROVIDER_ID: ProviderId = "aliyun-bailian";
 const GENERATION_PATH = "/services/aigc/multimodal-generation/generation";
+const IMAGE_GENERATION_PATH = "/services/aigc/image-generation/generation";
 const VIDEO_SYNTHESIS_PATH = "/services/aigc/video-generation/video-synthesis";
 const TASK_PATH_PREFIX = "/tasks/";
 
@@ -99,6 +100,10 @@ interface QwenInputParams {
   readonly n?: number;
   readonly size?: string;
   readonly providerOptions?: Readonly<Record<string, unknown>>;
+}
+
+interface WanImageInput extends QwenInputParams {
+  readonly prompt: string;
 }
 
 /**
@@ -219,6 +224,22 @@ export function createAliyunBailianProvider(
 
     async submit(request: AdapterRequest): Promise<TaskHandle<VideoContent[]>> {
       const entry = requireRegistryEntry(request.model);
+      if (entry.family === "wan-image") {
+        if (!isImageGenerationInput(request.input)) {
+          throw new SdkError({
+            code: "INVALID_REQUEST",
+            message:
+              "Aliyun adapter received a malformed image generation input",
+          });
+        }
+        return submitWanImageTask(
+          transport,
+          config,
+          request.model,
+          request.input,
+          entry
+        ) as unknown as TaskHandle<VideoContent[]>;
+      }
       if (entry.family !== "happyhorse-video") {
         throw notImplemented(`aliyun-bailian.submit (${request.model})`);
       }
@@ -257,6 +278,11 @@ function buildUrl(config: AliyunBailianConfig): string {
   return `${base}${GENERATION_PATH}`;
 }
 
+function buildWanImageUrl(config: AliyunBailianConfig): string {
+  const base = config.baseUrl.replace(/\/+$/, "");
+  return `${base}${IMAGE_GENERATION_PATH}`;
+}
+
 function buildParameters(
   input: QwenInputParams,
   entry: AliyunModelEntry
@@ -287,6 +313,33 @@ function buildParameters(
   return parameters;
 }
 
+function buildWanImageParameters(
+  input: WanImageInput,
+  entry: AliyunModelEntry
+): Record<string, unknown> {
+  const parameters: Record<string, unknown> = {};
+  if (entry.paramSupport.size && input.size !== undefined) {
+    parameters.size = input.size.replace(/x/gi, "*");
+  }
+  if (entry.paramSupport.n && input.n !== undefined) {
+    parameters.n = input.n;
+  }
+
+  const aliyun = readAliyunOptions(input.providerOptions);
+  if (aliyun.watermark !== undefined) parameters.watermark = aliyun.watermark;
+  if (aliyun.seed !== undefined) parameters.seed = aliyun.seed;
+  if (aliyun.thinking_mode !== undefined) {
+    parameters.thinking_mode = aliyun.thinking_mode;
+  }
+  if (aliyun.color_palette !== undefined) {
+    parameters.color_palette = aliyun.color_palette;
+  }
+  if (aliyun.enable_sequential !== undefined) {
+    parameters.enable_sequential = aliyun.enable_sequential;
+  }
+  return parameters;
+}
+
 function readAliyunOptions(
   providerOptions?: Readonly<Record<string, unknown>>
 ): AliyunImageProviderOptions {
@@ -298,6 +351,9 @@ function readAliyunOptions(
     prompt_extend?: boolean;
     watermark?: boolean;
     seed?: number;
+    thinking_mode?: string;
+    color_palette?: unknown;
+    enable_sequential?: boolean;
   } = {};
   if (typeof candidate.negative_prompt === "string") {
     options.negative_prompt = candidate.negative_prompt;
@@ -310,6 +366,15 @@ function readAliyunOptions(
   }
   if (typeof candidate.seed === "number") {
     options.seed = candidate.seed;
+  }
+  if (typeof candidate.thinking_mode === "string") {
+    options.thinking_mode = candidate.thinking_mode;
+  }
+  if (candidate.color_palette !== undefined) {
+    options.color_palette = candidate.color_palette;
+  }
+  if (typeof candidate.enable_sequential === "boolean") {
+    options.enable_sequential = candidate.enable_sequential;
   }
   return options;
 }
@@ -727,6 +792,96 @@ async function submitVideoTask(
   return createTaskHandle<VideoContent[]>({ taskId, poll });
 }
 
+async function submitWanImageTask(
+  transport: Transport,
+  config: AliyunBailianConfig,
+  modelId: string,
+  input: WanImageInput,
+  entry: AliyunModelEntry
+): Promise<TaskHandle<ImageContent[]>> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${config.apiKey}`,
+    "Content-Type": "application/json",
+    "X-DashScope-Async": "enable",
+  };
+  const body: Record<string, unknown> = {
+    model: modelId,
+    input: { prompt: input.prompt },
+  };
+  const parameters = buildWanImageParameters(input, entry);
+  if (Object.keys(parameters).length > 0) body.parameters = parameters;
+
+  let response;
+  try {
+    response = await transport.send<AliyunTaskSubmitResponse>({
+      url: buildWanImageUrl(config),
+      method: "POST",
+      headers,
+      body,
+    });
+  } catch (error) {
+    throw mapTransportError(error);
+  }
+  if (response.status < 200 || response.status >= 300) {
+    throw classifyHttpError(
+      response.status,
+      extractTaskSubmitErrorMessage(response.data, config.apiKey)
+    );
+  }
+
+  const taskId = response.data?.output?.task_id;
+  if (!taskId) {
+    throw new SdkError({
+      code: "PROVIDER_ERROR",
+      message: "Aliyun Wan image task submission returned no task id",
+    });
+  }
+
+  const poll = async (): Promise<TaskPollResult<ImageContent[]>> => {
+    const task = await getTask(transport, config, taskId);
+    const status = mapTaskStatus(task.output?.task_status);
+    if (status === "succeeded") {
+      const results = task.output?.results;
+      const content = results
+        ?.filter(
+          (result): result is { readonly url: string } =>
+            typeof result.url === "string" && result.url.length > 0
+        )
+        .map((result) => ({ url: result.url }));
+      if (!content || content.length === 0) {
+        return {
+          status: "failed",
+          error: new SdkError({
+            code: "PROVIDER_ERROR",
+            message:
+              "Aliyun Wan image task succeeded but returned no image urls",
+          }),
+        };
+      }
+      const result: GenerationResult<ImageContent[]> = {
+        content,
+        provider: ALIYUN_PROVIDER_ID,
+        model: modelId,
+        requestId: task.request_id,
+        raw: task.usage,
+      };
+      return { status, result };
+    }
+    if (status === "failed" || status === "cancelled") {
+      return {
+        status,
+        error: new SdkError({
+          code: "PROVIDER_ERROR",
+          message: extractTaskFailureMessage(task, config.apiKey, "image"),
+        }),
+      };
+    }
+    return { status };
+  };
+
+  return createTaskHandle<ImageContent[]>({ taskId, poll });
+}
+
 function extractTaskSubmitErrorMessage(
   data: AliyunTaskSubmitResponse | undefined,
   apiKey: string
@@ -753,7 +908,8 @@ function extractTaskErrorMessage(
 
 function extractTaskFailureMessage(
   task: AliyunTaskResponse | undefined,
-  apiKey: string
+  apiKey: string,
+  modality: "image" | "video" = "video"
 ): string {
   const message = [task?.output?.code, task?.output?.message]
     .filter(
@@ -761,5 +917,5 @@ function extractTaskFailureMessage(
     )
     .join(": ");
   if (message.length > 0) return message.replaceAll(apiKey, "[redacted]");
-  return "Aliyun video task failed";
+  return `Aliyun ${modality} task failed`;
 }
