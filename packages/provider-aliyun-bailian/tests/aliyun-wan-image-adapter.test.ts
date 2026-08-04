@@ -49,7 +49,9 @@ describe("aliyun-bailian Wan image async adapter", () => {
   test("builds the Wan async submit request and excludes Qwen-only fields", async () => {
     const { transport, requests } = createFakeTransport([
       submitResponse(),
-      taskResponse("SUCCEEDED", { results: [{ url: "https://x/1.png" }] }),
+      taskResponse("SUCCEEDED", {
+        choices: [{ message: { content: [{ image: "https://x/1.png" }] } }],
+      }),
     ]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
 
@@ -111,7 +113,16 @@ describe("aliyun-bailian Wan image async adapter", () => {
       taskResponse("PENDING"),
       taskResponse("PROCESSING"),
       taskResponse("SUCCEEDED", {
-        results: [{ url: "https://x/1.png" }, { url: "https://x/2.png" }],
+        choices: [
+          {
+            message: {
+              content: [
+                { image: "https://x/1.png" },
+                { image: "https://x/2.png" },
+              ],
+            },
+          },
+        ],
       }),
     ]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
@@ -137,10 +148,10 @@ describe("aliyun-bailian Wan image async adapter", () => {
     );
   });
 
-  test("rejects a succeeded task with no image urls", async () => {
+  test("rejects a succeeded task with no image choices", async () => {
     const { transport } = createFakeTransport([
       submitResponse(),
-      taskResponse("SUCCEEDED", { results: [] }),
+      taskResponse("SUCCEEDED", { choices: [] }),
     ]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
 

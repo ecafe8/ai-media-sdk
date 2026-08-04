@@ -32,10 +32,10 @@ The adapter SHALL reuse the existing shared `getTask(taskId)` (built in Phase 4)
 - **WHEN** `getTask` reads a `PENDING` then `PROCESSING` task status
 - **THEN** the poll closure SHALL return `pending` then `running` and SHALL keep polling
 
-#### Scenario: Poll maps SUCCEEDED and extracts the result urls
+#### Scenario: Poll maps SUCCEEDED and extracts image choices
 
-- **WHEN** `getTask` reads a `SUCCEEDED` status with `output.results[].url`
-- **THEN** the poll closure SHALL return `{ status: "succeeded", result }` where the `result.content` is an `ImageContent[]` carrying one entry per `output.results[].url`
+- **WHEN** `getTask` reads a `SUCCEEDED` status with `output.choices[].message.content[].image`
+- **THEN** the poll closure SHALL return `{ status: "succeeded", result }` where the `result.content` is an `ImageContent[]` carrying one entry per image content item
 
 #### Scenario: Poll maps FAILED/CANCELED/UNKNOWN to terminal errors
 
@@ -44,16 +44,16 @@ The adapter SHALL reuse the existing shared `getTask(taskId)` (built in Phase 4)
 
 ### Requirement: Wan image async results support multiple urls
 
-Unlike HappyHorse video (fixed `video_count: 1`), Wan image async SHALL map each entry of `output.results[]` to an `ImageContent` entry, producing a potentially multi-element `ImageContent[]` when `n > 1`. The `requestId` SHALL be read from `request_id`; non-sensitive `usage`/`metrics` SHALL be carried in `raw`.
+Unlike HappyHorse video (fixed `video_count: 1`), Wan image async SHALL map each image item in `output.choices[].message.content[]` to an `ImageContent` entry, producing a potentially multi-element `ImageContent[]` when `n > 1`. The `requestId` SHALL be read from `request_id`; non-sensitive `usage`/`metrics` SHALL be carried in `raw`.
 
 #### Scenario: Multi-element result is returned for n greater than one
 
-- **WHEN** `getTask` reads a `SUCCEEDED` status with `output.results` containing multiple URL entries
+- **WHEN** `getTask` reads a `SUCCEEDED` status with multiple `output.choices[].message.content[].image` entries
 - **THEN** the `result.content` SHALL be an `ImageContent[]` with one entry per URL, preserving order
 
-#### Scenario: SUCCEEDED with empty or missing results maps to PROVIDER_ERROR
+#### Scenario: SUCCEEDED with empty or missing image choices maps to PROVIDER_ERROR
 
-- **WHEN** `getTask` reads a `SUCCEEDED` status where `output.results` is absent, an empty array, or contains entries without `url`
+- **WHEN** `getTask` reads a `SUCCEEDED` status where `output.choices` is absent, empty, or contains no image content items
 - **THEN** the poll closure SHALL return `{ status: "failed", error }` with an `SdkError` of code `PROVIDER_ERROR` (mirroring the video path's handling of a missing `video_url` at `index.ts:688-695`)
 
 ### Requirement: Aliyun Wan image HTTP failures classify to stable SDK error codes

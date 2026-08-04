@@ -535,7 +535,7 @@ interface AliyunTaskResponse {
     readonly task_id?: string;
     readonly task_status?: string;
     readonly video_url?: string;
-    readonly results?: ReadonlyArray<{ readonly url?: string }>;
+    readonly choices?: QwenChoice[];
     readonly code?: string;
     readonly message?: string;
   };
@@ -843,20 +843,14 @@ async function submitWanImageTask(
     const task = await getTask(transport, config, taskId);
     const status = mapTaskStatus(task.output?.task_status);
     if (status === "succeeded") {
-      const results = task.output?.results;
-      const content = results
-        ?.filter(
-          (result): result is { readonly url: string } =>
-            typeof result.url === "string" && result.url.length > 0
-        )
-        .map((result) => ({ url: result.url }));
+      const content = mapTaskImageChoices(task.output?.choices);
       if (!content || content.length === 0) {
         return {
           status: "failed",
           error: new SdkError({
             code: "PROVIDER_ERROR",
             message:
-              "Aliyun Wan image task succeeded but returned no image urls",
+              "Aliyun Wan image task succeeded but returned no image choices",
           }),
         };
       }
@@ -882,6 +876,20 @@ async function submitWanImageTask(
   };
 
   return createTaskHandle<ImageContent[]>({ taskId, poll });
+}
+
+function mapTaskImageChoices(
+  choices: QwenChoice[] | undefined
+): ImageContent[] {
+  const content: ImageContent[] = [];
+  for (const choice of choices ?? []) {
+    for (const item of choice.message?.content ?? []) {
+      if (typeof item.image === "string" && item.image.length > 0) {
+        content.push({ url: item.image });
+      }
+    }
+  }
+  return content;
 }
 
 function extractTaskSubmitErrorMessage(
