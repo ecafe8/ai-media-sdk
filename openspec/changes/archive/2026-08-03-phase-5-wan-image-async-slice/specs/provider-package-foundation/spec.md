@@ -19,7 +19,7 @@ Provider packages SHALL route external calls exclusively through the shared `Tra
 - **WHEN** the Aliyun adapter `generate` or `edit` is invoked for a Qwen model with valid configuration and an injected transport
 - **THEN** it SHALL send a Qwen `multimodal-generation/generation` request through the transport (T2I content with text only; I2I content with 1-3 images then text) and map the response to a `GenerationResult<ImageContent[]>`
 
-#### Scenario: Aliyun Wan sync generate and edit stay not implemented
+#### Scenario: Alibaba adapter remains a no-network stub
 
 - **WHEN** the Aliyun adapter `generate` or `edit` is invoked for a `wan-image`-family model during this slice
 - **THEN** it SHALL throw a classified `SdkError` with code `NOT_IMPLEMENTED`, `retryable: false`, and SHALL not invoke the transport
