@@ -1,8 +1,8 @@
 import { createSeedreamProvider } from "@ai-media/provider-seedream";
 import { generateImage } from "@ai-media/sdk";
 
-import { readSeedreamConfig, readSeedreamModel } from "./config";
-import { saveResult } from "./save";
+import { readSeedreamConfig, readSeedreamModel } from "./config.js";
+import { saveResult } from "./save.js";
 
 const prompt = process.argv.slice(2).join(" ") || "江南小镇的清晨，水彩画风格";
 const startedAt = Date.now();

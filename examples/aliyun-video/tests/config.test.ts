@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readAliyunVideoConfig, readAliyunVideoModel } from "../src/config";
+import { readAliyunVideoConfig, readAliyunVideoModel } from "../src/config.js";
 
 describe("Aliyun HappyHorse video example configuration", () => {
   test("reports missing variables without making a request", () => {

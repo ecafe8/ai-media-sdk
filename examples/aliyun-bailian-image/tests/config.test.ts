@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readAliyunConfig, readAliyunModel } from "../src/config";
+import { readAliyunConfig, readAliyunModel } from "../src/config.js";
 
 describe("Alibaba Bailian example configuration", () => {
   test("reports missing variables without making a request", () => {

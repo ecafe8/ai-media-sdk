@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readSeedreamConfig, readSeedreamModel } from "../src/config";
+import { readSeedreamConfig, readSeedreamModel } from "../src/config.js";
 
 describe("Doubao-Seedream example configuration", () => {
   test("reports missing variables without making a request", () => {

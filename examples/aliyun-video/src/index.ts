@@ -1,8 +1,8 @@
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import { submitVideoTask } from "@ai-media/sdk";
 
-import { readAliyunVideoConfig, readAliyunVideoModel } from "./config";
-import { saveResult } from "./save";
+import { readAliyunVideoConfig, readAliyunVideoModel } from "./config.js";
+import { saveResult } from "./save.js";
 
 const prompt =
   process.argv.slice(2).join(" ") || "一座由硬纸板搭建的微型城市在夜晚焕发生机";

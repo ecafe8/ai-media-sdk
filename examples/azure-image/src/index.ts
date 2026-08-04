@@ -1,8 +1,8 @@
 import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
 import { generateImage } from "@ai-media/sdk";
 
-import { readAzureConfig, readAzureDeployment } from "./config";
-import { saveResult } from "./save";
+import { readAzureConfig, readAzureDeployment } from "./config.js";
+import { saveResult } from "./save.js";
 
 const prompt =
   process.argv.slice(2).join(" ") || "A quiet riverside town at sunrise";

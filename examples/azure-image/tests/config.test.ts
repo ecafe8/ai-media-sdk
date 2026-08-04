@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readAzureConfig } from "../src/config";
+import { readAzureConfig } from "../src/config.js";
 
 describe("Azure example configuration", () => {
   test("reports missing variables without making a request", () => {

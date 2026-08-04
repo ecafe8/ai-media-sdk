@@ -1,8 +1,8 @@
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import { generateImage, submitImageTask } from "@ai-media/sdk";
 
-import { readAliyunConfig, readAliyunModel } from "./config";
-import { saveResult } from "./save";
+import { readAliyunConfig, readAliyunModel } from "./config.js";
+import { saveResult } from "./save.js";
 
 const prompt = process.argv.slice(2).join(" ") || "江南小镇的清晨，水彩画风格";
 const startedAt = Date.now();
