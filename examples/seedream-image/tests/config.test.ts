@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readSeedreamConfig, readSeedreamModel } from "../src/config.js";
+import { readSeedreamConfig, readSeedreamModels } from "../src/config.js";
 
 describe("Doubao-Seedream example configuration", () => {
   test("reports missing variables without making a request", () => {
@@ -8,7 +8,16 @@ describe("Doubao-Seedream example configuration", () => {
   });
 
   test("uses the recommended Seedream 5.0 pro model by default", () => {
-    expect(readSeedreamModel({})).toBe("doubao-seedream-5-0-pro-260628");
+    expect(readSeedreamModels({})).toEqual(["doubao-seedream-5-0-pro-260628"]);
+  });
+
+  test("parses a comma-separated model list", () => {
+    expect(
+      readSeedreamModels({
+        SEEDREAM_MODEL:
+          "doubao-seedream-5-0-pro-260628, doubao-seedream-4-5-251128",
+      })
+    ).toEqual(["doubao-seedream-5-0-pro-260628", "doubao-seedream-4-5-251128"]);
   });
 
   test("builds a minimal config from only the API key", () => {

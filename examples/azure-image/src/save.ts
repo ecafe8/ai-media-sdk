@@ -13,6 +13,7 @@ export interface SaveResultOptions {
   readonly requestId?: string;
   readonly prompt: string;
   readonly startedAt: number;
+  readonly runId: string;
 }
 
 export async function saveResult(
@@ -21,8 +22,12 @@ export async function saveResult(
 ): Promise<string> {
   const now = new Date();
   const date = now.toISOString().slice(0, 10);
-  const time = now.toISOString().slice(11, 19).replaceAll(":", "");
-  const outputDir = join(process.cwd(), "output", date);
+  const outputDir = join(
+    process.cwd(),
+    "output",
+    date,
+    `${options.runId}-${safeName(options.model)}`
+  );
   await mkdir(outputDir, { recursive: true });
 
   const files: string[] = [];
@@ -32,7 +37,7 @@ export async function saveResult(
       const bytes = item.base64
         ? Buffer.from(item.base64, "base64")
         : await download(item.url);
-      const fileName = `${time}-${index}${extensionFor(item.mimeType)}`;
+      const fileName = `${index}${extensionFor(item.mimeType)}`;
       await writeFile(join(outputDir, fileName), bytes);
       files.push(fileName);
     } catch (error) {
@@ -43,7 +48,7 @@ export async function saveResult(
   }
 
   await writeFile(
-    join(outputDir, `${time}-metadata.json`),
+    join(outputDir, "metadata.json"),
     JSON.stringify(
       {
         timestamp: now.toISOString(),
@@ -61,6 +66,37 @@ export async function saveResult(
   );
 
   return outputDir;
+}
+
+export async function saveBatchSummary(
+  results: readonly Record<string, unknown>[],
+  prompt: string,
+  startedAt: number
+): Promise<string> {
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const time = now.toISOString().slice(11, 19).replaceAll(":", "");
+  const outputDir = join(process.cwd(), "output", date);
+  await mkdir(outputDir, { recursive: true });
+  const filePath = join(outputDir, `${time}-batch-summary.json`);
+  await writeFile(
+    filePath,
+    JSON.stringify(
+      {
+        timestamp: now.toISOString(),
+        prompt,
+        durationMs: Date.now() - startedAt,
+        results,
+      },
+      null,
+      2
+    )
+  );
+  return filePath;
+}
+
+function safeName(value: string): string {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, "-");
 }
 
 async function download(url: string | undefined): Promise<Uint8Array> {

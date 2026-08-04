@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { readAliyunConfig, readAliyunModel } from "../src/config.js";
+import { readAliyunConfig, readAliyunModels } from "../src/config.js";
 
 describe("Alibaba Bailian example configuration", () => {
   test("reports missing variables without making a request", () => {
@@ -8,7 +8,15 @@ describe("Alibaba Bailian example configuration", () => {
   });
 
   test("uses the recommended editable Qwen model by default", () => {
-    expect(readAliyunModel({})).toBe("qwen-image-2.0-pro-2026-06-22");
+    expect(readAliyunModels({})).toEqual(["qwen-image-2.0-pro-2026-06-22"]);
+  });
+
+  test("parses a comma-separated image model list", () => {
+    expect(
+      readAliyunModels({
+        ALIYUN_BAILIAN_IMAGE_MODEL: "wan2.7-image-pro, wan2.7-image,",
+      })
+    ).toEqual(["wan2.7-image-pro", "wan2.7-image"]);
   });
 
   test("builds a complete config from environment values", () => {

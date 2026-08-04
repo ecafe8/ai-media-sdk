@@ -25,8 +25,14 @@ export function readAliyunVideoConfig(
   };
 }
 
-export function readAliyunVideoModel(
+export function readAliyunVideoModels(
   env: NodeJS.ProcessEnv = process.env
-): string {
-  return env.ALIYUN_BAILIAN_VIDEO_MODEL || "happyhorse-1.1-t2v";
+): string[] {
+  const value = env.ALIYUN_BAILIAN_VIDEO_MODEL;
+  return value
+    ? value
+        .split(",")
+        .map((model) => model.trim())
+        .filter(Boolean)
+    : ["happyhorse-1.1-t2v"];
 }

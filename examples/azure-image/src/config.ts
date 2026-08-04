@@ -21,8 +21,11 @@ export function readAzureConfig(
   };
 }
 
-export function readAzureDeployment(
+export function readAzureDeployments(
   env: NodeJS.ProcessEnv = process.env
-): string {
-  return env.AZURE_OPENAI_DEPLOYMENT as string;
+): string[] {
+  return (env.AZURE_OPENAI_DEPLOYMENT as string)
+    .split(",")
+    .map((deployment) => deployment.trim())
+    .filter(Boolean);
 }

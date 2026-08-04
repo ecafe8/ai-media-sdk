@@ -1,52 +1,68 @@
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import { submitVideoTask } from "@ai-media/sdk";
 
-import { readAliyunVideoConfig, readAliyunVideoModel } from "./config.js";
-import { saveResult } from "./save.js";
+import { readAliyunVideoConfig, readAliyunVideoModels } from "./config.js";
+import { saveBatchSummary, saveResult } from "./save.js";
 
 const prompt =
   process.argv.slice(2).join(" ") || "一座由硬纸板搭建的微型城市在夜晚焕发生机";
-const startedAt = Date.now();
+const models = readAliyunVideoModels();
+const batchStartedAt = Date.now();
+const results: Array<Record<string, unknown>> = [];
 
 try {
   const provider = createAliyunBailianProvider(readAliyunVideoConfig());
-  const task = await submitVideoTask({
-    model: provider.video(readAliyunVideoModel()),
-    prompt,
-    providerOptions: {
-      aliyun: {
-        resolution: "720P",
-        ratio: "16:9",
-        duration: 5,
-        watermark: false,
-      },
-    },
-  });
-
-  const result = await task.wait({
-    pollIntervalMs: 15_000,
-    timeoutMs: 600_000,
-  });
-  const outputDir = await saveResult(result.content, {
-    provider: result.provider,
-    model: result.model,
-    requestId: result.requestId,
-    prompt,
-    startedAt,
-  });
-  console.log(
-    JSON.stringify(
-      {
+  for (const modelId of models) {
+    const startedAt = Date.now();
+    try {
+      const task = await submitVideoTask({
+        model: provider.video(modelId),
+        prompt,
+        providerOptions: {
+          aliyun: {
+            resolution: "720P",
+            ratio: "16:9",
+            duration: 5,
+            watermark: false,
+          },
+        },
+      });
+      const result = await task.wait({
+        pollIntervalMs: 15_000,
+        timeoutMs: 600_000,
+      });
+      const outputDir = await saveResult(result.content, {
         provider: result.provider,
         model: result.model,
         requestId: result.requestId,
-        videos: result.content,
-      },
-      null,
-      2
-    )
+        prompt,
+        startedAt,
+        runId: new Date(startedAt)
+          .toISOString()
+          .slice(11, 23)
+          .replace(/[:.]/g, ""),
+      });
+      results.push({ model: modelId, status: "succeeded", outputDir });
+      console.log(
+        JSON.stringify(
+          { model: modelId, videos: result.content, outputDir },
+          null,
+          2
+        )
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Video generation failed";
+      results.push({ model: modelId, status: "failed", error: message });
+      console.error(`[${modelId}] ${message}`);
+    }
+  }
+  console.log(JSON.stringify({ prompt, results }, null, 2));
+  console.log(
+    `Saved batch summary to ${await saveBatchSummary(results, prompt, batchStartedAt)}`
   );
-  console.log(`Saved result files to ${outputDir}`);
+  if (results.every((result) => result.status === "failed"))
+    process.exitCode = 1;
 } catch (error) {
   console.error(
     error instanceof Error ? error.message : "Video generation failed"

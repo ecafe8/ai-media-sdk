@@ -24,8 +24,14 @@ export function readSeedreamConfig(
   return config;
 }
 
-export function readSeedreamModel(
+export function readSeedreamModels(
   env: NodeJS.ProcessEnv = process.env
-): string {
-  return env.SEEDREAM_MODEL || "doubao-seedream-5-0-pro-260628";
+): string[] {
+  const value = env.SEEDREAM_MODEL;
+  return value
+    ? value
+        .split(",")
+        .map((model) => model.trim())
+        .filter(Boolean)
+    : ["doubao-seedream-5-0-pro-260628"];
 }
