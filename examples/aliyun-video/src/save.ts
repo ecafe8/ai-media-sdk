@@ -37,7 +37,7 @@ export async function saveResult(
       const bytes = item.base64
         ? Buffer.from(item.base64, "base64")
         : await download(item.url);
-      const fileName = `${index}${extensionFor(item.mimeType)}`;
+      const fileName = `${index}${extensionFor(item.mimeType, item.url)}`;
       await writeFile(join(outputDir, fileName), bytes);
       files.push(fileName);
     } catch (error) {
@@ -107,7 +107,7 @@ async function download(url: string | undefined): Promise<Uint8Array> {
   return new Uint8Array(await response.arrayBuffer());
 }
 
-function extensionFor(mimeType: string | undefined): string {
+function extensionFor(mimeType: string | undefined, url?: string): string {
   switch (mimeType?.toLowerCase()) {
     case "video/mp4":
       return ".mp4";
@@ -118,7 +118,24 @@ function extensionFor(mimeType: string | undefined): string {
     case "image/webp":
       return ".webp";
     case "image/png":
-    default:
       return ".png";
   }
+
+  // Provider result URLs are often signed, so inspect only the pathname.
+  if (url) {
+    try {
+      const pathname = new URL(url).pathname.toLowerCase();
+      if (pathname.endsWith(".mp4")) return ".mp4";
+      if (pathname.endsWith(".webm")) return ".webm";
+      if (pathname.endsWith(".jpg") || pathname.endsWith(".jpeg")) {
+        return ".jpg";
+      }
+      if (pathname.endsWith(".webp")) return ".webp";
+      if (pathname.endsWith(".png")) return ".png";
+    } catch {
+      // Fall through to the video example's safe default.
+    }
+  }
+
+  return ".mp4";
 }
