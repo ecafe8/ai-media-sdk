@@ -1,4 +1,4 @@
-import type { ModelCapability, ModelId } from "@ai-media/sdk";
+import type { ModelCapability, ModelId, ModelRegistry, SupportedModel } from "@ai-media/sdk";
 
 /**
  * In-package model capability registry for Aliyun Bailian.
@@ -93,15 +93,6 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     capabilities: WAN_GENERATE_CAPABILITY,
     paramSupport: { n: true, size: true },
   },
-  "z-image-turbo": {
-    family: "wan-image",
-    capabilities: {
-      modality: "image",
-      generate: true,
-      edit: false,
-    },
-    paramSupport: { size: true },
-  },
   "happyhorse-1.1-t2v": {
     family: "happyhorse-video",
     capabilities: {
@@ -147,4 +138,26 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     requiresInputVideo: true,
     maxReferenceImages: 5,
   },
+};
+
+const ALIYUN_PROVIDER_ID: ModelRegistry["providerId"] = "aliyun-bailian";
+
+/**
+ * Common projection of the Aliyun registry for modality-neutral aggregation.
+ *
+ * Derived programmatically from `ALIYUN_MODEL_REGISTRY` so it cannot drift.
+ * Provider-specific fields (`family`, `paramSupport`, `requiresFirstFrame`,
+ * `maxReferenceImages`) are intentionally omitted; consumers needing them
+ * import `ALIYUN_MODEL_REGISTRY` directly.
+ */
+export const aliyunModelRegistry: ModelRegistry = {
+  providerId: ALIYUN_PROVIDER_ID,
+  models: Object.entries(ALIYUN_MODEL_REGISTRY).map(
+    ([id, entry]): SupportedModel => ({
+      providerId: ALIYUN_PROVIDER_ID,
+      id,
+      modality: entry.capabilities.modality,
+      capabilities: entry.capabilities,
+    })
+  ),
 };

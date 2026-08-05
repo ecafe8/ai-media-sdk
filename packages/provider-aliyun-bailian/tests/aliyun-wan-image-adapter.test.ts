@@ -16,7 +16,6 @@ const ALIYUN_CONFIG = {
   baseUrl: "https://ws-id.cn-beijing.maas.aliyuncs.com/api/v1",
 };
 const WAN_PRO = "wan2.7-image-pro";
-const Z_IMAGE = "z-image-turbo";
 const WAIT_OPTS = { pollIntervalMs: 0, timeoutMs: 5000 };
 
 function submitResponse(taskId = "task-1") {
@@ -97,13 +96,23 @@ describe("aliyun-bailian Wan image async adapter", () => {
     expect(parameters.prompt_extend).toBeUndefined();
   });
 
-  test("rejects z-image-turbo async submission before transport", async () => {
+  test("rejects z-image-turbo at the image factory with UNKNOWN_MODEL", () => {
     const { transport, requests } = createFakeTransport([submitResponse()]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
 
-    await expect(
-      submitImageTask({ model: provider.image(Z_IMAGE), prompt: "一只猫" })
-    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    // z-image-turbo is no longer registered; provider.image() rejects it
+    // synchronously before submitImageTask is ever reached.
+    const error = (() => {
+      try {
+        provider.image("z-image-turbo");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(error).toBeInstanceOf(SdkError);
+    expect(error.code).toBe("UNKNOWN_MODEL");
+    expect(error.message).toMatch(/z-image-turbo/);
     expect(requests).toHaveLength(0);
   });
 

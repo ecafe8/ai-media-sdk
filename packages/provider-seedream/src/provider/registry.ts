@@ -1,4 +1,4 @@
-import type { ModelCapability, ModelId } from "@ai-media/sdk";
+import type { ModelCapability, ModelId, ModelRegistry, SupportedModel } from "@ai-media/sdk";
 
 /**
  * In-package model capability registry for Doubao-Seedream.
@@ -79,4 +79,25 @@ export const SEEDREAM_MODEL_REGISTRY: Readonly<
     paramSupport: PARAM_SUPPORT_SIZE,
     outputFormats: ["jpeg"],
   },
+};
+
+const SEEDREAM_PROVIDER_ID: ModelRegistry["providerId"] = "doubao-seedream";
+
+/**
+ * Common projection of the Seedream registry for modality-neutral aggregation.
+ *
+ * Derived programmatically from `SEEDREAM_MODEL_REGISTRY` so it cannot drift.
+ * Provider-specific fields (`paramSupport`, `outputFormats`) are intentionally
+ * omitted; consumers needing them import `SEEDREAM_MODEL_REGISTRY` directly.
+ */
+export const seedreamModelRegistry: ModelRegistry = {
+  providerId: SEEDREAM_PROVIDER_ID,
+  models: Object.entries(SEEDREAM_MODEL_REGISTRY).map(
+    ([id, entry]): SupportedModel => ({
+      providerId: SEEDREAM_PROVIDER_ID,
+      id,
+      modality: entry.capabilities.modality,
+      capabilities: entry.capabilities,
+    })
+  ),
 };

@@ -12,6 +12,7 @@ import {
   type ImageModelInstance,
   type ProviderAdapter,
   type ProviderId,
+  type SupportedModel,
   type Transport,
 } from "@ai-media/sdk";
 
@@ -19,6 +20,7 @@ import { resolveBaseUrl, type SeedreamConfig } from "../config/index.ts";
 import type { SeedreamImageProviderOptions } from "./options.ts";
 import {
   SEEDREAM_MODEL_REGISTRY,
+  seedreamModelRegistry,
   type SeedreamModelEntry,
 } from "./registry.ts";
 
@@ -50,6 +52,8 @@ export interface SeedreamProvider extends ProviderAdapter<ImageContent[]> {
   readonly transport: Transport;
   /** Create an image model instance bound to a Seedream model id. */
   image: (modelId: string) => ImageModelInstance;
+  /** Enumerate the supported models projected from the Seedream registry. */
+  listModels: () => readonly SupportedModel[];
 }
 
 interface ArkImageItem {
@@ -98,7 +102,7 @@ export function createSeedreamProvider(
       const entry = SEEDREAM_MODEL_REGISTRY[modelId];
       if (!entry) {
         throw new SdkError({
-          code: "INVALID_REQUEST",
+          code: "UNKNOWN_MODEL",
           message: `Unknown Seedream model id "${modelId}"`,
         });
       }
@@ -109,6 +113,8 @@ export function createSeedreamProvider(
         capabilities: entry.capabilities,
       };
     },
+
+    listModels: (): readonly SupportedModel[] => seedreamModelRegistry.models,
 
     async generate(
       request: AdapterRequest
@@ -155,7 +161,7 @@ function requireRegistryEntry(modelId: string): SeedreamModelEntry {
   const entry = SEEDREAM_MODEL_REGISTRY[modelId];
   if (!entry) {
     throw new SdkError({
-      code: "INVALID_REQUEST",
+      code: "UNKNOWN_MODEL",
       message: `Unknown Seedream model id "${modelId}"`,
     });
   }

@@ -31,5 +31,21 @@ export type {
   ProviderAdapter,
 } from "./adapter.ts";
 export type { ModelInstance } from "./model-instance.ts";
-export { SdkError, notImplemented, classifyHttpError } from "./error.ts";
+export {
+  SdkError,
+  notImplemented,
+  unknownModel,
+  classifyHttpError,
+} from "./error.ts";
 export type { SdkErrorCode, SdkErrorOptions } from "./error.ts";
+export type {
+  SupportedModel,
+  ModelRegistry,
+  ModelListable,
+  ModelRegistrySource,
+} from "./model-registry.ts";
+export {
+  collectSupportedModels,
+  findSupportedModel,
+  isSupportedModel,
+} from "./model-registry.ts";

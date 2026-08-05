@@ -9,13 +9,22 @@ import {
   type GenerationResult,
   type ImageContent,
   type ImageModelInstance,
+  type ModelCapability,
+  type ModelId,
   type ProviderAdapter,
   type ProviderId,
+  type SupportedModel,
   type Transport,
 } from "@ai-media/sdk";
 
 import type { AzureOpenAIConfig } from "../config/index.ts";
 import type { AzureImageProviderOptions } from "./options.ts";
+import {
+  AZURE_MODEL_REGISTRY,
+  DEFAULT_AZURE_CUSTOM_CAPABILITY,
+  azureModelRegistry,
+  type AzureModelEntry,
+} from "./registry.ts";
 
 /**
  * Azure OpenAI Provider factory, model instance, and adapter.
@@ -45,6 +54,17 @@ export interface AzureOpenAIProvider extends ProviderAdapter<ImageContent[]> {
   readonly transport: Transport;
   /** Create an image model instance bound to an Azure deployment name. */
   image: (deployment: string) => ImageModelInstance;
+  /**
+   * Register a custom deployment and bind an image model instance. Bypasses
+   * the known-deployment whitelist; the registered entry is visible to
+   * subsequent `image()`/`generate()` lookups on this instance.
+   */
+  createModel: (
+    deployment: string,
+    capabilities?: ModelCapability
+  ) => ImageModelInstance;
+  /** Enumerate the supported models projected from the Azure registry. */
+  listModels: () => readonly SupportedModel[];
 }
 
 interface AzureImageItem {
@@ -72,21 +92,59 @@ export function createAzureOpenAIProvider(
 ): AzureOpenAIProvider {
   const transport = options?.transport ?? createTransport();
 
+  // Per-instance runtime registry seeded from the static known-deployment
+  // whitelist. `createAzureModel` writes custom deployments here so the
+  // defensive re-check inside `generate()` recognizes them.
+  const runtimeRegistry = new Map<ModelId, AzureModelEntry>(
+    Object.entries(AZURE_MODEL_REGISTRY).map(([id, entry]) => [id, entry])
+  );
+
+  function requireAzureRegistryEntry(deployment: string): AzureModelEntry {
+    const entry = runtimeRegistry.get(deployment);
+    if (!entry) {
+      throw new SdkError({
+        code: "UNKNOWN_MODEL",
+        message: `Unknown Azure deployment "${deployment}". Use createAzureModel() to register a custom deployment.`,
+      });
+    }
+    return entry;
+  }
+
   const provider: AzureOpenAIProvider = {
     providerId: AZURE_PROVIDER_ID,
     config,
     transport,
 
-    image: (deployment: string): ImageModelInstance => ({
-      providerId: AZURE_PROVIDER_ID,
-      modelId: deployment,
-      adapter: provider,
-      capabilities: { modality: "image", generate: true, edit: false },
-    }),
+    image: (deployment: string): ImageModelInstance => {
+      const entry = requireAzureRegistryEntry(deployment);
+      return {
+        providerId: AZURE_PROVIDER_ID,
+        modelId: deployment,
+        adapter: provider,
+        capabilities: entry.capabilities,
+      };
+    },
+
+    createModel: (
+      deployment: string,
+      capabilities?: ModelCapability
+    ): ImageModelInstance => {
+      const resolvedCapabilities = capabilities ?? DEFAULT_AZURE_CUSTOM_CAPABILITY;
+      runtimeRegistry.set(deployment, { capabilities: resolvedCapabilities });
+      return {
+        providerId: AZURE_PROVIDER_ID,
+        modelId: deployment,
+        adapter: provider,
+        capabilities: resolvedCapabilities,
+      };
+    },
+
+    listModels: (): readonly SupportedModel[] => azureModelRegistry.models,
 
     async generate(
       request: AdapterRequest
     ): Promise<GenerationResult<ImageContent[]>> {
+      requireAzureRegistryEntry(request.model);
       if (!isImageGenerationInput(request.input)) {
         throw new SdkError({
           code: "INVALID_REQUEST",
@@ -137,6 +195,22 @@ export function createAzureOpenAIProvider(
   };
 
   return provider;
+}
+
+/**
+ * Register a custom Azure deployment on a provider instance and return a bound
+ * image model instance. Bypasses the known-deployment whitelist; the entry is
+ * visible to subsequent `image()`/`generate()` lookups on that instance.
+ *
+ * Thin wrapper over `provider.createModel(deployment, capabilities?)` so the
+ * escape hatch is also available as a package-level export.
+ */
+export function createAzureModel(
+  provider: AzureOpenAIProvider,
+  deployment: string,
+  capabilities?: ModelCapability
+): ImageModelInstance {
+  return provider.createModel(deployment, capabilities);
 }
 
 function buildGenerationsUrl(

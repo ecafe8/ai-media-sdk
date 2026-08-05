@@ -13,4 +13,4 @@ export type {
   SeedreamOutputFormat,
 } from "./provider/registry.ts";
 export { createSeedreamProvider } from "./provider/index.ts";
-export { SEEDREAM_MODEL_REGISTRY } from "./provider/registry.ts";
+export { SEEDREAM_MODEL_REGISTRY, seedreamModelRegistry } from "./provider/registry.ts";

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { getClientPlaygroundModels, getPlaygroundModel } from "./registry";
+import { getClientPlaygroundModels, getPlaygroundModel, PLAYGROUND_MODELS } from "./registry";
 
 describe("Playground capability registry", () => {
   test("marks only configured Providers as available", () => {
@@ -13,11 +13,14 @@ describe("Playground capability registry", () => {
     );
   });
 
-  test("keeps z-image-turbo generation-only", () => {
-    const model = getPlaygroundModel("aliyun-bailian", "z-image-turbo");
-    expect(model?.supportsGenerate).toBe(true);
-    expect(model?.supportsEdit).toBe(false);
-    expect(model?.supportsAsync).toBe(false);
+  test("does not carry drifted placeholder models", () => {
+    expect(getPlaygroundModel("aliyun-bailian", "z-image-turbo")).toBeUndefined();
+    expect(
+      getPlaygroundModel("aliyun-bailian", "wan2.7-t2v-2026-06-12")
+    ).toBeUndefined();
+    expect(
+      getPlaygroundModel("aliyun-bailian", "wan2.7-r2v-2026-06-12")
+    ).toBeUndefined();
   });
 
   test("registers the dated Qwen free-quota image model", () => {
@@ -27,11 +30,6 @@ describe("Playground capability registry", () => {
     );
     expect(model?.supportsGenerate).toBe(true);
     expect(model?.supportsEdit).toBe(true);
-  });
-
-  test("lists video models as unavailable to the image Playground", () => {
-    const model = getPlaygroundModel("aliyun-bailian", "wan2.7-t2v-2026-06-12");
-    expect(model?.supportsGenerate).toBe(false);
   });
 
   test("registers Seedream 5.0 pro as editable with max 10 images", () => {
@@ -44,11 +42,16 @@ describe("Playground capability registry", () => {
     expect(model?.maxEditImages).toBe(10);
   });
 
-  test("registers the Seedream 5.0 lite alias and 4.x models", () => {
+  test("lists both Seedream alias ids", () => {
+    const canonical = getPlaygroundModel(
+      "doubao-seedream",
+      "doubao-seedream-5-0-260128"
+    );
     const lite = getPlaygroundModel(
       "doubao-seedream",
       "doubao-seedream-5-0-lite-260128"
     );
+    expect(canonical?.maxEditImages).toBe(14);
     expect(lite?.maxEditImages).toBe(14);
     const model45 = getPlaygroundModel(
       "doubao-seedream",
@@ -105,8 +108,18 @@ describe("Playground capability registry", () => {
       expect(model?.modality).toBe("image");
       expect(model?.supportsAsync).toBe(true);
     }
-    expect(
-      getPlaygroundModel("aliyun-bailian", "z-image-turbo")?.supportsAsync
-    ).toBe(false);
+  });
+
+  test("PLAYGROUND_MODELS derives every model from the SDK registries with matching capabilities", () => {
+    // gpt-image-2 is the only Azure entry; it is generate-only (no edit).
+    const azure = PLAYGROUND_MODELS.filter((m) => m.provider === "azure-openai");
+    expect(azure).toHaveLength(1);
+    expect(azure[0]?.id).toBe("gpt-image-2");
+    expect(azure[0]?.supportsGenerate).toBe(true);
+    expect(azure[0]?.supportsEdit).toBe(false);
+
+    // No duplicate ids remain.
+    const ids = PLAYGROUND_MODELS.map((m) => `${m.provider}:${m.id}`);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

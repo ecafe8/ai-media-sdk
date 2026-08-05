@@ -4,4 +4,9 @@ export type {
   AzureOpenAIProvider,
 } from "./provider/index.ts";
 export type { AzureImageProviderOptions } from "./provider/options.ts";
-export { createAzureOpenAIProvider } from "./provider/index.ts";
+export type { AzureModelEntry } from "./provider/registry.ts";
+export {
+  AZURE_MODEL_REGISTRY,
+  azureModelRegistry,
+} from "./provider/registry.ts";
+export { createAzureOpenAIProvider, createAzureModel } from "./provider/index.ts";

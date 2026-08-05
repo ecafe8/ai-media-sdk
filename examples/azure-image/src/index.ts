@@ -12,6 +12,13 @@ const results: Array<Record<string, unknown>> = [];
 try {
   const provider = createAzureOpenAIProvider(readAzureConfig());
   const deployments = readAzureDeployments();
+  console.log("Available models:");
+  for (const model of provider.listModels()) {
+    const caps = model.capabilities;
+    console.log(
+      `  - ${model.id} [${model.modality}] generate=${caps.generate} edit=${caps.edit}`
+    );
+  }
   console.log(`Starting batch: ${deployments.length} deployment(s)`);
   for (const deployment of deployments) {
     const startedAt = Date.now();

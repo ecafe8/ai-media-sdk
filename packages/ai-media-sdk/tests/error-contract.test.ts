@@ -2,7 +2,12 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { SdkError, classifyHttpError, notImplemented } from "@ai-media/sdk";
+import {
+  SdkError,
+  classifyHttpError,
+  notImplemented,
+  unknownModel,
+} from "@ai-media/sdk";
 
 describe("core error contract", () => {
   test("notImplemented builds a non-retryable NOT_IMPLEMENTED error", () => {
@@ -12,6 +17,24 @@ describe("core error contract", () => {
     expect(error.code).toBe("NOT_IMPLEMENTED");
     expect(error.retryable).toBe(false);
     expect(error.message).toContain("generateImage");
+  });
+
+  test("unknownModel builds a non-retryable UNKNOWN_MODEL error", () => {
+    const error = unknownModel("not-a-real-model");
+
+    expect(error).toBeInstanceOf(SdkError);
+    expect(error.code).toBe("UNKNOWN_MODEL");
+    expect(error.retryable).toBe(false);
+    expect(error.message).toBe('Unknown model id "not-a-real-model"');
+    expect(error.message).not.toContain("provider");
+  });
+
+  test("unknownModel carries provider context when supplied", () => {
+    const error = unknownModel("foo", "aliyun-bailian");
+
+    expect(error.code).toBe("UNKNOWN_MODEL");
+    expect(error.message).toBe('Unknown model id "foo" for provider "aliyun-bailian"');
+    expect(error.message).not.toContain("apiKey");
   });
 
   test("classifyHttpError maps HTTP status to stable codes", () => {

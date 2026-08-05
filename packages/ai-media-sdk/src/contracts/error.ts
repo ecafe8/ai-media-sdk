@@ -13,6 +13,7 @@ export type SdkErrorCode =
   | "AUTH_ERROR"
   | "RATE_LIMITED"
   | "INVALID_REQUEST"
+  | "UNKNOWN_MODEL"
   | "PROVIDER_ERROR"
   | "TIMEOUT"
   | "NETWORK_ERROR"
@@ -26,6 +27,7 @@ const RETRYABLE_BY_DEFAULT: Readonly<Record<SdkErrorCode, boolean>> = {
   AUTH_ERROR: false,
   RATE_LIMITED: true,
   INVALID_REQUEST: false,
+  UNKNOWN_MODEL: false,
   PROVIDER_ERROR: false,
   TIMEOUT: true,
   NETWORK_ERROR: true,
@@ -72,6 +74,29 @@ export function notImplemented(feature: string): SdkError {
   return new SdkError({
     code: "NOT_IMPLEMENTED",
     message: `${feature} is not implemented in Phase 0`,
+    retryable: false,
+  });
+}
+
+/**
+ * Build a non-retryable `UNKNOWN_MODEL` error for an unrecognized model id.
+ *
+ * Used when a model id is not present in the relevant Provider registry; this
+ * is distinct from capability/modality mismatches on known models, which stay
+ * `INVALID_REQUEST`. When `providerId` is supplied the message names it so
+ * callers can identify which Provider rejected the id.
+ *
+ * @param modelId - The unrecognized model id.
+ * @param providerId - Optional stable Provider id for context.
+ */
+export function unknownModel(modelId: string, providerId?: string): SdkError {
+  const message =
+    providerId === undefined
+      ? `Unknown model id "${modelId}"`
+      : `Unknown model id "${modelId}" for provider "${providerId}"`;
+  return new SdkError({
+    code: "UNKNOWN_MODEL",
+    message,
     retryable: false,
   });
 }

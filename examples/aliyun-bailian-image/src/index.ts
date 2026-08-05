@@ -5,24 +5,29 @@ import { readAliyunConfig, readAliyunModels } from "./config.js";
 import { saveBatchSummary, saveResult } from "./save.js";
 
 const prompt = process.argv.slice(2).join(" ") || "江南小镇的清晨，水彩画风格";
-const models = readAliyunModels();
 const batchStartedAt = Date.now();
 const results: Array<Record<string, unknown>> = [];
 
 try {
   const provider = createAliyunBailianProvider(readAliyunConfig());
+  console.log("Available models:");
+  for (const model of provider.listModels()) {
+    const caps = model.capabilities;
+    const async = caps.async ? " async" : "";
+    console.log(
+      `  - ${model.id} [${model.modality}] generate=${caps.generate} edit=${caps.edit}${async}`
+    );
+  }
+  const models = readAliyunModels();
   console.log(`Starting batch: ${models.length} model(s)`);
   for (const modelId of models) {
     const startedAt = Date.now();
     console.log(`[${modelId}] starting`);
     try {
-      if (modelId === "z-image-turbo") {
-        throw new Error("async generation is not supported for z-image-turbo");
-      }
       const model = provider.image(modelId);
       console.log(`[${modelId}] submitting request`);
       const result =
-        modelId.startsWith("wan") || modelId === "z-image-turbo"
+        modelId.startsWith("wan")
           ? await (
               await submitImageTask({
                 model,

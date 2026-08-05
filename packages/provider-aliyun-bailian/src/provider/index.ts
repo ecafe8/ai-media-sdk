@@ -14,6 +14,7 @@ import {
   type ImageModelInstance,
   type ProviderAdapter,
   type ProviderId,
+  type SupportedModel,
   type TaskHandle,
   type TaskPollResult,
   type TaskStatus,
@@ -24,7 +25,11 @@ import {
 
 import type { AliyunBailianConfig } from "../config/index.ts";
 import type { AliyunImageProviderOptions } from "./options.ts";
-import { ALIYUN_MODEL_REGISTRY, type AliyunModelEntry } from "./registry.ts";
+import {
+  ALIYUN_MODEL_REGISTRY,
+  aliyunModelRegistry,
+  type AliyunModelEntry,
+} from "./registry.ts";
 
 /**
  * Alibaba Cloud Bailian (DashScope) Provider factory, model instance, and
@@ -66,6 +71,8 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
   image: (modelId: string) => ImageModelInstance;
   /** Create a video model instance bound to a HappyHorse video model id. */
   video: (modelId: string) => VideoModelInstance;
+  /** Enumerate the supported models projected from the Aliyun registry. */
+  listModels: () => readonly SupportedModel[];
 }
 
 interface QwenContentItem {
@@ -129,8 +136,14 @@ export function createAliyunBailianProvider(
       const entry = ALIYUN_MODEL_REGISTRY[modelId];
       if (!entry) {
         throw new SdkError({
-          code: "INVALID_REQUEST",
+          code: "UNKNOWN_MODEL",
           message: `Unknown Aliyun model id "${modelId}"`,
+        });
+      }
+      if (entry.capabilities.modality !== "image") {
+        throw new SdkError({
+          code: "INVALID_REQUEST",
+          message: `Aliyun model "${modelId}" is not an image model`,
         });
       }
       return {
@@ -145,7 +158,7 @@ export function createAliyunBailianProvider(
       const entry = ALIYUN_MODEL_REGISTRY[modelId];
       if (!entry) {
         throw new SdkError({
-          code: "INVALID_REQUEST",
+          code: "UNKNOWN_MODEL",
           message: `Unknown Aliyun model id "${modelId}"`,
         });
       }
@@ -166,6 +179,8 @@ export function createAliyunBailianProvider(
         capabilities: entry.capabilities,
       };
     },
+
+    listModels: (): readonly SupportedModel[] => aliyunModelRegistry.models,
 
     async generate(
       request: AdapterRequest
@@ -266,7 +281,7 @@ function requireRegistryEntry(modelId: string): AliyunModelEntry {
   const entry = ALIYUN_MODEL_REGISTRY[modelId];
   if (!entry) {
     throw new SdkError({
-      code: "INVALID_REQUEST",
+      code: "UNKNOWN_MODEL",
       message: `Unknown Aliyun model id "${modelId}"`,
     });
   }

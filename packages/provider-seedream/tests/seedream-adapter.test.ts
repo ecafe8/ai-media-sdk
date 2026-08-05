@@ -50,14 +50,33 @@ describe("seedream provider", () => {
     expect(model.capabilities.maxEditImages).toBe(10);
   });
 
-  test("unknown model id is rejected", () => {
+  test("unknown model id is rejected with UNKNOWN_MODEL", () => {
     const { transport } = createFakeTransport([arkResponse([{ url: "x" }])]);
     const provider = createSeedreamProvider(SEEDREAM_CONFIG, { transport });
 
-    expect(() => provider.image("not-a-real-model")).toThrow(SdkError);
-    expect(() => provider.image("not-a-real-model")).toThrow(
-      /Unknown Seedream model id/
-    );
+    const error = (() => {
+      try {
+        provider.image("not-a-real-model");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(error).toBeInstanceOf(SdkError);
+    expect(error.code).toBe("UNKNOWN_MODEL");
+    expect(error.message).toMatch(/Unknown Seedream model id/);
+  });
+
+  test("listModels projects every registry entry including the alias pair", () => {
+    const { transport } = createFakeTransport([arkResponse([{ url: "x" }])]);
+    const provider = createSeedreamProvider(SEEDREAM_CONFIG, { transport });
+
+    const models = provider.listModels();
+    // 5 registry entries (canonical + lite alias)
+    expect(models.length).toBe(5);
+    expect(models.every((m) => m.providerId === "doubao-seedream")).toBe(true);
+    expect(models.some((m) => m.id === "doubao-seedream-5-0-260128")).toBe(true);
+    expect(models.some((m) => m.id === "doubao-seedream-5-0-lite-260128")).toBe(true);
   });
 
   test("binds all four registered Seedream models and the lite alias", () => {

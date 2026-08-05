@@ -51,14 +51,33 @@ describe("aliyun-bailian video adapter", () => {
     expect(i2v.capabilities.modality).toBe("video");
   });
 
-  test("video() rejects an unknown or non-video model", () => {
+  test("video() rejects an unknown model with UNKNOWN_MODEL and a non-video model with INVALID_REQUEST", () => {
     const { transport } = createFakeTransport([submitResponse()]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
 
-    expect(() => provider.video("not-a-real-model")).toThrow(SdkError);
+    const unknownError = (() => {
+      try {
+        provider.video("not-a-real-model");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(unknownError).toBeInstanceOf(SdkError);
+    expect(unknownError.code).toBe("UNKNOWN_MODEL");
+
     expect(() => provider.video("qwen-image-2.0-pro")).toThrow(
       /not a video model/
     );
+    const nonVideoError = (() => {
+      try {
+        provider.video("qwen-image-2.0-pro");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(nonVideoError.code).toBe("INVALID_REQUEST");
   });
 
   test("builds the t2v submit request with the async header and prompt body", async () => {

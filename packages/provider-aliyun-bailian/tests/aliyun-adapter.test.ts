@@ -56,14 +56,54 @@ describe("aliyun-bailian provider", () => {
     expect(model.capabilities.maxEditImages).toBe(3);
   });
 
-  test("unknown model id is rejected", () => {
+  test("unknown model id is rejected with UNKNOWN_MODEL", () => {
     const { transport } = createFakeTransport([qwenResponse(["x"])]);
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
 
-    expect(() => provider.image("not-a-real-model")).toThrow(SdkError);
-    expect(() => provider.image("not-a-real-model")).toThrow(
-      /Unknown Aliyun model id/
+    const error = (() => {
+      try {
+        provider.image("not-a-real-model");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(error).toBeInstanceOf(SdkError);
+    expect(error.code).toBe("UNKNOWN_MODEL");
+    expect(error.message).toMatch(/Unknown Aliyun model id/);
+  });
+
+  test("image() rejects known video-family models with INVALID_REQUEST", () => {
+    const { transport } = createFakeTransport([qwenResponse(["x"])]);
+    const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
+
+    expect(() => provider.image("happyhorse-1.1-t2v")).toThrow(SdkError);
+    expect(() => provider.image("happyhorse-1.1-t2v")).toThrow(
+      /is not an image model/
     );
+    const error = (() => {
+      try {
+        provider.image("happyhorse-1.1-t2v");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(error.code).toBe("INVALID_REQUEST");
+  });
+
+  test("listModels projects every registry entry with provider id and modality", () => {
+    const { transport } = createFakeTransport([qwenResponse(["x"])]);
+    const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
+
+    const models = provider.listModels();
+    expect(models.every((m) => m.providerId === "aliyun-bailian")).toBe(true);
+    // 4 Qwen + 2 Wan image + 4 HappyHorse video = 10 (z-image-turbo removed)
+    expect(models.length).toBe(10);
+    expect(models.some((m) => m.id === "qwen-image-2.0-pro")).toBe(true);
+    expect(models.some((m) => m.id === "wan2.7-image-pro")).toBe(true);
+    expect(models.some((m) => m.id === "happyhorse-1.1-t2v")).toBe(true);
+    expect(models.some((m) => m.id === "z-image-turbo")).toBe(false);
   });
 
   test("binds the dated Qwen free-quota model", () => {

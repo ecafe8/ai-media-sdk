@@ -3,7 +3,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { SdkError, type AdapterRequest } from "@ai-media/sdk";
-import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { createAzureOpenAIProvider, createAzureModel } from "@ai-media/provider-azure-openai";
 
 import {
   createFakeTransport,
@@ -40,6 +40,60 @@ describe("azure-openai provider", () => {
     expect(model.providerId).toBe("azure-openai");
     expect(model.capabilities.generate).toBe(true);
     expect(model.capabilities.edit).toBe(false);
+  });
+
+  test("unknown deployment is rejected with UNKNOWN_MODEL", () => {
+    const { transport } = createFakeTransport([transportResponse(200, {})]);
+    const provider = createAzureOpenAIProvider(AZURE_CONFIG, { transport });
+
+    const error = (() => {
+      try {
+        provider.image("not-a-real-deployment");
+      } catch (e) {
+        return e as SdkError;
+      }
+      throw new Error("expected throw");
+    })();
+    expect(error).toBeInstanceOf(SdkError);
+    expect(error.code).toBe("UNKNOWN_MODEL");
+    expect(error.message).toContain("createAzureModel");
+  });
+
+  test("createAzureModel registers a custom deployment visible to image() and generate()", async () => {
+    const { transport, requests } = createFakeTransport([
+      transportResponse(200, { data: [{ url: "https://x/a.png" }] }),
+    ]);
+    const provider = createAzureOpenAIProvider(AZURE_CONFIG, { transport });
+
+    const custom = createAzureModel(provider, "my-custom-deploy", {
+      modality: "image",
+      generate: true,
+      edit: true,
+    });
+    expect(custom.modelId).toBe("my-custom-deploy");
+    expect(custom.capabilities.edit).toBe(true);
+
+    // The registered deployment is now visible to image().
+    const rebound = provider.image("my-custom-deploy");
+    expect(rebound.capabilities.edit).toBe(true);
+
+    // generate() recognizes the registered deployment and proceeds.
+    await provider.generate({
+      provider: "azure-openai",
+      model: "my-custom-deploy",
+      modality: "image",
+      input: { prompt: "a red fox" },
+    });
+    expect(requests[0]?.url).toContain("my-custom-deploy");
+  });
+
+  test("listModels includes gpt-image-2", () => {
+    const { transport } = createFakeTransport([transportResponse(200, {})]);
+    const provider = createAzureOpenAIProvider(AZURE_CONFIG, { transport });
+
+    const models = provider.listModels();
+    expect(models.every((m) => m.providerId === "azure-openai")).toBe(true);
+    expect(models.some((m) => m.id === "gpt-image-2")).toBe(true);
   });
 
   test("builds the generations request URL, auth header, and body", async () => {
