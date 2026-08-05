@@ -4,8 +4,7 @@
 TBD - created by archiving change phase-3-seedream-image-slice. Update Purpose after archive.
 ## Requirements
 ### Requirement: Seedream adapter dispatches by an in-package model registry
-
-The Doubao-Seedream provider SHALL maintain an in-package model capability registry mapping each `modelId` to its capabilities, supported parameters, and accepted output formats. `provider.image(modelId)` SHALL bind a model instance to the shared adapter and SHALL reject an unknown model id with `INVALID_REQUEST`.
+The Doubao-Seedream provider SHALL maintain an in-package model capability registry mapping each `modelId` to its capabilities, supported parameters, and accepted output formats. `provider.image(modelId)` SHALL bind a model instance to the shared adapter and SHALL reject an unknown model id with `UNKNOWN_MODEL`.
 
 #### Scenario: Known Seedream model binds to the adapter
 
@@ -15,7 +14,7 @@ The Doubao-Seedream provider SHALL maintain an in-package model capability regis
 #### Scenario: Unknown model id is rejected
 
 - **WHEN** `provider.image("not-a-real-model")` is called
-- **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not send a request
+- **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` and SHALL not send a request
 
 ### Requirement: Seedream request is built via the shared transport
 

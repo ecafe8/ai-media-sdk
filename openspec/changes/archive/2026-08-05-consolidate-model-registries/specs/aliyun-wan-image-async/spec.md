@@ -23,7 +23,7 @@ The Wan image adapter SHALL reuse the existing `AliyunBailianConfig` (`apiKey` +
 - **WHEN** `provider.image("wan2.7-image-pro")` or `provider.image("wan2.7-image")` is called
 - **THEN** each SHALL return an `ImageModelInstance`-shaped instance whose `capabilities.modality` is `"image"` and `capabilities.async` is `true`
 
-#### Scenario: z-image-turbo is not registered this phase
+#### Scenario: z-image-turbo is not submitted as an async task
 
 - **WHEN** `provider.image("z-image-turbo")` is called
-- **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` (the id is absent from the registry), and `submitImageTask` SHALL never be reached for it
+- **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` (the `z-image-turbo` entry is no longer registered this phase), and `submitImageTask` SHALL never be reached for it

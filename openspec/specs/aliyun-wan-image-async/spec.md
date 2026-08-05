@@ -15,7 +15,7 @@ The Aliyun adapter `submit()` SHALL route `wan-image`-family requests to `POST {
 #### Scenario: Unknown Wan model id is rejected
 
 - **WHEN** `provider.image("not-a-real-wan-model")` is called
-- **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not send a request
+- **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` and SHALL not send a request
 
 ### Requirement: Wan image body builds a prompt and parameters input
 
@@ -80,7 +80,7 @@ The adapter SHALL classify non-2xx submit and poll responses via the shared `cla
 
 ### Requirement: Aliyun Wan image config and registry declare async image capability
 
-The Wan image adapter SHALL reuse the existing `AliyunBailianConfig` (`apiKey` + region-scoped `baseUrl`) and the same `Authorization: Bearer` transport. The in-package model registry SHALL register `wan2.7-image-pro` and `wan2.7-image` with `modality: "image"`, `generate: true`, `edit: false`, and `async: true`. `z-image-turbo` SHALL remain generation-only until its synchronous contract is implemented and account capability is confirmed.
+The Wan image adapter SHALL reuse the existing `AliyunBailianConfig` (`apiKey` + region-scoped `baseUrl`) and the same `Authorization: Bearer` transport. The in-package model registry SHALL register `wan2.7-image-pro` and `wan2.7-image` with `modality: "image"`, `generate: true`, `edit: false`, and `async: true`. The `z-image-turbo` entry SHALL NOT be present in the registry this phase because its synchronous contract is unimplemented and it lacks the `async` flag required to reach `submit()`.
 
 #### Scenario: Wan image models bind with image and async capabilities
 
@@ -90,7 +90,7 @@ The Wan image adapter SHALL reuse the existing `AliyunBailianConfig` (`apiKey` +
 #### Scenario: z-image-turbo is not submitted as an async task
 
 - **WHEN** `provider.image("z-image-turbo")` is called
-- **THEN** its `capabilities.async` SHALL be absent or false, and `submitImageTask` SHALL reject before making a network request
+- **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` (the `z-image-turbo` entry is no longer registered this phase), and `submitImageTask` SHALL never be reached for it
 
 ### Requirement: Wan sync generate and edit remain not implemented
 

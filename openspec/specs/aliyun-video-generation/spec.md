@@ -2,7 +2,6 @@
 
 ## Purpose
 Aliyun Bailian (DashScope) video generation and editing via the HappyHorse model family: asynchronous task submission to `POST /services/aigc/video-generation/video-synthesis` (`X-DashScope-Async: enable`) and polling via the shared `GET /tasks/{task_id}` endpoint, mapping `output.video_url` to a single-element `VideoContent[]`. Four modes are covered: text-to-video (t2v, `happyhorse-1.1-t2v`), first-frame image-to-video (i2v, `happyhorse-1.1-i2v`), reference-to-video (r2v, `happyhorse-1.1-r2v`, 1-9 reference images), and video editing (`happyhorse-1.0-video-edit`, 1 source video + 0-5 reference images). The four modes share the same submit endpoint, task state machine, and poll path; they differ only in `input.media` composition and forwarded `parameters`.
-
 ## Requirements
 ### Requirement: Aliyun video adapter submits async tasks to the video-synthesis endpoint
 
@@ -16,7 +15,7 @@ The Aliyun adapter `submit()` SHALL route `video`-modality requests to `POST {ba
 #### Scenario: Unknown video model id is rejected
 
 - **WHEN** `provider.image("not-a-real-video-model")` is called
-- **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not send a request
+- **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` and SHALL not send a request
 
 ### Requirement: t2v builds a prompt-only input body
 
