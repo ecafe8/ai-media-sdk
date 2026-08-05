@@ -29,8 +29,13 @@ export interface AliyunParamSupport {
  *
  * `requiresFirstFrame` marks first-frame i2v video models that need a
  * `firstFrame` input (t2v models set it false/undefined). `requiresInputVideo`
- * marks video-edit models that need a public `inputVideo` URL. `maxReferenceImages`
- * caps the ordered `referenceImages` array for r2v/video-edit models.
+ * marks video-edit models that need a public `inputVideo` URL.
+ * `maxReferenceImages` caps the ordered `referenceImages` array for r2v/
+ * video-edit models. `supportedResolutions`/`supportedAspectRatios` declare
+ * the per-model allowed value lists for the Aliyun-native `resolution`/
+ * `ratio` parameters carried under `providerOptions.aliyun`; an empty
+ * `supportedAspectRatios` array means the model takes no `ratio` parameter
+ * (i2v auto-follows the first frame; video-edit has no ratio field).
  */
 export interface AliyunModelEntry {
   readonly family: AliyunModelFamily;
@@ -39,6 +44,8 @@ export interface AliyunModelEntry {
   readonly requiresFirstFrame?: boolean;
   readonly requiresInputVideo?: boolean;
   readonly maxReferenceImages?: number;
+  readonly supportedResolutions?: readonly string[];
+  readonly supportedAspectRatios?: readonly string[];
 }
 
 const QWEN_T2I_I2I_CAPABILITY: ModelCapability = {
@@ -46,6 +53,17 @@ const QWEN_T2I_I2I_CAPABILITY: ModelCapability = {
   generate: true,
   edit: true,
   maxEditImages: 3,
+  maxResolution: { width: 2048, height: 2048 },
+  maxN: 6,
+};
+
+const WAN_PRO_GENERATE_CAPABILITY: ModelCapability = {
+  modality: "image",
+  generate: true,
+  edit: false,
+  async: true,
+  maxResolution: { width: 4096, height: 4096 },
+  maxN: 4,
 };
 
 const WAN_GENERATE_CAPABILITY: ModelCapability = {
@@ -53,7 +71,37 @@ const WAN_GENERATE_CAPABILITY: ModelCapability = {
   generate: true,
   edit: false,
   async: true,
+  maxResolution: { width: 2048, height: 2048 },
+  maxN: 4,
 };
+
+/**
+ * Aspect ratios accepted by HappyHorse t2v/r2v models per the live DashScope
+ * contract. i2v omits `ratio` (auto-follows the first frame); video-edit has
+ * no `ratio` parameter at all.
+ */
+const HAPPYHORSE_RATIOS: readonly string[] = [
+  "16:9",
+  "9:16",
+  "1:1",
+  "4:3",
+  "3:4",
+  "4:5",
+  "5:4",
+  "9:21",
+  "21:9",
+];
+
+const HAPPYHORSE_RESOLUTIONS: readonly string[] = [
+  "480P",
+  "720P",
+  "1080P",
+];
+
+const HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS: readonly string[] = [
+  "720P",
+  "1080P",
+];
 
 /**
  * The model registry. Qwen models run the synchronous `multimodal-generation`
@@ -85,7 +133,7 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
   },
   "wan2.7-image-pro": {
     family: "wan-image",
-    capabilities: WAN_GENERATE_CAPABILITY,
+    capabilities: WAN_PRO_GENERATE_CAPABILITY,
     paramSupport: { n: true, size: true },
   },
   "wan2.7-image": {
@@ -103,6 +151,8 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     },
     paramSupport: {},
     requiresFirstFrame: false,
+    supportedResolutions: HAPPYHORSE_RESOLUTIONS,
+    supportedAspectRatios: HAPPYHORSE_RATIOS,
   },
   "happyhorse-1.1-i2v": {
     family: "happyhorse-video",
@@ -114,6 +164,8 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     },
     paramSupport: {},
     requiresFirstFrame: true,
+    supportedResolutions: HAPPYHORSE_RESOLUTIONS,
+    supportedAspectRatios: [],
   },
   "happyhorse-1.1-r2v": {
     family: "happyhorse-video",
@@ -125,6 +177,8 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     },
     paramSupport: {},
     maxReferenceImages: 9,
+    supportedResolutions: HAPPYHORSE_RESOLUTIONS,
+    supportedAspectRatios: HAPPYHORSE_RATIOS,
   },
   "happyhorse-1.0-video-edit": {
     family: "happyhorse-video",
@@ -137,6 +191,8 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     paramSupport: {},
     requiresInputVideo: true,
     maxReferenceImages: 5,
+    supportedResolutions: HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS,
+    supportedAspectRatios: [],
   },
 };
 

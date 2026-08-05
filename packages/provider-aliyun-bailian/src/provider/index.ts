@@ -629,8 +629,31 @@ function buildTaskUrl(config: AliyunBailianConfig, taskId: string): string {
   return `${base}${TASK_PATH_PREFIX}${encodeURIComponent(taskId)}`;
 }
 
-const VIDEO_RESOLUTIONS = ["480P", "720P", "1080P"] as const;
-const VIDEO_EDIT_RESOLUTIONS = ["720P", "1080P"] as const;
+/**
+ * Resolve the allowed resolution values for a model from the registry entry.
+ * Falls back to the full HappyHorse list when the entry does not declare
+ * `supportedResolutions` (defensive; registry entries should always declare).
+ */
+function allowedResolutionsFor(entry: AliyunModelEntry): readonly string[] {
+  return entry.supportedResolutions ?? ["480P", "720P", "1080P"];
+}
+
+/**
+ * Fallback aspect-ratio list used when a registry entry does not declare
+ * `supportedAspectRatios`. Real entries always declare it (i2v/video-edit
+ * declare `[]` to mark "no ratio param").
+ */
+const HAPPYHORSE_RATIOS_FALLBACK: readonly string[] = [
+  "16:9",
+  "9:16",
+  "1:1",
+  "4:3",
+  "3:4",
+  "4:5",
+  "5:4",
+  "9:21",
+  "21:9",
+];
 
 /**
  * Validate model-specific media combination, prompt requirement, reference
@@ -773,9 +796,7 @@ function buildVideoBody(
   const aliyun = readAliyunVideoOptions(input.providerOptions);
   const parameters: Record<string, unknown> = {};
   if (aliyun.resolution !== undefined) {
-    const allowed: readonly string[] = isVideoEdit
-      ? VIDEO_EDIT_RESOLUTIONS
-      : VIDEO_RESOLUTIONS;
+    const allowed = allowedResolutionsFor(entry);
     if (!allowed.includes(aliyun.resolution)) {
       throw new SdkError({
         code: "INVALID_REQUEST",
@@ -785,6 +806,14 @@ function buildVideoBody(
     parameters.resolution = aliyun.resolution;
   }
   if (aliyun.ratio !== undefined && !isI2v && !isVideoEdit) {
+    const allowedRatios =
+      entry.supportedAspectRatios ?? HAPPYHORSE_RATIOS_FALLBACK;
+    if (allowedRatios.length > 0 && !allowedRatios.includes(aliyun.ratio)) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `ratio must be one of ${allowedRatios.join(", ")}`,
+      });
+    }
     parameters.ratio = aliyun.ratio;
   }
   if (aliyun.duration !== undefined && !isVideoEdit) {

@@ -24,7 +24,31 @@ export interface AzureModelEntry {
   readonly capabilities: ModelCapability;
 }
 
+/**
+ * Capabilities for the live-confirmed `gpt-image-2` Serverless Global Standard
+ * deployment. `supportedSizes` is the closed set Azure accepts for `size`;
+ * `maxN` is `1` because the deployment returns a single image per call.
+ */
 const GPT_IMAGE_2_CAPABILITY: ModelCapability = {
+  modality: "image",
+  generate: true,
+  edit: false,
+  supportedSizes: [
+    "1024x1024",
+    "1024x1536",
+    "1536x1024",
+    "auto",
+  ],
+  maxN: 1,
+};
+
+/**
+ * Default capabilities for a custom deployment registered via
+ * `createAzureModel` when the caller does not supply any. Custom deployments
+ * do not declare size/maxN metadata, so the core passes `size`/`n` through
+ * unchanged (backwards-compatible behaviour for user-defined deployments).
+ */
+export const DEFAULT_AZURE_CUSTOM_CAPABILITY: ModelCapability = {
   modality: "image",
   generate: true,
   edit: false,
@@ -57,14 +81,4 @@ export const azureModelRegistry: ModelRegistry = {
       capabilities: entry.capabilities,
     })
   ),
-};
-
-/**
- * Default capabilities for a custom deployment registered via
- * `createAzureModel` when the caller does not supply any.
- */
-export const DEFAULT_AZURE_CUSTOM_CAPABILITY: ModelCapability = {
-  modality: "image",
-  generate: true,
-  edit: false,
 };
