@@ -25,7 +25,8 @@ export type ImageOperation = "generate" | "edit";
 export type PlaygroundModelFamily =
   | "azure-gpt-image"
   | "qwen-multimodal"
-  | "wan-image"
+  | "wan-image-2.7"
+  | "wan-image-2.6"
   | "happyhorse-video"
   | "doubao-seedream-5-pro"
   | "doubao-seedream-5-lite"

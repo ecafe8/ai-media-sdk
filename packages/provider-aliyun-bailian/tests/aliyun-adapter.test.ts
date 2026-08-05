@@ -98,8 +98,8 @@ describe("aliyun-bailian provider", () => {
 
     const models = provider.listModels();
     expect(models.every((m) => m.providerId === "aliyun-bailian")).toBe(true);
-    // 4 Qwen + 2 Wan image + 4 HappyHorse video = 10 (z-image-turbo removed)
-    expect(models.length).toBe(10);
+    // 5 Qwen + 3 Wan image + 4 HappyHorse video = 12
+    expect(models.length).toBe(12);
     expect(models.some((m) => m.id === "qwen-image-2.0-pro")).toBe(true);
     expect(models.some((m) => m.id === "wan2.7-image-pro")).toBe(true);
     expect(models.some((m) => m.id === "happyhorse-1.1-t2v")).toBe(true);

@@ -490,7 +490,13 @@ function advancedNamespace(
 ): "azure" | "aliyun" | "seedream" | undefined {
   if (!family) return undefined;
   if (family === "azure-gpt-image") return "azure";
-  if (family === "qwen-multimodal" || family === "wan-image") return "aliyun";
+  if (
+    family === "qwen-multimodal" ||
+    family === "wan-image-2.6" ||
+    family === "wan-image-2.7"
+  ) {
+    return "aliyun";
+  }
   if (family.startsWith("doubao-seedream")) return "seedream";
   return undefined;
 }

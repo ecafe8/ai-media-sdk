@@ -33,6 +33,10 @@ const PLAYGROUND_LABELS: Readonly<
     label: "Qwen Image 3.0 Pro",
     recommendation: "High-quality generation and editing",
   },
+  "aliyun-bailian:qwen-image-3.0": {
+    label: "Qwen Image 3.0",
+    recommendation: "Standard generation and editing; balanced quality and speed",
+  },
   "aliyun-bailian:qwen-image-2.0-pro": {
     label: "Qwen Image 2.0 Pro",
     recommendation: "Balanced generation and editing",
@@ -52,6 +56,10 @@ const PLAYGROUND_LABELS: Readonly<
   "aliyun-bailian:wan2.7-image": {
     label: "Wan 2.7 Image",
     recommendation: "Balanced generation",
+  },
+  "aliyun-bailian:wan2.6-t2i": {
+    label: "Wan 2.6 T2I",
+    recommendation: "Async text-to-image; pixel size 1280*1280–1440*1440",
   },
   "aliyun-bailian:happyhorse-1.1-t2v": {
     label: "HappyHorse 1.1 T2V（文生视频）",
@@ -106,11 +114,19 @@ function labelFor(provider: PlaygroundProvider, id: string): {
 
 /**
  * Derive the Playground family slug for an Aliyun model from its registry
- * `family` field. Used to drive the Advanced Options section.
+ * `family` field and model id. wan2.6-t2i and wan2.7-image have different
+ * advanced-option field sets (wan2.6 supports negative_prompt/prompt_extend;
+ * wan2.7 supports thinking_mode/color_palette/enable_sequential), so they
+ * need distinct Playground family slugs even though they share the
+ * `wan-image` Aliyun family (used for adapter routing).
  */
 function aliyunFamilySlug(
-  family: "qwen-multimodal" | "wan-image" | "happyhorse-video"
+  family: "qwen-multimodal" | "wan-image" | "happyhorse-video",
+  id: string
 ): PlaygroundModelFamily {
+  if (family === "wan-image") {
+    return id === "wan2.6-t2i" ? "wan-image-2.6" : "wan-image-2.7";
+  }
   return family;
 }
 
@@ -131,7 +147,7 @@ function fromAliyun(
     label,
     provider: "aliyun-bailian",
     modality: caps.modality === "video" ? "video" : "image",
-    family: aliyunFamilySlug(entry.family),
+    family: aliyunFamilySlug(entry.family, id),
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
     supportsVideo: caps.modality === "video",

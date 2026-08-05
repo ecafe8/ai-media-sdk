@@ -5,6 +5,8 @@ export type {
 } from "./provider/index.ts";
 export type { AliyunImageProviderOptions } from "./provider/options.ts";
 export type {
+  AliyunBbox,
+  AliyunColorPaletteEntry,
   AliyunHappyHorseI2VParams,
   AliyunHappyHorseR2VParams,
   AliyunHappyHorseT2VParams,
@@ -12,6 +14,7 @@ export type {
   AliyunImageFamilyOptions,
   AliyunQwenImageParams,
   AliyunVideoFamilyOptions,
+  AliyunWan26T2VParams,
   AliyunWan27ImageParams,
   AliyunWan27ProImageParams,
 } from "./provider/params.ts";

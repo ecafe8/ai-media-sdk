@@ -4,7 +4,11 @@ import type {
   VideoGenerationInput,
 } from "@ai-media/sdk";
 
-import type { AliyunImageProviderOptions } from "./options.ts";
+import type {
+  AliyunBbox,
+  AliyunColorPaletteEntry,
+  AliyunImageProviderOptions,
+} from "./options.ts";
 
 /**
  * Aliyun-native image provider options shared by Qwen and Wan families.
@@ -12,16 +16,17 @@ import type { AliyunImageProviderOptions } from "./options.ts";
  * Type alias of `AliyunImageProviderOptions` so the family `TParams` can
  * reference a stable local alias without forcing consumers to import from
  * `options.ts` separately. Qwen-only fields (`negative_prompt`,
- * `prompt_extend`) and Wan-only fields (`thinking_mode`, `color_palette`,
- * `enable_sequential`) appear on the same shape; the adapter only forwards
- * fields whose model family supports them, so callers get IDE hints for all
- * Aliyun image options regardless of the selected family.
+ * `prompt_extend`, `prompt_extend_mode`) and Wan-only fields
+ * (`thinking_mode`, `color_palette`, `enable_sequential`, `bbox_list`)
+ * appear on the same shape; the adapter only forwards fields whose model
+ * family supports them, so callers get IDE hints for all Aliyun image
+ * options regardless of the selected family.
  */
 export type AliyunImageFamilyOptions = AliyunImageProviderOptions;
 
 /**
  * Family-typed request params for Aliyun Qwen-image models
- * (`qwen-image-3.0-pro`, `qwen-image-2.0-pro`,
+ * (`qwen-image-3.0-pro`, `qwen-image-3.0`, `qwen-image-2.0-pro`,
  * `qwen-image-2.0-pro-2026-06-22`, `qwen-image-2.0`).
  *
  * Selected when callers write `aliyun.image("qwen-image-2.0-pro")` etc. so
@@ -57,6 +62,29 @@ export interface AliyunWan27ImageParams extends ImageGenerationInput {
   readonly n?: 1 | 2 | 3 | 4;
   readonly providerOptions?: {
     readonly aliyun?: AliyunImageFamilyOptions;
+  };
+}
+
+/**
+ * Family-typed request params for Aliyun Wan 2.6 T2I
+ * (`wan2.6-t2i`, max resolution 1440x1440, max n 4).
+ *
+ * Unlike Wan 2.7, wan2.6-t2i does not support `thinking_mode`,
+ * `color_palette`, `enable_sequential`, or `bbox_list`; it does support
+ * Qwen-style `negative_prompt` and `prompt_extend`. The
+ * `providerOptions.aliyun` shape is therefore narrowed to exclude Wan 2.7
+ * exclusive fields and include Qwen-style fields.
+ */
+export interface AliyunWan26T2VParams extends ImageGenerationInput {
+  readonly n?: 1 | 2 | 3 | 4;
+  readonly providerOptions?: {
+    readonly aliyun?: {
+      readonly negative_prompt?: string;
+      readonly prompt_extend?: boolean;
+      readonly prompt_extend_mode?: "direct" | "agent";
+      readonly watermark?: boolean;
+      readonly seed?: number;
+    };
   };
 }
 
@@ -143,3 +171,6 @@ export interface AliyunHappyHorseVideoEditParams extends VideoGenerationInput {
     };
   };
 }
+
+// Re-export option sub-types so consumers can import them from params.ts.
+export type { AliyunBbox, AliyunColorPaletteEntry };

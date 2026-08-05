@@ -7,6 +7,7 @@
 
 import {
   generateImage,
+  submitImageTask,
   submitVideoTask,
   type ImageGenerationInput,
   type VideoGenerationInput,
@@ -17,6 +18,7 @@ import {
   type AliyunHappyHorseT2VParams,
   type AliyunHappyHorseVideoEditParams,
   type AliyunQwenImageParams,
+  type AliyunWan26T2VParams,
   type AliyunWan27ProImageParams,
 } from "@ai-media/provider-aliyun-bailian";
 
@@ -36,6 +38,15 @@ generateImage({
   prompt: "p",
   providerOptions: { aliyun: { negative_prompt: "blurry" } },
 });
+// qwen-image-3.0 (standard) shares the same family params.
+const qwen30Model = aliyun.image("qwen-image-3.0");
+generateImage({ model: qwen30Model, prompt: "p", n: 3, size: "1024*1024" });
+// prompt_extend_mode is a valid Qwen option.
+generateImage({
+  model: qwen30Model,
+  prompt: "p",
+  providerOptions: { aliyun: { prompt_extend_mode: "agent" } },
+});
 
 // Out-of-namespace providerOptions is a compile-time error.
 // @ts-expect-error QwenImageParams only allows the `aliyun` namespace
@@ -48,6 +59,9 @@ generateImage({ model: qwenModel, prompt: "p", n: 7 });
 // Wan 2.7 Pro overload.
 const wanProModel = aliyun.image("wan2.7-image-pro");
 generateImage({ model: wanProModel, prompt: "p", size: "4096x4096", n: 4 });
+// wan2.7 supports tier values "1K"/"2K"/"4K".
+submitImageTask({ model: wanProModel, prompt: "p", size: "2K" });
+submitImageTask({ model: wanProModel, prompt: "p", size: "4K" });
 // @ts-expect-error AliyunWan27ProImageParams only allows n: 1..4
 generateImage({ model: wanProModel, prompt: "p", n: 5 });
 
@@ -83,6 +97,18 @@ submitVideoTask({
 // video-edit resolution is constrained to 720P/1080P.
 // @ts-expect-error video-edit family narrows resolution to "720P" | "1080P"
 submitVideoTask({ model: videoEditModel, prompt: "p", inputVideo: { url: "https://x/src.mp4" }, providerOptions: { aliyun: { resolution: "480P" } } });
+
+// Wan 2.6 T2I overload: pixel-only size (no tier), Qwen-style options.
+const wan26Model = aliyun.image("wan2.6-t2i");
+generateImage({ model: wan26Model, prompt: "p", size: "1280*1280", n: 1 });
+// wan2.6 supports negative_prompt and prompt_extend.
+submitImageTask({
+  model: wan26Model,
+  prompt: "p",
+  providerOptions: { aliyun: { negative_prompt: "flowers", prompt_extend: true } },
+});
+// @ts-expect-error wan2.6-t2i does not support thinking_mode (wan2.7 only)
+submitImageTask({ model: wan26Model, prompt: "p", providerOptions: { aliyun: { thinking_mode: true } } });
 
 // String fallback overload returns the untyped default.
 declare const dynamicImageId: string;
@@ -120,3 +146,8 @@ void _videoEditCheck;
 const wanProSample: AliyunWan27ProImageParams = { prompt: "p" };
 const _wanProCheck: ImageGenerationInput = wanProSample;
 void _wanProCheck;
+
+// Sanity: Wan 2.6 params extend the base input.
+const wan26Sample: AliyunWan26T2VParams = { prompt: "p" };
+const _wan26Check: ImageGenerationInput = wan26Sample;
+void _wan26Check;

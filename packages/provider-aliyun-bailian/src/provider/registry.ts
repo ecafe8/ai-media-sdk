@@ -18,10 +18,16 @@ export type AliyunModelFamily =
 
 /**
  * Supported public parameters per model (drives what the adapter forwards).
+ *
+ * `negative_prompt`/`prompt_extend` are Qwen-style fields that wan2.6-t2i
+ * also supports; wan2.7-image does not declare them so the adapter won't
+ * forward them to a model that rejects them.
  */
 export interface AliyunParamSupport {
   readonly n?: boolean;
   readonly size?: boolean;
+  readonly negative_prompt?: boolean;
+  readonly prompt_extend?: boolean;
 }
 
 /**
@@ -62,6 +68,7 @@ const WAN_PRO_GENERATE_CAPABILITY: ModelCapability = {
   generate: true,
   edit: false,
   async: true,
+  supportedSizes: ["1K", "2K", "4K"],
   maxResolution: { width: 4096, height: 4096 },
   maxN: 4,
 };
@@ -71,7 +78,23 @@ const WAN_GENERATE_CAPABILITY: ModelCapability = {
   generate: true,
   edit: false,
   async: true,
+  supportedSizes: ["1K", "2K"],
   maxResolution: { width: 2048, height: 2048 },
+  maxN: 4,
+};
+
+/**
+ * wan2.6-t2i: total pixel range [1280*1280, 1440*1440], aspect ratio [1:4, 4:1].
+ * Uses pixel-only `宽*高` size format (no tier enum). Supports Qwen-style
+ * `negative_prompt`/`prompt_extend` params (unlike wan2.7 which uses
+ * `thinking_mode`/`color_palette`/`enable_sequential`).
+ */
+const WAN26_T2I_GENERATE_CAPABILITY: ModelCapability = {
+  modality: "image",
+  generate: true,
+  edit: false,
+  async: true,
+  maxResolution: { width: 1440, height: 1440 },
   maxN: 4,
 };
 
@@ -114,22 +137,27 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
   "qwen-image-3.0-pro": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true },
+    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+  },
+  "qwen-image-3.0": {
+    family: "qwen-multimodal",
+    capabilities: QWEN_T2I_I2I_CAPABILITY,
+    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
   },
   "qwen-image-2.0-pro": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true },
+    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
   },
   "qwen-image-2.0-pro-2026-06-22": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true },
+    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
   },
   "qwen-image-2.0": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true },
+    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
   },
   "wan2.7-image-pro": {
     family: "wan-image",
@@ -140,6 +168,11 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     family: "wan-image",
     capabilities: WAN_GENERATE_CAPABILITY,
     paramSupport: { n: true, size: true },
+  },
+  "wan2.6-t2i": {
+    family: "wan-image",
+    capabilities: WAN26_T2I_GENERATE_CAPABILITY,
+    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
   },
   "happyhorse-1.1-t2v": {
     family: "happyhorse-video",

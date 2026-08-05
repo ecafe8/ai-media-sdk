@@ -138,11 +138,22 @@ export function imageAdvancedFieldSet(
         { id: "aliyun.watermark", label: "水印", kind: "boolean" },
         { id: "aliyun.seed", label: "随机种子", kind: "number" },
       ];
-    case "wan-image":
+    case "wan-image-2.6":
+      return [
+        { id: "aliyun.negative_prompt", label: "负向提示词", kind: "text" },
+        {
+          id: "aliyun.prompt_extend",
+          label: "提示词扩写",
+          kind: "boolean",
+        },
+        { id: "aliyun.watermark", label: "水印", kind: "boolean" },
+        { id: "aliyun.seed", label: "随机种子", kind: "number" },
+      ];
+    case "wan-image-2.7":
       return [
         { id: "aliyun.watermark", label: "水印", kind: "boolean" },
         { id: "aliyun.seed", label: "随机种子", kind: "number" },
-        { id: "aliyun.thinking_mode", label: "Thinking 模式", kind: "text" },
+        { id: "aliyun.thinking_mode", label: "Thinking 模式", kind: "boolean" },
         {
           id: "aliyun.color_palette",
           label: "调色板",

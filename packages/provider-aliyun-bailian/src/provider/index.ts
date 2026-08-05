@@ -31,6 +31,7 @@ import type {
   AliyunHappyHorseT2VParams,
   AliyunHappyHorseVideoEditParams,
   AliyunQwenImageParams,
+  AliyunWan26T2VParams,
   AliyunWan27ImageParams,
   AliyunWan27ProImageParams,
 } from "./params.ts";
@@ -85,9 +86,10 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
    * fallback keeps the default `ImageGenerationInput` shape for dynamic ids.
    */
   image: {
-    (modelId: "qwen-image-3.0-pro" | "qwen-image-2.0-pro" | "qwen-image-2.0-pro-2026-06-22" | "qwen-image-2.0"): ImageModelInstance<AliyunQwenImageParams>;
+    (modelId: "qwen-image-3.0-pro" | "qwen-image-3.0" | "qwen-image-2.0-pro" | "qwen-image-2.0-pro-2026-06-22" | "qwen-image-2.0"): ImageModelInstance<AliyunQwenImageParams>;
     (modelId: "wan2.7-image-pro"): ImageModelInstance<AliyunWan27ProImageParams>;
     (modelId: "wan2.7-image"): ImageModelInstance<AliyunWan27ImageParams>;
+    (modelId: "wan2.6-t2i"): ImageModelInstance<AliyunWan26T2VParams>;
     (modelId: string): ImageModelInstance;
   };
   /**
@@ -355,6 +357,9 @@ function buildParameters(
   if (aliyun.prompt_extend !== undefined) {
     parameters.prompt_extend = aliyun.prompt_extend;
   }
+  if (aliyun.prompt_extend_mode !== undefined) {
+    parameters.prompt_extend_mode = aliyun.prompt_extend_mode;
+  }
   if (aliyun.watermark !== undefined) {
     parameters.watermark = aliyun.watermark;
   }
@@ -377,6 +382,15 @@ function buildWanImageParameters(
   }
 
   const aliyun = readAliyunOptions(input.providerOptions);
+  // Qwen-style fields forwarded only when the model declares support
+  // (wan2.6-t2i supports them; wan2.7-image does not).
+  if (entry.paramSupport.negative_prompt && aliyun.negative_prompt !== undefined) {
+    parameters.negative_prompt = aliyun.negative_prompt;
+  }
+  if (entry.paramSupport.prompt_extend && aliyun.prompt_extend !== undefined) {
+    parameters.prompt_extend = aliyun.prompt_extend;
+  }
+  // Wan 2.7-specific fields (not forwarded for wan2.6-t2i).
   if (aliyun.watermark !== undefined) parameters.watermark = aliyun.watermark;
   if (aliyun.seed !== undefined) parameters.seed = aliyun.seed;
   if (aliyun.thinking_mode !== undefined) {
@@ -387,6 +401,9 @@ function buildWanImageParameters(
   }
   if (aliyun.enable_sequential !== undefined) {
     parameters.enable_sequential = aliyun.enable_sequential;
+  }
+  if (aliyun.bbox_list !== undefined) {
+    parameters.bbox_list = aliyun.bbox_list;
   }
   return parameters;
 }
@@ -400,11 +417,13 @@ function readAliyunOptions(
   const options: {
     negative_prompt?: string;
     prompt_extend?: boolean;
+    prompt_extend_mode?: "direct" | "agent";
     watermark?: boolean;
     seed?: number;
-    thinking_mode?: string;
-    color_palette?: unknown;
+    thinking_mode?: boolean;
+    color_palette?: ReadonlyArray<{ hex: string; ratio: string }>;
     enable_sequential?: boolean;
+    bbox_list?: ReadonlyArray<ReadonlyArray<readonly [number, number, number, number]>>;
   } = {};
   if (typeof candidate.negative_prompt === "string") {
     options.negative_prompt = candidate.negative_prompt;
@@ -412,20 +431,31 @@ function readAliyunOptions(
   if (typeof candidate.prompt_extend === "boolean") {
     options.prompt_extend = candidate.prompt_extend;
   }
+  if (candidate.prompt_extend_mode === "direct" || candidate.prompt_extend_mode === "agent") {
+    options.prompt_extend_mode = candidate.prompt_extend_mode;
+  }
   if (typeof candidate.watermark === "boolean") {
     options.watermark = candidate.watermark;
   }
   if (typeof candidate.seed === "number") {
     options.seed = candidate.seed;
   }
-  if (typeof candidate.thinking_mode === "string") {
+  if (typeof candidate.thinking_mode === "boolean") {
     options.thinking_mode = candidate.thinking_mode;
   }
-  if (candidate.color_palette !== undefined) {
-    options.color_palette = candidate.color_palette;
+  if (Array.isArray(candidate.color_palette)) {
+    options.color_palette = candidate.color_palette as ReadonlyArray<{
+      hex: string;
+      ratio: string;
+    }>;
   }
   if (typeof candidate.enable_sequential === "boolean") {
     options.enable_sequential = candidate.enable_sequential;
+  }
+  if (Array.isArray(candidate.bbox_list)) {
+    options.bbox_list = candidate.bbox_list as ReadonlyArray<
+      ReadonlyArray<readonly [number, number, number, number]>
+    >;
   }
   return options;
 }
