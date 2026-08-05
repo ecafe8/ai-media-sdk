@@ -11,7 +11,8 @@ describe("Playground generate route", () => {
         body: JSON.stringify({
           provider: "aliyun-bailian",
           model: "qwen-image-2.0-pro",
-          mode: "generate",
+          modality: "image",
+          imageOperation: "generate",
           prompt: "  ",
         }),
       })
@@ -21,7 +22,7 @@ describe("Playground generate route", () => {
       status: "failed",
       error: {
         code: "VALIDATION_ERROR",
-        message: "Provide a Provider, model, mode, and non-empty prompt.",
+        message: "Provide a Provider, model, modality, and non-empty prompt.",
       },
     });
   });
@@ -34,7 +35,8 @@ describe("Playground generate route", () => {
         body: JSON.stringify({
           provider: "aliyun-bailian",
           model: "qwen-image-2.0-pro",
-          mode: "edit",
+          modality: "image",
+          imageOperation: "edit",
           prompt: "edit this image",
           referenceImageUrl: "not-a-url",
         }),
@@ -52,7 +54,7 @@ describe("Playground generate route", () => {
         body: JSON.stringify({
           provider: "aliyun-bailian",
           model: "happyhorse-1.0-video-edit",
-          mode: "video",
+          modality: "video",
           prompt: "edit",
           inputVideoUrl: "ftp://x/source.mp4",
         }),
@@ -70,7 +72,7 @@ describe("Playground generate route", () => {
         body: JSON.stringify({
           provider: "aliyun-bailian",
           model: "happyhorse-1.1-r2v",
-          mode: "video",
+          modality: "video",
           prompt: "p",
           referenceImageUrls: ["https://x/a.png", "not-a-url"],
         }),

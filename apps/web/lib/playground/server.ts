@@ -77,14 +77,14 @@ export function createProviderSelection(
     });
   }
 
-  if (request.mode === "edit" && !model.supportsEdit) {
+  if (request.imageOperation === "edit" && !model.supportsEdit) {
     throw new SdkError({
       code: "INVALID_REQUEST",
       message: "The selected model does not support image editing",
     });
   }
 
-  if (request.mode === "video") {
+  if (request.modality === "video") {
     if (!model.supportsVideo) {
       throw new SdkError({
         code: "INVALID_REQUEST",
@@ -175,7 +175,7 @@ export async function executePlaygroundRequest(
     });
     const selection = createProviderSelection(request);
 
-    if (request.mode === "video") {
+    if (request.modality === "video") {
       const model = selection.model;
       const videoRequest: Parameters<typeof submitVideoTask>[0] = {
         model: selection.instance as VideoModelInstance,
@@ -237,7 +237,7 @@ export async function executePlaygroundRequest(
     }
 
     let result: GenerationResult<ImageContent[]>;
-    if (request.mode === "edit") {
+    if (request.imageOperation === "edit") {
       result = await editImage({
         model: selection.instance as ImageModelInstance,
         prompt: request.prompt,
@@ -299,7 +299,7 @@ function logPlaygroundEvent(
     event: `playground.provider_request.${event}`,
     provider: request.provider,
     model: request.model,
-    mode: request.mode,
+    modality: request.modality,
     ...details,
   };
 

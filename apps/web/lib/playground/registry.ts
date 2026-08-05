@@ -2,7 +2,11 @@ import { ALIYUN_MODEL_REGISTRY } from "@ai-media/provider-aliyun-bailian";
 import { AZURE_MODEL_REGISTRY } from "@ai-media/provider-azure-openai";
 import { SEEDREAM_MODEL_REGISTRY } from "@ai-media/provider-seedream";
 
-import type { PlaygroundModel, PlaygroundProvider } from "./types";
+import type {
+  PlaygroundModel,
+  PlaygroundModelFamily,
+  PlaygroundProvider,
+} from "./types";
 
 export const PLAYGROUND_PROVIDERS: readonly {
   readonly id: PlaygroundProvider;
@@ -101,7 +105,20 @@ function labelFor(provider: PlaygroundProvider, id: string): {
 }
 
 /**
- * Derive a `PlaygroundModel` from an Aliyun registry entry.
+ * Derive the Playground family slug for an Aliyun model from its registry
+ * `family` field. Used to drive the Advanced Options section.
+ */
+function aliyunFamilySlug(
+  family: "qwen-multimodal" | "wan-image" | "happyhorse-video"
+): PlaygroundModelFamily {
+  return family;
+}
+
+/**
+ * Derive a `PlaygroundModel` from an Aliyun registry entry. Projects the
+ * core `ModelCapability` size/maxN metadata plus the Aliyun-specific
+ * `supportedResolutions`/`supportedAspectRatios` (only consumed by the
+ * Playground form, not by the core `SupportedModel` projection).
  */
 function fromAliyun(
   id: string,
@@ -114,6 +131,7 @@ function fromAliyun(
     label,
     provider: "aliyun-bailian",
     modality: caps.modality === "video" ? "video" : "image",
+    family: aliyunFamilySlug(entry.family),
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
     supportsVideo: caps.modality === "video",
@@ -122,14 +140,33 @@ function fromAliyun(
     requiresInputVideo: entry.requiresInputVideo,
     maxReferenceImages: entry.maxReferenceImages,
     maxEditImages: caps.maxEditImages,
+    supportedSizes: caps.supportedSizes,
+    maxResolution: caps.maxResolution,
+    maxN: caps.maxN,
+    supportedResolutions: entry.supportedResolutions,
+    supportedAspectRatios: entry.supportedAspectRatios,
     recommendation,
     configured: false,
   };
 }
 
 /**
- * Derive a `PlaygroundModel` from a Seedream registry entry.
+ * Derive a `PlaygroundModel` from a Seedream registry entry. The family slug
+ * is derived from the model id so the form can distinguish 5.0 Pro / 5.0
+ * Lite / 4.5 / 4.0 for Advanced Options (4.x omits `output_format`).
  */
+function seedreamFamilySlug(id: string): PlaygroundModelFamily {
+  if (id === "doubao-seedream-5-0-pro-260628") return "doubao-seedream-5-pro";
+  if (
+    id === "doubao-seedream-5-0-260128" ||
+    id === "doubao-seedream-5-0-lite-260128"
+  ) {
+    return "doubao-seedream-5-lite";
+  }
+  if (id === "doubao-seedream-4-5-251128") return "doubao-seedream-4-5";
+  return "doubao-seedream-4-0";
+}
+
 function fromSeedream(
   id: string,
   entry: (typeof SEEDREAM_MODEL_REGISTRY)[string]
@@ -141,18 +178,20 @@ function fromSeedream(
     label,
     provider: "doubao-seedream",
     modality: caps.modality === "video" ? "video" : "image",
+    family: seedreamFamilySlug(id),
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
     supportsVideo: false,
+    supportsAsync: caps.async === true,
     maxEditImages: caps.maxEditImages,
+    supportedSizes: caps.supportedSizes,
+    maxResolution: caps.maxResolution,
+    maxN: caps.maxN,
     recommendation,
     configured: false,
   };
 }
 
-/**
- * Derive a `PlaygroundModel` from an Azure registry entry.
- */
 function fromAzure(
   id: string,
   entry: (typeof AZURE_MODEL_REGISTRY)[string]
@@ -164,11 +203,15 @@ function fromAzure(
     label,
     provider: "azure-openai",
     modality: caps.modality === "video" ? "video" : "image",
+    family: "azure-gpt-image",
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
     supportsVideo: false,
     supportsAsync: caps.async === true,
     maxEditImages: caps.maxEditImages,
+    supportedSizes: caps.supportedSizes,
+    maxResolution: caps.maxResolution,
+    maxN: caps.maxN,
     recommendation,
     configured: false,
   };

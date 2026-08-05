@@ -8,7 +8,8 @@ const PROVIDERS = new Set([
   "aliyun-bailian",
   "doubao-seedream",
 ]);
-const MODES = new Set(["generate", "edit", "video"]);
+const MODALITIES = new Set(["image", "video"]);
+const IMAGE_OPERATIONS = new Set(["generate", "edit"]);
 
 export async function POST(request: Request): Promise<Response> {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: Request): Promise<Response> {
           status: "failed",
           error: {
             code: "VALIDATION_ERROR",
-            message: "Provide a Provider, model, mode, and non-empty prompt.",
+            message: "Provide a Provider, model, modality, and non-empty prompt.",
           },
         },
         { status: 422 }
@@ -49,15 +50,23 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
     typeof candidate.provider !== "string" ||
     !PROVIDERS.has(candidate.provider) ||
     typeof candidate.model !== "string" ||
-    typeof candidate.mode !== "string" ||
-    !MODES.has(candidate.mode) ||
+    typeof candidate.modality !== "string" ||
+    !MODALITIES.has(candidate.modality) ||
     typeof candidate.prompt !== "string" ||
     candidate.prompt.trim().length === 0
   ) {
     return undefined;
   }
 
-  if (candidate.mode === "edit") {
+  if (
+    candidate.imageOperation !== undefined &&
+    (typeof candidate.imageOperation !== "string" ||
+      !IMAGE_OPERATIONS.has(candidate.imageOperation))
+  ) {
+    return undefined;
+  }
+
+  if (candidate.imageOperation === "edit") {
     if (
       typeof candidate.referenceImageUrl !== "string" ||
       !isPublicHttpUrl(candidate.referenceImageUrl)
@@ -67,7 +76,7 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   }
 
   if (
-    candidate.mode === "video" &&
+    candidate.modality === "video" &&
     candidate.referenceImageUrl !== undefined &&
     (typeof candidate.referenceImageUrl !== "string" ||
       !isPublicHttpUrl(candidate.referenceImageUrl))
@@ -80,7 +89,7 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
     (typeof candidate.n !== "number" ||
       !Number.isInteger(candidate.n) ||
       candidate.n < 1 ||
-      candidate.n > 4)
+      candidate.n > 6)
   ) {
     return undefined;
   }
@@ -129,7 +138,11 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   return {
     provider: candidate.provider as PlaygroundRequest["provider"],
     model: candidate.model,
-    mode: candidate.mode as PlaygroundRequest["mode"],
+    modality: candidate.modality as PlaygroundRequest["modality"],
+    imageOperation:
+      typeof candidate.imageOperation === "string"
+        ? (candidate.imageOperation as PlaygroundRequest["imageOperation"])
+        : undefined,
     prompt: candidate.prompt.trim(),
     referenceImageUrl:
       typeof candidate.referenceImageUrl === "string"
