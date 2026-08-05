@@ -47,6 +47,6 @@
 
 ## 7. Verification and commit
 
-- [ ] 7.1 Run `bun run lint`, `bun run typecheck`, `bun run build` (root, turbo-scheduled) and fix any failures
-- [ ] 7.2 Run `bun test` in affected workspaces: `packages/ai-media-sdk`, `packages/provider-aliyun-bailian`, `packages/provider-seedream`, `packages/provider-azure-openai`, and `apps/web` registry tests
-- [ ] 7.3 Inspect `git status`/`git diff`; stage only change-related files; commit on `main` with message `feat: consolidate supported-model registries and intercept unknown/incompatible models`; report the commit hash and do not push
+- [x] 7.1 Run `bun run lint`, `bun run typecheck`, `bun run build` (root, turbo-scheduled) and fix any failures
+- [x] 7.2 Run `bun test` in affected workspaces: `packages/ai-media-sdk`, `packages/provider-aliyun-bailian`, `packages/provider-seedream`, `packages/provider-azure-openai`, and `apps/web` registry tests
+- [x] 7.3 Inspect `git status`/`git diff`; stage only change-related files; commit on `main` with message `feat: consolidate supported-model registries and intercept unknown/incompatible models`; report the commit hash and do not push
