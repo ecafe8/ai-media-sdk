@@ -6,7 +6,7 @@
 - 所属产品：AI Image SDK
 - 总 PRD：`docs/prd/main-prd.md`
 - Sub 目录：`docs/prd/sub-provider-adapters/`
-- 文档版本：v1.4.0
+- 文档版本：v1.5.0
 - 文档状态：草稿
 - UI 类型：纯后端型，不生成 `ui.md`
 - 来源说明：产品范围来自总 PRD；仓库事实来自当前 monorepo；Provider 能力来自外部官方/参考资料；Context7 已确认 DashScope 无官方 JS/TS SDK；未确认内容标记为待确认。
@@ -159,13 +159,13 @@ flowchart TD
 
 ## 10. 分支验收标准
 
-- [ ] 四类首批 Provider 均能通过统一工厂创建，或明确标记其外部资料缺口。
-- [ ] Azure OpenAI 使用 deployment name 创建图像模型实例。
-- [ ] Provider 配置不把真实密钥写入日志、代码或错误信息。
-- [ ] Provider 能力声明能阻止不支持参数静默下传。
-- [ ] Provider 原生选项不会污染其他 Provider 的参数类型。
-- [ ] Provider 任务和结果能被 `SUB-002`、`SUB-003` 消费。
-- [ ] 阿里云百炼首期推荐模型的文生图/编辑、最大输出数和最大分辨率能力已注册并可校验。
+- [x] 四类首批 Provider 均能通过统一工厂创建，或明确标记其外部资料缺口。
+- [x] Azure OpenAI 使用 deployment name 创建图像模型实例。
+- [x] Provider 配置不把真实密钥写入日志、代码或错误信息。
+- [x] Provider 能力声明能阻止不支持参数静默下传。（2026-08-05，OpenSpec `model-aware-params`：`generateImage` 预检 `size`/`n`；Aliyun 视频分辨率/ratio 校验改为注册表驱动。）
+- [x] Provider 原生选项不会污染其他 Provider 的参数类型。（家族 `TParams` 把 `providerOptions.<namespace>` 在编译期按家族收窄，跨命名空间字段触发类型错误。）
+- [x] Provider 任务和结果能被 `SUB-002`、`SUB-003` 消费。
+- [x] 阿里云百炼首期推荐模型的文生图/编辑、最大输出数和最大分辨率能力已注册并可校验。（`ALIYUN_MODEL_REGISTRY` 每个模型条目均带 `capabilities.maxResolution`/`maxN`；`generateImage`/`submitImageTask` 预检。）
 - [ ] 每个 Provider 至少有一个 example 配置说明。
 
 ## 11. 待确认事项
@@ -187,3 +187,4 @@ flowchart TD
 | v1.3.0 | 2026-07-31 | Doubao-Seedream 官方 API 入口确认：火山方舟 OpenAI 兼容 `/api/v3/images/generations`，`Authorization: Bearer`，同步 `data[]`；4 个模型能力矩阵与请求字段登记于 `tech.md` v1.5.0。                                                                                                                                                                                                                                                                                |
 | v1.4.0 | 2026-07-31 | 纠正万相（Wan）异步结果形态为 `output.results[].url`（ImageSynthesis 形态）；新增阿里云百炼视频异步契约（HappyHorse `t2v`/`i2v`）：提交 `video-generation/video-synthesis` + `X-DashScope-Async`，轮询 `GET /tasks/{task_id}`（与图像异步同一任务机制），结果 `output.video_url`（MP4 H.264，24h），24h task_id。Phase 4 将交付核心模态无关异步契约（`submitTask`/`TaskHandle.wait()`）并解锁视频异步（SUB-006 提前至 MVP 后阶段）。详见 `tech.md` v1.6.0 §4.5。 |
 | v1.5.0 | 2026-08-04 | HappyHorse `r2v`/`video-edit` live 契约确认（用户提供官方文档）：r2v 1-9 张参考图 + `[Image N]` 指代；video-edit 1 视频（仅公网 URL）+ 0-5 参考图 + `audio_setting`，无 `ratio`/`duration`。Wan 视频系列资料过时标记不推进。视频需求正式化至 `docs/prd/sub-video-generation/`（SUB-006）。详见 `tech.md` v1.7.0 §4.5。 |
+| v1.6.0 | 2026-08-05 | 落实 OpenSpec `model-aware-params`：Provider 注册表填充 size/maxN/resolution 元数据；§10 验收标准中「阿里云推荐模型能力矩阵能校验编辑支持、最大输出数和最大分辨率」勾选完成；§7「Provider 独有参数必须置于其命名空间下」继续由 `providerOptions.<namespace>` 隔离满足；§11 待确认项「Azure 公共/原生字段最终配置结构」「wan/qwen 是否拆包」仍保留（暂不推进）。详见 `tech.md` v1.8.0 §4。 |

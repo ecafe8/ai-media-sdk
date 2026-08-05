@@ -5,7 +5,7 @@
 - Sub：`SUB-001 Provider 适配体系`
 - 总 PRD：`docs/prd/main-prd.md`
 - 对应需求文档：`./prd.md`
-- 文档版本：v1.6.0
+- 文档版本：v1.8.0
 - 文档状态：草稿
 - 方案性质：独立 Provider 契约，参考 AI SDK，不将 AI SDK 作为核心运行时依赖；Provider 适配器纯 fetch，不包装官方 SDK
 
@@ -337,3 +337,4 @@ Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料�
 | v1.5.0 | 2026-07-31 | Doubao-Seedream live 契约确认：火山方舟官方 OpenAI 兼容 `POST /api/v3/images/generations`，`Authorization: Bearer`，**同步** `data[]` 响应（不被 `SUB-003` 阻塞）；单端点承载 T2I/I2I/多参考图融合/组图/交互编辑（编辑仅增 `image` 字段，非独立 multipart 端点）；登记 4 个模型（5.0 pro/5.0 lite/4.5/4.0）能力矩阵、请求字段、原生参数命名空间 `providerOptions.seedream`、图片输入限制、24h URL 与 500 IPM 限流；fal.ai 资料降级为历史参考；Phase 3 首期切片范围锁定 T2I+I2I/多图编辑，组图/流式/联网搜索后置。                                                                                                                                                                                                              |
 | v1.6.0 | 2026-07-31 | 纠正万相（Wan）异步任务结果形态：`SUCCEEDED` 时结果在 `output.results[].url`（ImageSynthesis 形态），非此前误记的 `output.choices[].message.content[].image`（后者属 Qwen `multimodal-generation`）；补全任务状态枚举。依据 Context7 `/dashscope/dashscope-sdk-python`。新增 §4.5 阿里云百炼视频异步契约（HappyHorse）：提交 `video-generation/video-synthesis` + `X-DashScope-Async`，t2v/i2v 请求体，轮询 `GET /tasks/{task_id}`（与图像异步同一任务机制），状态 `PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN`，结果 `output.video_url`（MP4 H.264，24h），24h task_id，RPS≤20/15s 间隔；首批 `happyhorse-1.1-t2v`/`happyhorse-1.1-i2v`。Phase 4 将交付核心模态无关异步契约（SUB-003）并解锁视频异步（SUB-006 提前）。 |
 | v1.7.0 | 2026-08-04 | §4.5 补充 HappyHorse r2v 与 video-edit live 契约（用户提供官方文档并核对）：r2v（`happyhorse-1.1-r2v`/`1.0-r2v`）1-9 张 `reference_image` + prompt `[Image N]` 指代，参数同 t2v；video-edit（固定 `happyhorse-1.0-video-edit`）1 个 `video`（仅公网 URL，MP4/MOV 3-60s ≤100MB）+ 0-5 张 `reference_image`，参数含 `audio_setting`（`auto`/`origin`）且无 `ratio`/`duration`，`resolution` 仅 720P/1080P。四模式共用 `video-synthesis` 提交与 `/tasks/{task_id}` 轮询。Wan 视频系列（`wan2.7-*`）与 `animate-*` 官方资料过时，标记不推进。视频需求正式化至 `docs/prd/sub-video-generation/`（SUB-006）。 |
+| v1.8.0 | 2026-08-05 | 落实 OpenSpec `model-aware-params`（Part 2-3）：§4.1/§4.3/§4.4 各模型矩阵补 `supportedSizes`/`maxResolution`/`maxN` 列；§4.3 Aliyun HappyHorse 视频在 `AliyunModelEntry` 新增 `supportedResolutions`/`supportedAspectRatios`（i2v 与 video-edit 声明 `[]` 表示无 `ratio` 参数），适配器把硬编码 `VIDEO_RESOLUTIONS`/`VIDEO_EDIT_RESOLUTIONS` 常量改为注册表驱动；§4 各 Provider 包 `image(modelId)`/`video(modelId)` 提供按家族字面量重载，返回携带家族级 `TParams` 的 `ImageModelInstance`/`VideoModelInstance`，使 `generateImage`/`submitVideoTask` 编译期收窄 `size`/`n`/`providerOptions.<namespace>` 字段；`TParams` 是 phantom 类型参数，运行时无形状变化，字符串兜底重载保持向后兼容。 |

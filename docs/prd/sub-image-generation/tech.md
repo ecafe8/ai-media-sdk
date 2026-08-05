@@ -5,7 +5,7 @@
 - Sub：`SUB-002 统一图像生成与编辑`
 - 总 PRD：`docs/prd/main-prd.md`
 - 对应需求文档：`./prd.md`
-- 文档版本：v1.1.0
+- 文档版本：v1.3.0
 - 文档状态：草稿
 
 ## 1. 代码库事实与复用点
@@ -82,9 +82,9 @@ flowchart LR
 - `editImage({ model, prompt, images, ... })`：显式编辑入口，或后续合并为结构化 prompt；最终命名待确认。
 - `providerOptions` 按 Provider 命名空间隔离，类型由 Provider 提供。
 - 图片输入建立统一 `ImageInput` 表示，支持 Buffer、URL 和可扩展的 Blob/流输入；Node.js 首期优先验证 Buffer/URL。
-- 公共尺寸字段不应假设 `aspectRatio` 对所有模型有效；Azure DALL-E 资料明确偏向 `size`，因此需能力化建模。
-- 阿里云百炼模型使用能力注册表进行模型级校验：`z-image-turbo` 禁止编辑；`wan2.7-image-pro` 文生图最大 4096x4096、编辑最大 2048x2048；其他推荐模型按其最大 2048x2048 和输出数量约束。
-- `maxImages` 必须按请求操作校验；百炼推荐模型通常为 4 或 6 张，连续生成 12 张是否作为独立能力待确认。
+- 公共尺寸字段不应假设 `aspectRatio` 对所有模型有效；Azure DALL-E 资料明确偏向 `size`，因此需能力化建模。**已落实**（2026-08-05，OpenSpec `model-aware-params`）：`ModelCapability` 新增 `supportedSizes`/`maxResolution`/`maxN` 可选字段，`generateImage` 在 transport 调用前预检 `size`/`n`；闭集 `supportedSizes` 优先匹配，否则按 `^\d+[x*]\d+$/i` 像素正则 + `maxResolution` 上限校验。未声明字段的模型继续原样透传（向后兼容）。
+- 阿里云百炼模型使用能力注册表进行模型级校验：`z-image-turbo` 禁止编辑；`wan2.7-image-pro` 文生图最大 4096x4096、编辑最大 2048x2048；其他推荐模型按其最大 2048x2048 和输出数量约束。**已落实**：Qwen 系列 `maxResolution: 2048x2048`/`maxN: 6`；`wan2.7-image-pro` `maxResolution: 4096x4096`/`maxN: 4`；`wan2.7-image` `maxResolution: 2048x2048`/`maxN: 4`。
+- `maxImages` 必须按请求操作校验；百炼推荐模型通常为 4 或 6 张，连续生成 12 张是否作为独立能力待确认。**`maxN` 已校验**（`generateImage` 预检）；连续生成 12 张仍作为 Wan 原生 `enable_sequential` 选项经 `providerOptions.aliyun` 透传，未升级为公共能力。
 
 ## 5. 数据流图
 
@@ -195,9 +195,9 @@ sequenceDiagram
 
 ## 11. 风险与待确认
 
-- 不同 Provider 对图片输入、尺寸和输出的语义差异可能迫使公共字段变为能力条件字段。
+- ~~不同 Provider 对图片输入、尺寸和输出的语义差异可能迫使公共字段变为能力条件字段。~~ **已落实**（2026-08-05，OpenSpec `model-aware-params`）：`ModelCapability.supportedSizes`/`maxResolution`/`maxN` 让 `size`/`n` 在 `generateImage` 预检阶段按模型能力条件校验；未声明字段的模型继续原样透传。
 - 是否支持多图/mask 进入公共 MVP 需结合首批模型实际能力确认。
-- 百炼模型的连续生成 12 张是否进入公共契约，以及 Qwen Image 负向提示词是否作为公共字段或 Provider 选项，待 API 设计确认。
+- ~~百炼模型的连续生成 12 张是否进入公共契约，以及 Qwen Image 负向提示词是否作为公共字段或 Provider 选项，待 API 设计确认。~~ **已落实**：连续生成 12 张作为 Wan 家族 `providerOptions.aliyun.enable_sequential` 选项；Qwen Image 负向提示词作为 `providerOptions.aliyun.negative_prompt` 选项。两者均未升级为公共契约，保持 namespace 隔离。Playground 通过「高级选项」折叠区暴露。
 - URL 下载会带来 SSRF、内存和超时风险。
 
 ## 12. 变更记录
@@ -207,3 +207,4 @@ sequenceDiagram
 | v1.0.0 | 2026-07-30 | 创建统一图像生成与编辑技术方案。 |
 | v1.1.0 | 2026-07-30 | 根据百炼资料补充模型级能力注册、分辨率和输出数量校验方案。 |
 | v1.2.0 | 2026-07-30 | 核心类型模态无关泛型化（`GenerationResult<T>`/`TaskHandle<T>`），预留 `generateVideo`/`generateAudio` 入口；对齐 `@ai-media/*` 包 scope 与纯 fetch Provider。 |
+| v1.3.0 | 2026-08-05 | 落实 OpenSpec `model-aware-params`（Part 1-3）：§4 核心契约新增 `ModelCapability.supportedSizes`/`maxResolution`/`maxN` 字段；§11 待确认项「公共字段变为能力条件字段」「百炼连续生成/负向提示词位置」标记为已决；`generateImage` 预检 `size`/`n`；Provider 注册表填充 size/maxN 元数据；`image(modelId)` 按家族字面量重载提供 IDE 提示。 |

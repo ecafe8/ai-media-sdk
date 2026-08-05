@@ -145,18 +145,18 @@ flowchart TD
 - [ ] 图片编辑仅在模型能力声明支持时可提交。
 - [ ] Buffer/URL 等公共图片输入能被明确校验并传递。
 - [ ] Provider 原生参数被限制在正确命名空间。
-- [ ] 参数/能力错误在外部请求前返回。
-- [ ] 同步和异步 Provider 都能转换为 `SUB-003` 可消费的结果。
-- [ ] 阿里云百炼推荐模型能力矩阵能校验编辑支持、最大输出数和最大分辨率。
+- [x] 参数/能力错误在外部请求前返回。
+- [x] 同步和异步 Provider 都能转换为 `SUB-003` 可消费的结果。
+- [x] 阿里云百炼推荐模型能力矩阵能校验编辑支持、最大输出数和最大分辨率。
 
 ## 11. 待确认事项
 
-- 统一函数命名采用 `generateImage`/`editImage`，还是统一一个支持文本和图片 prompt 的函数。
-- 公共参数首期包含哪些尺寸、质量、数量和格式字段。
+- ~~统一函数命名采用 `generateImage`/`editImage`，还是统一一个支持文本和图片 prompt 的函数。~~ 已决：采用 `generateImage`/`editImage` 双入口。
+- ~~公共参数首期包含哪些尺寸、质量、数量和格式字段。~~ 已决（2026-08-05，OpenSpec `model-aware-params`）：公共参数为 `size`/`n`，按 `ModelCapability.supportedSizes`/`maxResolution`/`maxN` 在 `generateImage` 预检阶段按模型条件校验；质量/格式等 Provider 原生字段经 `providerOptions.<namespace>` 透传。
 - URL 输入是否由 SDK 下载，还是要求 Provider 原生接受 URL。
 - 结果默认提供 URL、二进制，还是惰性读取对象。
-- 多图片和 mask 是否进入 MVP 公共契约，还是仅走 Provider 能力扩展。
-- 百炼连续生成“最多 12 张”的能力是否作为独立操作暴露，还是首期仅保留单次输出数约束。
+- ~~多图片和 mask 是否进入 MVP 公共契约，还是仅走 Provider 能力扩展。~~ 已决：多图片输入（`images: ImageContent[]`）进入公共契约；mask 仅走 Provider 能力扩展。
+- ~~百炼连续生成"最多 12 张"的能力是否作为独立操作暴露，还是首期仅保留单次输出数约束。~~ 已决：首期仅保留单次输出数约束（`maxN`）；连续 12 张作为 Wan 家族 `providerOptions.aliyun.enable_sequential` 原生选项。
 
 ## 12. 变更记录
 
