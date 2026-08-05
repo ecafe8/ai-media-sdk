@@ -9,7 +9,7 @@ import {
 import { saveBatchSummary, saveResult } from "./save.js";
 
 const prompt =
-  process.argv.slice(2).join(" ") || "左侧背景不变,图片右侧的每个视频框内分别动态播放各自屏幕中的视频内容，视频框本身不动";
+  process.argv.slice(2).join(" ") || "左侧背景不变,图片右侧的每个视频框内分别动态循环播放各自屏幕中的视频内容，视频框本身不动";
 const models = readAliyunVideoModels();
 const exampleInputs = readAliyunVideoExampleInputs();
 const batchStartedAt = Date.now();
@@ -45,7 +45,7 @@ try {
           aliyun: {
             resolution: "720P",
             ...(isR2v ? { ratio: "16:9" } : {}),
-            ...(isVideoEdit ? {} : { duration: 5 }),
+            ...(isVideoEdit ? {} : { duration: 15 }),
             watermark: false,
           },
         },
