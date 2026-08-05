@@ -143,9 +143,18 @@ function validateN(
  *
  * Validates public parameters against model capabilities, builds a
  * modality-neutral `AdapterRequest`, and dispatches to the adapter `generate`.
+ *
+ * Generic over `TParams` (defaults to `ImageGenerationInput`) so that when the
+ * caller obtains `model` via a literal-id Provider factory overload (e.g.
+ * `azure.image("gpt-image-2")`), the `size`/`n`/`providerOptions.<namespace>`
+ * fields are narrowed at compile time to what the model accepts. Dynamic
+ * model ids (string fallback overload) keep the pre-change `string`/`number`
+ * request shape.
  */
-export async function generateImage(
-  request: ImageGenerationRequest
+export async function generateImage<
+  TParams extends ImageGenerationInput = ImageGenerationInput,
+>(
+  request: ImageGenerationRequest<TParams>
 ): Promise<GenerationResult<ImageContent[]>> {
   const { model, prompt, n, size, providerOptions } = request;
 

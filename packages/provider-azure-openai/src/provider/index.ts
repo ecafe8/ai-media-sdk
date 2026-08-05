@@ -19,6 +19,7 @@ import {
 
 import type { AzureOpenAIConfig } from "../config/index.ts";
 import type { AzureImageProviderOptions } from "./options.ts";
+import type { AzureGptImage2Params } from "./params.ts";
 import {
   AZURE_MODEL_REGISTRY,
   DEFAULT_AZURE_CUSTOM_CAPABILITY,
@@ -52,8 +53,20 @@ export interface AzureOpenAIProvider extends ProviderAdapter<ImageContent[]> {
   readonly providerId: ProviderId;
   readonly config: Readonly<AzureOpenAIConfig>;
   readonly transport: Transport;
-  /** Create an image model instance bound to an Azure deployment name. */
-  image: (deployment: string) => ImageModelInstance;
+  /**
+   * Create an image model instance bound to an Azure deployment.
+   *
+   * Literal overloads return a typed `ImageModelInstance<AzureGptImage2Params>`
+   * for known deployments so `generateImage`/`submitImageTask` narrow `size`
+   * to the documented Azure values and `providerOptions.azure` to the
+   * `AzureImageProviderOptions` shape at compile time. The string fallback
+   * keeps the default `ImageGenerationInput` shape for custom deployments
+   * registered via `createAzureModel`.
+   */
+  image: {
+    (deployment: "gpt-image-2"): ImageModelInstance<AzureGptImage2Params>;
+    (deployment: string): ImageModelInstance;
+  },
   /**
    * Register a custom deployment and bind an image model instance. Bypasses
    * the known-deployment whitelist; the registered entry is visible to

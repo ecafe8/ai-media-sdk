@@ -5,8 +5,11 @@ import type { ImageModelInstance } from "./model-instance.ts";
  * Image generation request and input contracts.
  *
  * `ImageGenerationInput` is the provider-agnostic payload handed to a Provider
- * adapter inside an `AdapterRequest`. `ImageGenerationRequest` adds the
- * provider-bound model instance so `generateImage` can dispatch.
+ * adapter inside an `AdapterRequest`. `ImageGenerationRequest<TParams>` adds
+ * the provider-bound model instance so `generateImage` can dispatch, and
+ * constrains the request shape to the bound model's `TParams` so the IDE
+ * surfaces only the `size`/`n`/`providerOptions.<namespace>` values the
+ * selected model accepts.
  */
 
 /**
@@ -24,14 +27,19 @@ export interface ImageGenerationInput {
 
 /**
  * A complete image generation request bound to a provider model instance.
+ *
+ * `TParams` carries the family-specific request shape (defaults to
+ * `ImageGenerationInput`). The request is `TParams` intersected with
+ * `{ model }`, so the `size`/`n`/`providerOptions` fields narrow per family
+ * when callers obtain `model` via a literal-id factory overload (e.g.
+ * `azure.image("gpt-image-2")`); the default keeps `size: string` and
+ * `n: number` for dynamic ids.
  */
-export interface ImageGenerationRequest {
-  readonly model: ImageModelInstance;
-  readonly prompt: string;
-  readonly n?: number;
-  readonly size?: string;
-  readonly providerOptions?: Readonly<Record<string, unknown>>;
-}
+export type ImageGenerationRequest<
+  TParams extends ImageGenerationInput = ImageGenerationInput,
+> = TParams & {
+  readonly model: ImageModelInstance<TParams>;
+};
 
 /**
  * Provider-agnostic image edit payload carried in `AdapterRequest.input`.

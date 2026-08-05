@@ -1,22 +1,28 @@
 import type { ImageContent, VideoContent } from "../contracts/content.ts";
-import type { ModelInstance } from "../contracts/model-instance.ts";
+import type {
+  ModelInstance,
+  DefaultVideoParams,
+} from "../contracts/model-instance.ts";
 
 /**
  * Video generation request and input contracts.
  *
  * `VideoGenerationInput` is the provider-agnostic payload handed to a Provider
- * adapter inside an `AdapterRequest`. `VideoGenerationRequest` adds the
- * provider-bound video model instance so `submitVideoTask` can dispatch. The
- * public input carries `prompt` and mode-specific media inputs (an optional
- * `firstFrame` for first-frame i2v, ordered `referenceImages` for r2v/
- * video-edit, and an `inputVideo` public URL for video-edit); native video
- * parameters travel under `providerOptions.<provider>`.
+ * adapter inside an `AdapterRequest`. `VideoGenerationRequest<TParams>` adds
+ * the provider-bound video model instance so `submitVideoTask` can dispatch,
+ * and constrains the request shape to the bound model's `TParams` (defaults
+ * to `VideoGenerationInput`). The public input carries `prompt` and
+ * mode-specific media inputs (an optional `firstFrame` for first-frame i2v,
+ * ordered `referenceImages` for r2v/video-edit, and an `inputVideo` public
+ * URL for video-edit); native video parameters travel under
+ * `providerOptions.<provider>`.
  */
 
 /**
  * A provider-bound video model instance, specialized to `VideoContent[]`.
  */
-export type VideoModelInstance = ModelInstance<VideoContent[]>;
+export type VideoModelInstance<TParams = DefaultVideoParams> =
+  ModelInstance<VideoContent[], TParams>;
 
 /**
  * Provider-agnostic video generation payload carried in `AdapterRequest.input`.
@@ -39,12 +45,16 @@ export interface VideoGenerationInput {
 
 /**
  * A complete video generation request bound to a provider video model instance.
+ *
+ * `TParams` carries the family-specific request shape (defaults to
+ * `VideoGenerationInput`). The request is `TParams` intersected with
+ * `{ model }` so `providerOptions.<provider>` (e.g. `aliyun.resolution`,
+ * `aliyun.ratio`, `aliyun.audio_setting`) narrows per video mode when callers
+ * obtain `model` via a literal-id factory overload; the default keeps
+ * `providerOptions: Record<string, unknown>` for dynamic ids.
  */
-export interface VideoGenerationRequest {
-  readonly model: VideoModelInstance;
-  readonly prompt: string;
-  readonly firstFrame?: ImageContent;
-  readonly referenceImages?: readonly ImageContent[];
-  readonly inputVideo?: { readonly url: string };
-  readonly providerOptions?: Readonly<Record<string, unknown>>;
-}
+export type VideoGenerationRequest<
+  TParams extends VideoGenerationInput = VideoGenerationInput,
+> = TParams & {
+  readonly model: VideoModelInstance<TParams>;
+};

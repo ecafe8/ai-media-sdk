@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { SdkError, submitVideoTask } from "@ai-media/sdk";
+import { SdkError, submitVideoTask, type VideoGenerationRequest } from "@ai-media/sdk";
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 
 import {
@@ -192,9 +192,13 @@ describe("aliyun-bailian r2v/video-edit adapter", () => {
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
     const model = provider.video(R2V);
 
-    await expect(submitVideoTask({ model, prompt: "p" })).rejects.toMatchObject(
-      { code: "INVALID_REQUEST" }
-    );
+    // Cast to the untyped VideoGenerationRequest: the family TParams would
+    // otherwise narrow `referenceImages` to required at compile time. The
+    // test deliberately passes a missing value to exercise the runtime
+    // adapter validator path.
+    await expect(
+      submitVideoTask({ model, prompt: "p" } as VideoGenerationRequest)
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(requests).toHaveLength(0);
   });
 
@@ -217,9 +221,13 @@ describe("aliyun-bailian r2v/video-edit adapter", () => {
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
     const model = provider.video(VIDEO_EDIT);
 
-    await expect(submitVideoTask({ model, prompt: "p" })).rejects.toMatchObject(
-      { code: "INVALID_REQUEST" }
-    );
+    // Cast to the untyped VideoGenerationRequest: the family TParams would
+    // otherwise narrow `inputVideo` to required at compile time. The test
+    // deliberately passes a missing value to exercise the runtime adapter
+    // validator path.
+    await expect(
+      submitVideoTask({ model, prompt: "p" } as VideoGenerationRequest)
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(requests).toHaveLength(0);
   });
 
@@ -307,13 +315,16 @@ describe("aliyun-bailian r2v/video-edit adapter", () => {
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
     const model = provider.video(VIDEO_EDIT);
 
+    // `audio_setting: "loud"` is deliberately outside the family-typed
+    // `"auto" | "origin"` union; cast to the untyped request shape so the
+    // runtime adapter validator path is exercised.
     await expect(
       submitVideoTask({
         model,
         prompt: "p",
         inputVideo: { url: "https://x/source.mp4" },
         providerOptions: { aliyun: { audio_setting: "loud" } },
-      })
+      } as VideoGenerationRequest)
     ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(requests).toHaveLength(0);
   });
@@ -323,13 +334,16 @@ describe("aliyun-bailian r2v/video-edit adapter", () => {
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
     const model = provider.video(VIDEO_EDIT);
 
+    // `resolution: "480P"` is deliberately outside the video-edit family's
+    // `"720P" | "1080P"` union; cast to the untyped request shape so the
+    // runtime adapter validator path is exercised.
     await expect(
       submitVideoTask({
         model,
         prompt: "p",
         inputVideo: { url: "https://x/source.mp4" },
         providerOptions: { aliyun: { resolution: "480P" } },
-      })
+      } as VideoGenerationRequest)
     ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(requests).toHaveLength(0);
   });

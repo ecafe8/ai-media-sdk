@@ -5,6 +5,17 @@ export type {
 } from "./provider/index.ts";
 export type { AliyunImageProviderOptions } from "./provider/options.ts";
 export type {
+  AliyunHappyHorseI2VParams,
+  AliyunHappyHorseR2VParams,
+  AliyunHappyHorseT2VParams,
+  AliyunHappyHorseVideoEditParams,
+  AliyunImageFamilyOptions,
+  AliyunQwenImageParams,
+  AliyunVideoFamilyOptions,
+  AliyunWan27ImageParams,
+  AliyunWan27ProImageParams,
+} from "./provider/params.ts";
+export type {
   AliyunModelEntry,
   AliyunModelFamily,
   AliyunParamSupport,

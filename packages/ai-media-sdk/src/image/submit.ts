@@ -10,10 +10,15 @@ import type {
  * Submit an asynchronous image generation task via the bound model instance.
  *
  * The public request shape intentionally matches `generateImage`; only the
- * dispatch method and asynchronous return contract differ.
+ * dispatch method and asynchronous return contract differ. Generic over
+ * `TParams` so callers selecting a model by literal id get compile-time
+ * narrowing of `size`/`n`/`providerOptions.<namespace>` exactly as in
+ * `generateImage`.
  */
-export async function submitImageTask(
-  request: ImageGenerationRequest
+export async function submitImageTask<
+  TParams extends ImageGenerationInput = ImageGenerationInput,
+>(
+  request: ImageGenerationRequest<TParams>
 ): Promise<TaskHandle<ImageContent[]>> {
   const { model, prompt, n, size, providerOptions } = request;
 

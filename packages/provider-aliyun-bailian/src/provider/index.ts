@@ -25,6 +25,15 @@ import {
 
 import type { AliyunBailianConfig } from "../config/index.ts";
 import type { AliyunImageProviderOptions } from "./options.ts";
+import type {
+  AliyunHappyHorseI2VParams,
+  AliyunHappyHorseR2VParams,
+  AliyunHappyHorseT2VParams,
+  AliyunHappyHorseVideoEditParams,
+  AliyunQwenImageParams,
+  AliyunWan27ImageParams,
+  AliyunWan27ProImageParams,
+} from "./params.ts";
 import {
   ALIYUN_MODEL_REGISTRY,
   aliyunModelRegistry,
@@ -67,10 +76,37 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
   readonly providerId: ProviderId;
   readonly config: Readonly<AliyunBailianConfig>;
   readonly transport: Transport;
-  /** Create an image model instance bound to an Aliyun model id. */
-  image: (modelId: string) => ImageModelInstance;
-  /** Create a video model instance bound to a HappyHorse video model id. */
-  video: (modelId: string) => VideoModelInstance;
+  /**
+   * Create an image model instance bound to an Aliyun model id.
+   *
+   * Literal overloads return family-typed `ImageModelInstance<...Params>`
+   * (Qwen-multimodal or Wan-image family) so `generateImage`/`submitImageTask`
+   * narrow `size`/`n` and `providerOptions.aliyun` at compile time. The string
+   * fallback keeps the default `ImageGenerationInput` shape for dynamic ids.
+   */
+  image: {
+    (modelId: "qwen-image-3.0-pro" | "qwen-image-2.0-pro" | "qwen-image-2.0-pro-2026-06-22" | "qwen-image-2.0"): ImageModelInstance<AliyunQwenImageParams>;
+    (modelId: "wan2.7-image-pro"): ImageModelInstance<AliyunWan27ProImageParams>;
+    (modelId: "wan2.7-image"): ImageModelInstance<AliyunWan27ImageParams>;
+    (modelId: string): ImageModelInstance;
+  };
+  /**
+   * Create a video model instance bound to a HappyHorse video model id.
+   *
+   * Literal overloads return family-typed `VideoModelInstance<...Params>` per
+   * HappyHorse mode (t2v/i2v/r2v/video-edit) so `submitVideoTask` narrows
+   * `firstFrame`/`referenceImages`/`inputVideo` and
+   * `providerOptions.aliyun.resolution`/`ratio`/`duration`/`audio_setting`
+   * at compile time. The string fallback keeps the default
+   * `VideoGenerationInput` shape for dynamic ids.
+   */
+  video: {
+    (modelId: "happyhorse-1.1-t2v"): VideoModelInstance<AliyunHappyHorseT2VParams>;
+    (modelId: "happyhorse-1.1-i2v"): VideoModelInstance<AliyunHappyHorseI2VParams>;
+    (modelId: "happyhorse-1.1-r2v"): VideoModelInstance<AliyunHappyHorseR2VParams>;
+    (modelId: "happyhorse-1.0-video-edit"): VideoModelInstance<AliyunHappyHorseVideoEditParams>;
+    (modelId: string): VideoModelInstance;
+  };
   /** Enumerate the supported models projected from the Aliyun registry. */
   listModels: () => readonly SupportedModel[];
 }

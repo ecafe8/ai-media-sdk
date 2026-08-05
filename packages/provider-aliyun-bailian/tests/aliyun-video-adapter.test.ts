@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { SdkError, submitVideoTask } from "@ai-media/sdk";
+import { SdkError, submitVideoTask, type VideoGenerationRequest } from "@ai-media/sdk";
 import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 
 import {
@@ -181,8 +181,12 @@ describe("aliyun-bailian video adapter", () => {
     const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
     const model = provider.video(I2V);
 
+    // Cast to the untyped VideoGenerationRequest: the family TParams would
+    // otherwise narrow `firstFrame` to required at compile time. The test
+    // deliberately passes a missing value to exercise the runtime adapter
+    // validator path.
     await expect(
-      submitVideoTask({ model, prompt: "动起来" })
+      submitVideoTask({ model, prompt: "动起来" } as VideoGenerationRequest)
     ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(requests).toHaveLength(0);
   });

@@ -8,6 +8,13 @@ export type {
   SeedreamOptimizePromptOptions,
 } from "./provider/options.ts";
 export type {
+  Seedream40Params,
+  Seedream45Params,
+  Seedream5LiteParams,
+  Seedream5ProParams,
+  SeedreamFamilyOptions,
+} from "./provider/params.ts";
+export type {
   SeedreamModelEntry,
   SeedreamParamSupport,
   SeedreamOutputFormat,

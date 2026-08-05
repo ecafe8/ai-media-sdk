@@ -18,6 +18,12 @@ import {
 
 import { resolveBaseUrl, type SeedreamConfig } from "../config/index.ts";
 import type { SeedreamImageProviderOptions } from "./options.ts";
+import type {
+  Seedream40Params,
+  Seedream45Params,
+  Seedream5LiteParams,
+  Seedream5ProParams,
+} from "./params.ts";
 import {
   SEEDREAM_MODEL_REGISTRY,
   seedreamModelRegistry,
@@ -50,8 +56,22 @@ export interface SeedreamProvider extends ProviderAdapter<ImageContent[]> {
   readonly providerId: ProviderId;
   readonly config: Readonly<SeedreamConfig>;
   readonly transport: Transport;
-  /** Create an image model instance bound to a Seedream model id. */
-  image: (modelId: string) => ImageModelInstance;
+  /**
+   * Create an image model instance bound to a Seedream model id.
+   *
+   * Literal overloads return family-typed `ImageModelInstance<Seedream*Params>`
+   * per model generation so `generateImage`/`editImage` narrow `size` to the
+   * model's tier enum literal union and `providerOptions.seedream` to the
+   * `SeedreamImageProviderOptions` shape at compile time. The string fallback
+   * keeps the default `ImageGenerationInput` shape for dynamic ids.
+   */
+  image: {
+    (modelId: "doubao-seedream-5-0-pro-260628"): ImageModelInstance<Seedream5ProParams>;
+    (modelId: "doubao-seedream-5-0-260128" | "doubao-seedream-5-0-lite-260128"): ImageModelInstance<Seedream5LiteParams>;
+    (modelId: "doubao-seedream-4-5-251128"): ImageModelInstance<Seedream45Params>;
+    (modelId: "doubao-seedream-4-0-250828"): ImageModelInstance<Seedream40Params>;
+    (modelId: string): ImageModelInstance;
+  };
   /** Enumerate the supported models projected from the Seedream registry. */
   listModels: () => readonly SupportedModel[];
 }

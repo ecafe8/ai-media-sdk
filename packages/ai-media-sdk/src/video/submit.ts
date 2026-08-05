@@ -15,10 +15,15 @@ import type {
  * `TaskHandle<VideoContent[]>`. Model-specific media presence, prompt
  * requirement, and provider-native parameter validation are enforced by the
  * adapter, not the core (prompt is optional for i2v, required for t2v/r2v/
- * video-edit).
+ * video-edit). Generic over `TParams` (defaults to `VideoGenerationInput`) so
+ * callers selecting a video model by literal id get compile-time narrowing of
+ * `providerOptions.<namespace>` (e.g. `aliyun.resolution`,
+ * `aliyun.audio_setting`).
  */
-export async function submitVideoTask(
-  request: VideoGenerationRequest
+export async function submitVideoTask<
+  TParams extends VideoGenerationInput = VideoGenerationInput,
+>(
+  request: VideoGenerationRequest<TParams>
 ): Promise<TaskHandle<VideoContent[]>> {
   const {
     model,
