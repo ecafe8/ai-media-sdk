@@ -61,6 +61,9 @@ function createModel(
     generate?: boolean;
     edit?: boolean;
     maxEditImages?: number;
+    supportedSizes?: readonly string[];
+    maxResolution?: { readonly width: number; readonly height: number };
+    maxN?: number;
   } = {}
 ): { model: ImageModelInstance } & ReturnType<typeof createFakeAdapter> {
   const fake = createFakeAdapter();
@@ -73,6 +76,9 @@ function createModel(
       generate: capabilities.generate ?? true,
       edit: capabilities.edit ?? false,
       maxEditImages: capabilities.maxEditImages,
+      supportedSizes: capabilities.supportedSizes,
+      maxResolution: capabilities.maxResolution,
+      maxN: capabilities.maxN,
     },
   };
   return { model, ...fake };

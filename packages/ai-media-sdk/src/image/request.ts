@@ -82,3 +82,25 @@ export function isImageEditInput(value: unknown): value is ImageEditInput {
   if (typeof candidate.prompt !== "string") return false;
   return Array.isArray(candidate.images);
 }
+
+/**
+ * Build a pixel-form `size` string from explicit width/height.
+ *
+ * Identity helper for self-documenting call sites; the wire format is
+ * `${width}x${height}` (lowercase `x`). Use this when the selected model
+ * accepts free-form pixel sizes (e.g. Aliyun Qwen within `maxResolution`).
+ */
+export function pixelSize(width: number, height: number): string {
+  return `${width}x${height}`;
+}
+
+/**
+ * Build a tier-form `size` string from a tier identifier.
+ *
+ * Identity helper for self-documenting call sites; the wire format is the
+ * tier identifier verbatim (e.g. `"1K"`, `"2K"`, `"4K"`). Use this when the
+ * selected model accepts resolution tiers (e.g. Seedream, Aliyun Wan).
+ */
+export function tierSize(tier: string): string {
+  return tier;
+}

@@ -13,6 +13,8 @@ export {
   editImage,
   submitImageTask,
   toImageUrl,
+  pixelSize,
+  tierSize,
 } from "./image/index.ts";
 export type {
   VideoGenerationInput,
