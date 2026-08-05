@@ -282,12 +282,13 @@ flowchart LR
 | -------------------- | ------ | -------- | ---------------: | -------------------------------- | ---------------------------------------------- |
 | `wan2.7-image-pro`   | 支持   | 支持     | 4（连续生成 12） | 文生图 4096x4096；编辑 2048x2048 | 高质量、文字渲染、品牌色、角色一致性、多图编辑 |
 | `wan2.7-image`       | 支持   | 支持     | 4（连续生成 12） | 2048x2048                        | 平衡质量和速度                                 |
-| `z-image-turbo`      | 支持   | 不支持   |                1 | 2048x2048                        | 快速、低成本、写实人像和产品照片               |
-| `qwen-image-3.0-pro` | 支持   | 支持     |                6 | 2048x2048                        | 复杂版面、小字渲染、多语言字体；邀测中         |
+| `wan2.6-t2i`         | 支持   | 不支持   |                4 | 1440x1440                        | 文生图（异步）；像素范围 [1280\*1280, 1440\*1440] |
+| `qwen-image-3.0-pro` | 支持   | 支持     |                6 | 2048x2048                        | 复杂版面、小字渲染、多语言字体                  |
+| `qwen-image-3.0`     | 支持   | 支持     |                6 | 2048x2048                        | 标准版，兼顾质量与速度                          |
 | `qwen-image-2.0-pro` | 支持   | 支持     |                6 | 2048x2048                        | 高质量生成/编辑、负向提示词                    |
 | `qwen-image-2.0`     | 支持   | 支持     |                6 | 2048x2048                        | Qwen Image Pro 的快速版本                      |
 
-其他百炼模型（如 `wan2.6-*`、`wan2.5-*`、`wan2.2-*`、`wan2.1-*`、Qwen Image legacy/edit 变体）由模型能力注册表按需扩展，不作为首期推荐默认值。
+> ~~`z-image-turbo`~~ 已从推荐目录移除（不再推荐）。`wan2.6-t2i` 新增接入（async-only，同步路径 `NOT_IMPLEMENTED`，使用 `submitImageTask()`）。其他百炼模型（如 `wan2.5-*`、`wan2.2-*`、`wan2.1-*`、Qwen Image legacy/edit 变体）由模型能力注册表按需扩展，不作为首期推荐默认值。
 
 #### 统一图像能力
 
@@ -481,7 +482,7 @@ flowchart LR
 - 来源：https://help.aliyun.com/zh/model-studio/text-to-image；https://help.aliyun.com/zh/model-studio/qwen-image-edit-guide；https://help.aliyun.com/zh/model-studio/wan-image-edit
 - 调研日期：2026-07-30
 - 资料来源：用户提供的百炼模型文档摘录，作为当前产品模型选择依据。
-- 可借鉴内容：按高质量、平衡、快速低成本三档选择模型；明确 `wan2.7-image-pro`、`wan2.7-image`、`z-image-turbo`、Qwen Image 系列的文生图/编辑能力、最大输出数和分辨率。
+- 可借鉴内容：按高质量、平衡、快速低成本三档选择模型；明确 `wan2.7-image-pro`、`wan2.7-image`、`wan2.6-t2i`、Qwen Image 系列的文生图/编辑能力、最大输出数和分辨率。
 - 对本产品的影响：阿里云 Provider 不再只记录“Wanxiang 产品待确认”，而是建立推荐模型目录和按模型能力声明；统一图像契约必须支持模型级输出数量、分辨率和编辑能力校验。
 - 尚未确认内容：百炼具体 API endpoint、认证方式、异步任务/轮询接口、请求字段、返回 URL 生命周期和地域限制。
 - 商业/许可限制：模型可用性、邀测状态、地域、价格和商业使用限制遵循阿里云百炼及各模型官方条款。
@@ -493,7 +494,7 @@ flowchart LR
 - `providerOptions` 能兼顾统一接口和平台独有能力，但必须通过能力声明和 Provider 命名空间防止参数混用。
 - 外部文档展示了不同模型在图片输入、尺寸和数量等方面的差异，因此本产品采用“按模型能力开放”，不承诺所有 Provider 的最低公约数之外能力完全一致。
 - AI SDK 的 Azure 实现说明 Azure 图像模型的模型实例标识与 Azure deployment name 相关；本产品因此将 Azure deployment、endpoint 和 API version 作为 Azure Provider 配置边界，而不是公共图像生成参数。
-- 百炼资料证明同一 Provider 内不同模型的能力差异足以影响公共参数校验：例如 `z-image-turbo` 不支持编辑，而 `wan2.7-image-pro` 支持多图编辑并允许更高分辨率；因此阿里云模型能力必须进入运行时能力注册表。
+- 百炼资料证明同一 Provider 内不同模型的能力差异足以影响公共参数校验：例如 `wan2.6-t2i` 不支持编辑，而 `wan2.7-image-pro` 支持多图编辑并允许更高分辨率；因此阿里云模型能力必须进入运行时能力注册表。
 - 本次未对所有候选 Provider 的最新 API、许可证、价格和具体模型版本做完整外部审计；这些内容在 Provider sub 级 PRD 和接入前评估中补充。
 
 ## 12. 关键决策记录
@@ -526,7 +527,7 @@ flowchart LR
 - 支持 Provider 工厂、模型实例和统一生成调用。
 - 核心类型预留视频/音频扩展入口（`generateVideo`/`generateAudio` 仅签名，不实现）。
 - 接入 Azure OpenAI、Google、阿里云、Doubao-Seedream。
-- 阿里云 Provider 提供百炼推荐模型目录，首期至少覆盖 `wan2.7-image-pro`、`wan2.7-image`、`z-image-turbo`、`qwen-image-2.0-pro` 和 `qwen-image-2.0` 的能力声明。
+- 阿里云 Provider 提供百炼推荐模型目录，首期至少覆盖 `wan2.7-image-pro`、`wan2.7-image`、`wan2.6-t2i`、`qwen-image-3.0-pro`、`qwen-image-3.0`、`qwen-image-2.0-pro` 和 `qwen-image-2.0` 的能力声明。
 - 支持文生图。
 - 按模型能力支持图生图/图片编辑。
 - 支持公共参数、`providerOptions` 和能力检查。

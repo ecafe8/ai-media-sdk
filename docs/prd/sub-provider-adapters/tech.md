@@ -5,7 +5,7 @@
 - Sub：`SUB-001 Provider 适配体系`
 - 总 PRD：`docs/prd/main-prd.md`
 - 对应需求文档：`./prd.md`
-- 文档版本：v1.8.0
+- 文档版本：v1.9.0
 - 文档状态：草稿
 - 方案性质：独立 Provider 契约，参考 AI SDK，不将 AI SDK 作为核心运行时依赖；Provider 适配器纯 fetch，不包装官方 SDK
 
@@ -131,10 +131,12 @@ flowchart LR
 ### 4.3 阿里云百炼
 
 - 用户提供的百炼资料已确定首期推荐模型和模型级能力：
-  - `wan2.7-image-pro`：文生图/编辑，最多 4 张（连续 12），文生图最高 4096x4096，编辑最高 2048x2048。
-  - `wan2.7-image`：文生图/编辑，最多 4 张（连续 12），最高 2048x2048。
-  - `z-image-turbo`：仅文生图，最多 1 张，最高 2048x2048，快速低成本场景。
-  - `qwen-image-3.0-pro`：文生图/编辑，最多 6 张，最高 2048x2048，复杂版面和多语言字体，邀测中。
+  - `wan2.7-image-pro`：文生图/编辑/组图/交互编辑，最多 4 张（组图 12），文生图最高 4096x4096（4K），编辑/组图最高 2048x2048（2K）；size 接受 `1K`/`2K`/`4K` 档位或 `宽*高` 像素值（不可混用）。
+  - `wan2.7-image`：文生图/编辑，最多 4 张，最高 2048x2048；size 接受 `1K`/`2K` 档位或 `宽*高`，不支持 4K。
+  - `wan2.6-t2i`：文生图，最多 4 张，像素范围 [1280\*1280, 1440\*1440]，宽高比 [1:4, 4:1]；size 仅 `宽*高` 像素值（无档位）；支持 Qwen 式 `negative_prompt`/`prompt_extend`（wan2.7 不支持这两字段）。
+  - ~~`z-image-turbo`：仅文生图，最多 1 张，最高 2048x2048，快速低成本场景。~~ 已从注册表移除。
+  - `qwen-image-3.0-pro`：文生图/编辑，最多 6 张，512\*512 至 2048\*2048，复杂版面和多语言字体。
+  - `qwen-image-3.0`：文生图/编辑（标准版），能力同 3.0-pro，兼顾质量与速度。
   - `qwen-image-2.0-pro`：文生图/编辑，最多 6 张，最高 2048x2048，并适合负向提示词场景。
   - `qwen-image-2.0`：文生图/编辑，最多 6 张，最高 2048x2048，为快速版本。
 - 百炼资料明确 Wan 和 Qwen Image 存在不同编辑、多图、输出数量和分辨率能力，适配器必须按模型注册能力，不得只按 Provider 设置单一能力。
@@ -142,10 +144,10 @@ flowchart LR
 - **文生图 wan 与 qwen 不共用契约**（关键，纠正此前"共用 ImageSynthesis"的初步判断）：
   - 万相（Wan）走 `POST /services/aigc/image-generation/generation`；异步调用必须设 `X-DashScope-Async: enable`，返回 `output.task_id` + `output.task_status=PENDING`，再 `GET /tasks/{task_id}` 轮询至 `SUCCEEDED`/`FAILED`（`task_id` 查询有效期 24h，过期变 `UNKNOWN`）；**`SUCCEEDED` 时结果在 `output.choices[].message.content[].image`（multimodal-generation 形态，与 Qwen 同一 shape；适配器 `mapTaskImageChoices` 已按此形态解析）**。任务状态枚举 `PENDING`/`PROCESSING`/`SUCCEEDED`/`FAILED`/`CANCELED`/`UNKNOWN`。`wan2.7-image-pro`、`wan2.7-image`、`wan2.6-image`、`wan2.6-t2i` 亦支持同步调用（不带异步头，端点 `POST /services/aigc/multimodal-generation/generation`，结果同为 `output.choices[].message.content[].image`）。
   - 千问（Qwen-Image）走 `POST /services/aigc/multimodal-generation/generation`；`qwen-image-2.0` 系列均支持同步，`qwen-image-plus`/`qwen-image` 支持异步；同步响应直接含 `output.choices[].message.content[].image`。
-- **参数集按模型系列分化**：`prompt`（`input.messages[].content[].text`，必选）、`n`、`size`（wan 用 `2K`/`4K` 缩写或 `宽*高`，qwen 用 `宽*高`）为公共；`negative_prompt`、`prompt_extend` 仅 qwen；`thinking_mode`、`color_palette`、`enable_sequential`（组图，1-12 张）仅 wan2.7；`watermark` 通用。
+- **参数集按模型系列分化**：`prompt`（`input.messages[].content[].text`，必选）、`n`、`size` 为公共；`negative_prompt`、`prompt_extend`、`prompt_extend_mode`（`direct`/`agent`，仅 T2I）由 qwen 与 wan2.6 支持（wan2.7 不支持）；`thinking_mode`（boolean，默认 true）、`color_palette`（`Array<{hex; ratio}>`，3-10 色）、`enable_sequential`（组图，1-12 张）、`bbox_list`（交互式编辑坐标框）仅 wan2.7；`watermark`、`seed` 通用。适配器按 `AliyunParamSupport` 标记按模型条件转发，不静默下传不支持的参数。
 - DashScope 无官方 JS/TS SDK（Context7 确认，仅 Python/Java/CLI），Provider 包必须原生 fetch 直连 REST。
 - 编辑契约（`/images/edits` 等价物）本次未探查，待后续 live 确认；**是否拆 wan/qwen 包由 Phase 2 架构决策定**（见下）。
-- 资料来源：https://help.aliyun.com/zh/model-studio/text-to-image、https://help.aliyun.com/zh/model-studio/qwen-image-api、https://help.aliyun.com/zh/model-studio/wan-image-generation-and-editing-api-reference；日期 2026-07-30。
+- 资料来源：https://help.aliyun.com/zh/model-studio/text-to-image、https://help.aliyun.com/zh/model-studio/qwen-image-api、https://help.aliyun.com/zh/model-studio/wan-image-generation-api-reference；日期 2026-07-30。千问-图像生成与编辑3.0（https://help.aliyun.com/zh/model-studio/qwen-image-generation-and-editing-3.0）、万相-文生图2.6（https://help.aliyun.com/zh/model-studio/wan-text-to-image-2.6）、万相2.7图像生成与编辑（https://help.aliyun.com/zh/model-studio/wan-image-generation-api-reference）官方文档由用户核对提供，日期 2026-08-05。
 
 ### 4.4 Doubao-Seedream
 
@@ -338,3 +340,4 @@ Context7 查询日期：2026-07-30；百炼模型矩阵依据用户提供资料�
 | v1.6.0 | 2026-07-31 | 纠正万相（Wan）异步任务结果形态：`SUCCEEDED` 时结果在 `output.results[].url`（ImageSynthesis 形态），非此前误记的 `output.choices[].message.content[].image`（后者属 Qwen `multimodal-generation`）；补全任务状态枚举。依据 Context7 `/dashscope/dashscope-sdk-python`。新增 §4.5 阿里云百炼视频异步契约（HappyHorse）：提交 `video-generation/video-synthesis` + `X-DashScope-Async`，t2v/i2v 请求体，轮询 `GET /tasks/{task_id}`（与图像异步同一任务机制），状态 `PENDING/RUNNING/SUCCEEDED/FAILED/CANCELED/UNKNOWN`，结果 `output.video_url`（MP4 H.264，24h），24h task_id，RPS≤20/15s 间隔；首批 `happyhorse-1.1-t2v`/`happyhorse-1.1-i2v`。Phase 4 将交付核心模态无关异步契约（SUB-003）并解锁视频异步（SUB-006 提前）。 |
 | v1.7.0 | 2026-08-04 | §4.5 补充 HappyHorse r2v 与 video-edit live 契约（用户提供官方文档并核对）：r2v（`happyhorse-1.1-r2v`/`1.0-r2v`）1-9 张 `reference_image` + prompt `[Image N]` 指代，参数同 t2v；video-edit（固定 `happyhorse-1.0-video-edit`）1 个 `video`（仅公网 URL，MP4/MOV 3-60s ≤100MB）+ 0-5 张 `reference_image`，参数含 `audio_setting`（`auto`/`origin`）且无 `ratio`/`duration`，`resolution` 仅 720P/1080P。四模式共用 `video-synthesis` 提交与 `/tasks/{task_id}` 轮询。Wan 视频系列（`wan2.7-*`）与 `animate-*` 官方资料过时，标记不推进。视频需求正式化至 `docs/prd/sub-video-generation/`（SUB-006）。 |
 | v1.8.0 | 2026-08-05 | 落实 OpenSpec `model-aware-params`（Part 2-3）：§4.1/§4.3/§4.4 各模型矩阵补 `supportedSizes`/`maxResolution`/`maxN` 列；§4.3 Aliyun HappyHorse 视频在 `AliyunModelEntry` 新增 `supportedResolutions`/`supportedAspectRatios`（i2v 与 video-edit 声明 `[]` 表示无 `ratio` 参数），适配器把硬编码 `VIDEO_RESOLUTIONS`/`VIDEO_EDIT_RESOLUTIONS` 常量改为注册表驱动；§4 各 Provider 包 `image(modelId)`/`video(modelId)` 提供按家族字面量重载，返回携带家族级 `TParams` 的 `ImageModelInstance`/`VideoModelInstance`，使 `generateImage`/`submitVideoTask` 编译期收窄 `size`/`n`/`providerOptions.<namespace>` 字段；`TParams` 是 phantom 类型参数，运行时无形状变化，字符串兜底重载保持向后兼容。 |
+| v1.9.0 | 2026-08-05 | 依据用户提供的官方文档（千问-图像生成与编辑3.0、万相-文生图2.6、万相2.7图像生成与编辑）对齐 Aliyun 注册表与 PRD 文本：① 注册 `qwen-image-3.0`（标准版）与 `wan2.6-t2i`（async-only，像素范围 [1280\*1280, 1440\*1440]）；② `wan2.7-image-pro` 补 `supportedSizes: ["1K","2K","4K"]`，`wan2.7-image` 补 `["1K","2K"]`（修复 `size: "2K"` 被 `validateSize` 误拒的回归）；③ `thinking_mode` 类型 `string`→`boolean`；④ 新增 `prompt_extend_mode`（`direct`/`agent`，Qwen + wan2.6）与 `bbox_list`（wan2.7 交互编辑）；⑤ `color_palette` 类型 `unknown`→`ReadonlyArray<{hex; ratio}>`；⑥ `AliyunParamSupport` 加 `negative_prompt`/`prompt_extend` 标记，`buildWanImageParameters` 按标记条件转发 Qwen 式字段（wan2.6 支持、wan2.7 不支持）；⑦ 纠正 v1.6.0 的异步响应 shape 描述：wan image 异步 `SUCCEEDED` 结果在 `output.choices[].message.content[].image`（非 `output.results[].url`），适配器代码已正确解析；⑧ Playground `PlaygroundModelFamily` 拆 `wan-image`→`wan-image-2.6`/`wan-image-2.7` 区分高级选项。资料来源见 §4.3 资料来源行。 |

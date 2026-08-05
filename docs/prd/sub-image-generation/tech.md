@@ -83,7 +83,7 @@ flowchart LR
 - `providerOptions` 按 Provider 命名空间隔离，类型由 Provider 提供。
 - 图片输入建立统一 `ImageInput` 表示，支持 Buffer、URL 和可扩展的 Blob/流输入；Node.js 首期优先验证 Buffer/URL。
 - 公共尺寸字段不应假设 `aspectRatio` 对所有模型有效；Azure DALL-E 资料明确偏向 `size`，因此需能力化建模。**已落实**（2026-08-05，OpenSpec `model-aware-params`）：`ModelCapability` 新增 `supportedSizes`/`maxResolution`/`maxN` 可选字段，`generateImage` 在 transport 调用前预检 `size`/`n`；闭集 `supportedSizes` 优先匹配，否则按 `^\d+[x*]\d+$/i` 像素正则 + `maxResolution` 上限校验。未声明字段的模型继续原样透传（向后兼容）。
-- 阿里云百炼模型使用能力注册表进行模型级校验：`z-image-turbo` 禁止编辑；`wan2.7-image-pro` 文生图最大 4096x4096、编辑最大 2048x2048；其他推荐模型按其最大 2048x2048 和输出数量约束。**已落实**：Qwen 系列 `maxResolution: 2048x2048`/`maxN: 6`；`wan2.7-image-pro` `maxResolution: 4096x4096`/`maxN: 4`；`wan2.7-image` `maxResolution: 2048x2048`/`maxN: 4`。
+- 阿里云百炼模型使用能力注册表进行模型级校验：`wan2.6-t2i` 仅文生图（不支持编辑）；`wan2.7-image-pro` 文生图最高 4096x4096、编辑最高 2048x2048；其他推荐模型按其最大 2048x2048 和输出数量约束。**已落实**：Qwen 系列 `maxResolution: 2048x2048`/`maxN: 6`；`wan2.7-image-pro` `supportedSizes: ["1K","2K","4K"]`/`maxResolution: 4096x4096`/`maxN: 4`；`wan2.7-image` `supportedSizes: ["1K","2K"]`/`maxResolution: 2048x2048`/`maxN: 4`；`wan2.6-t2i` `maxResolution: 1440x1440`/`maxN: 4`（无 `supportedSizes`，仅像素格式）。
 - `maxImages` 必须按请求操作校验；百炼推荐模型通常为 4 或 6 张，连续生成 12 张是否作为独立能力待确认。**`maxN` 已校验**（`generateImage` 预检）；连续生成 12 张仍作为 Wan 原生 `enable_sequential` 选项经 `providerOptions.aliyun` 透传，未升级为公共能力。
 
 ## 5. 数据流图

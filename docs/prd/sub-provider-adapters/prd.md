@@ -6,7 +6,7 @@
 - 所属产品：AI Image SDK
 - 总 PRD：`docs/prd/main-prd.md`
 - Sub 目录：`docs/prd/sub-provider-adapters/`
-- 文档版本：v1.5.0
+- 文档版本：v1.7.0
 - 文档状态：草稿
 - UI 类型：纯后端型，不生成 `ui.md`
 - 来源说明：产品范围来自总 PRD；仓库事实来自当前 monorepo；Provider 能力来自外部官方/参考资料；Context7 已确认 DashScope 无官方 JS/TS SDK；未确认内容标记为待确认。
@@ -19,7 +19,7 @@
 
 - Azure OpenAI 图像 Provider；模型实例使用 Azure deployment name。
 - Google 图像 Provider；具体 Gemini 图像模型待确认。
-- 阿里云百炼图像 Provider；首期推荐模型为 `wan2.7-image-pro`、`wan2.7-image`、`z-image-turbo`、`qwen-image-2.0-pro` 和 `qwen-image-2.0`，具体 API 产品和认证方式待确认。
+- 阿里云百炼图像 Provider；首期推荐模型为 `wan2.7-image-pro`、`wan2.7-image`、`wan2.6-t2i`、`qwen-image-3.0-pro`、`qwen-image-3.0`、`qwen-image-2.0-pro` 和 `qwen-image-2.0`，具体 API 产品和认证方式待确认。
 - 字节 Doubao-Seedream Provider；具体官方接入渠道、模型和任务 API 待确认。
 
 ## 2. 分支边界
@@ -132,7 +132,7 @@ flowchart TD
 - Azure OpenAI 的模型实例标识为 deployment name，不作为跨平台模型别名。
 - Provider 不主动读取或持久化 API Key；密钥只用于运行时请求。
 - Provider 必须声明生成、编辑、图片输入、尺寸、格式和任务查询能力。
-- 阿里云百炼模型能力必须按模型注册，不能把 `z-image-turbo` 的文生图能力误报为支持图片编辑。
+- 阿里云百炼模型能力必须按模型注册，不能把 `wan2.6-t2i` 的文生图能力误报为支持图片编辑。
 - 阿里云推荐模型目录至少记录生成/编辑支持、最大输出数、最大分辨率和邀测状态。
 - Provider 独有参数必须置于其命名空间下；命名空间最终命名待统一 SDK 契约确认。
 - Provider 适配器必须保留非敏感的 Provider、模型、请求和外部任务标识。
@@ -188,3 +188,4 @@ flowchart TD
 | v1.4.0 | 2026-07-31 | 纠正万相（Wan）异步结果形态为 `output.results[].url`（ImageSynthesis 形态）；新增阿里云百炼视频异步契约（HappyHorse `t2v`/`i2v`）：提交 `video-generation/video-synthesis` + `X-DashScope-Async`，轮询 `GET /tasks/{task_id}`（与图像异步同一任务机制），结果 `output.video_url`（MP4 H.264，24h），24h task_id。Phase 4 将交付核心模态无关异步契约（`submitTask`/`TaskHandle.wait()`）并解锁视频异步（SUB-006 提前至 MVP 后阶段）。详见 `tech.md` v1.6.0 §4.5。 |
 | v1.5.0 | 2026-08-04 | HappyHorse `r2v`/`video-edit` live 契约确认（用户提供官方文档）：r2v 1-9 张参考图 + `[Image N]` 指代；video-edit 1 视频（仅公网 URL）+ 0-5 参考图 + `audio_setting`，无 `ratio`/`duration`。Wan 视频系列资料过时标记不推进。视频需求正式化至 `docs/prd/sub-video-generation/`（SUB-006）。详见 `tech.md` v1.7.0 §4.5。 |
 | v1.6.0 | 2026-08-05 | 落实 OpenSpec `model-aware-params`：Provider 注册表填充 size/maxN/resolution 元数据；§10 验收标准中「阿里云推荐模型能力矩阵能校验编辑支持、最大输出数和最大分辨率」勾选完成；§7「Provider 独有参数必须置于其命名空间下」继续由 `providerOptions.<namespace>` 隔离满足；§11 待确认项「Azure 公共/原生字段最终配置结构」「wan/qwen 是否拆包」仍保留（暂不推进）。详见 `tech.md` v1.8.0 §4。 |
+| v1.7.0 | 2026-08-05 | 依据用户提供的官方文档对齐 Aliyun 注册表：注册 `qwen-image-3.0` 与 `wan2.6-t2i`；`wan2.7-image` 补 `supportedSizes` 修复回归；`thinking_mode` 类型 boolean；新增 `prompt_extend_mode`/`bbox_list`/`color_palette` 收窄类型；`AliyunParamSupport` 加 `negative_prompt`/`prompt_extend` 标记；纠正 v1.6.0 wan 异步响应 shape 文本（`results[].url`→`choices[].message.content[].image`）。详见 `tech.md` v1.9.0 §4.3。 |

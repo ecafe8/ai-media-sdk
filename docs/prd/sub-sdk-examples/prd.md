@@ -21,7 +21,7 @@
 
 - examples workspace 结构和运行说明。
 - 各首批 Provider 的 `.env.example`。
-- 阿里云百炼示例默认展示推荐模型选择：高质量使用 `wan2.7-image-pro`，平衡使用 `wan2.7-image`，快速低成本使用 `z-image-turbo`；编辑场景隐藏不支持编辑的模型。
+- 阿里云百炼示例默认展示推荐模型选择：高质量使用 `wan2.7-image-pro`，平衡使用 `wan2.7-image`，快速异步使用 `wan2.6-t2i`；编辑场景隐藏不支持编辑的模型。
 - Node.js 服务端最小调用示例。
 - 当前 Web 应用中的 Web Playground。
 - Playground 的 prompt、Provider/model 选择、生成/编辑模式、加载、错误和结果展示。
@@ -148,7 +148,7 @@ flowchart TD
 ## 10. 分支验收标准
 
 - [ ] 每个首批 Provider 有 `.env.example` 和最小 Node.js 示例。
-- [ ] 阿里云百炼示例展示推荐模型和文生图/编辑能力差异，不把 `z-image-turbo` 展示为可编辑模型。
+- [ ] 阿里云百炼示例展示推荐模型和文生图/编辑能力差异，不把 `wan2.6-t2i` 展示为可编辑模型。
 - [ ] Playground 不要求浏览器输入 API Key。
 - [ ] 用户可选择 Provider/model、输入 prompt 并提交生成。
 - [ ] UI 能展示加载、处理中、成功、失败和不支持能力状态。
