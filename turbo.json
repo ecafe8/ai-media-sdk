@@ -9,7 +9,8 @@
     "ALIYUN_BAILIAN_API_KEY",
     "ALIYUN_BAILIAN_BASE_URL",
     "ARK_API_KEY",
-    "ARK_BASE_URL"
+    "ARK_BASE_URL",
+    "GEMINI_API_KEY"
   ],
   "tasks": {
     "build": {

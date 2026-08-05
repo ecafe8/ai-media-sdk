@@ -469,6 +469,46 @@ function mapImageContent(image: ImageContent): string {
   });
 }
 
+/**
+ * Recursively detect whether any string value in the mapped request body uses
+ * the `oss://` scheme. When true, the caller MUST send
+ * `X-DashScope-OssResourceResolve: enable` so DashScope can resolve the
+ * temporary OSS URL. The scan is a cheap prefix check over string leaves and
+ * covers Qwen image content, video first-frame/reference/input-video URLs, and
+ * any future path that embeds URLs in the body.
+ */
+function hasOssUrl(value: unknown): boolean {
+  if (typeof value === "string") return value.startsWith("oss://");
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (hasOssUrl(item)) return true;
+    }
+    return false;
+  }
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value as Record<string, unknown>)) {
+      if (hasOssUrl(item)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Conditionally inject the `X-DashScope-OssResourceResolve: enable` header
+ * when the request body references at least one `oss://` temporary URL. The
+ * header is a no-op for requests that carry only `http:`/`https:`/`data:`
+ * URLs, so non-temporary-URL requests stay byte-identical.
+ */
+function withOssResolveHeader(
+  headers: Record<string, string>,
+  body: unknown
+): Record<string, string> {
+  if (hasOssUrl(body)) {
+    return { ...headers, "X-DashScope-OssResourceResolve": "enable" };
+  }
+  return headers;
+}
+
 async function sendQwenRequest(
   transport: Transport,
   config: AliyunBailianConfig,
@@ -478,15 +518,18 @@ async function sendQwenRequest(
   entry: AliyunModelEntry
 ): Promise<GenerationResult<ImageContent[]>> {
   const url = buildUrl(config);
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`,
-    "Content-Type": "application/json",
-  };
   const body = {
     model: modelId,
     input: { messages: [{ role: "user", content }] },
     parameters: buildParameters(input, entry),
   };
+  const headers: Record<string, string> = withOssResolveHeader(
+    {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body
+  );
 
   let response;
   try {
@@ -966,12 +1009,15 @@ async function submitVideoTask(
   entry: AliyunModelEntry
 ): Promise<TaskHandle<VideoContent[]>> {
   const url = buildVideoUrl(config);
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`,
-    "Content-Type": "application/json",
-    "X-DashScope-Async": "enable",
-  };
   const body = buildVideoBody(input, modelId, entry);
+  const headers: Record<string, string> = withOssResolveHeader(
+    {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+      "X-DashScope-Async": "enable",
+    },
+    body
+  );
 
   let response;
   try {
@@ -1053,11 +1099,6 @@ async function submitWanImageTask(
   input: WanImageInput,
   entry: AliyunModelEntry
 ): Promise<TaskHandle<ImageContent[]>> {
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`,
-    "Content-Type": "application/json",
-    "X-DashScope-Async": "enable",
-  };
   const body: Record<string, unknown> = {
     model: modelId,
     input: {
@@ -1066,6 +1107,15 @@ async function submitWanImageTask(
   };
   const parameters = buildWanImageParameters(input, entry);
   if (Object.keys(parameters).length > 0) body.parameters = parameters;
+
+  const headers: Record<string, string> = withOssResolveHeader(
+    {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+      "X-DashScope-Async": "enable",
+    },
+    body
+  );
 
   let response;
   try {

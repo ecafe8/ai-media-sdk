@@ -1,0 +1,19 @@
+{
+  "name": "@ai-media/example-uploader-aliyun",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@ai-media/provider-aliyun-bailian": "workspace:*",
+    "@ai-media/sdk": "workspace:*",
+    "@ai-media/uploader": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.0",
+    "@types/node": "^26.1.2"
+  }
+}

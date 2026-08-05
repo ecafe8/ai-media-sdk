@@ -1,0 +1,13 @@
+{
+  "extends": "@workspace/typescript-config/node-library.json",
+  "compilerOptions": {
+    "paths": {
+      "@ai-media/uploader": ["./src/index.ts"],
+      "@ai-media/uploader/core": ["./src/core/index.ts"],
+      "@ai-media/uploader/aliyun": ["./src/aliyun/index.ts"],
+      "@ai-media/uploader/google": ["./src/google/index.ts"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "tests"]
+}

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "bun"],
+    "paths": {
+      "@ai-media/uploader": ["./src/index.ts"],
+      "@ai-media/uploader/core": ["./src/core/index.ts"],
+      "@ai-media/uploader/aliyun": ["./src/aliyun/index.ts"],
+      "@ai-media/uploader/google": ["./src/google/index.ts"]
+    }
+  },
+  "include": ["src", "tests"],
+  "exclude": ["node_modules", "dist"]
+}
