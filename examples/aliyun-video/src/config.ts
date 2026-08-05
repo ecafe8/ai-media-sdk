@@ -38,12 +38,16 @@ export function readAliyunVideoModels(
 }
 
 /**
- * Read optional example inputs for r2v/video-edit modes.
+ * Read optional example inputs for t2v/i2v/r2v/video-edit modes.
  *
- * - `ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS`: comma-separated reference image URLs.
+ * - `ALIYUN_BAILIAN_FIRST_FRAME_URL`: a single image URL for i2v first-frame.
+ *   If unset, falls back to the first entry of `ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS`.
+ * - `ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS`: comma-separated reference image URLs
+ *   for r2v (1-9) and video-edit (0-5 optional).
  * - `ALIYUN_BAILIAN_INPUT_VIDEO_URL`: a public source video URL for video-edit.
  */
 export interface AliyunVideoExampleInputs {
+  readonly firstFrameUrl?: string;
   readonly referenceImageUrls: string[];
   readonly inputVideoUrl?: string;
 }
@@ -59,5 +63,9 @@ export function readAliyunVideoExampleInputs(
         .filter(Boolean)
     : [];
   const inputVideoUrl = env.ALIYUN_BAILIAN_INPUT_VIDEO_URL?.trim() || undefined;
-  return { referenceImageUrls, inputVideoUrl };
+  const firstFrameUrl =
+    env.ALIYUN_BAILIAN_FIRST_FRAME_URL?.trim() ||
+    referenceImageUrls[0] ||
+    undefined;
+  return { firstFrameUrl, referenceImageUrls, inputVideoUrl };
 }

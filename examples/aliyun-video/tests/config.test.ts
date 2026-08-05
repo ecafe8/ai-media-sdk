@@ -35,8 +35,9 @@ describe("Aliyun HappyHorse video example configuration", () => {
     });
   });
 
-  test("reads example inputs for r2v and video-edit", () => {
+  test("reads example inputs for i2v/r2v and video-edit", () => {
     expect(readAliyunVideoExampleInputs({})).toEqual({
+      firstFrameUrl: undefined,
       referenceImageUrls: [],
       inputVideoUrl: undefined,
     });
@@ -47,8 +48,20 @@ describe("Aliyun HappyHorse video example configuration", () => {
         ALIYUN_BAILIAN_INPUT_VIDEO_URL: "https://x/source.mp4",
       })
     ).toEqual({
+      firstFrameUrl: "https://x/a.png",
       referenceImageUrls: ["https://x/a.png", "https://x/b.png"],
       inputVideoUrl: "https://x/source.mp4",
+    });
+    expect(
+      readAliyunVideoExampleInputs({
+        ALIYUN_BAILIAN_FIRST_FRAME_URL: "https://x/first.png",
+        ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS:
+          "https://x/ref1.png, https://x/ref2.png",
+      })
+    ).toEqual({
+      firstFrameUrl: "https://x/first.png",
+      referenceImageUrls: ["https://x/ref1.png", "https://x/ref2.png"],
+      inputVideoUrl: undefined,
     });
   });
 });

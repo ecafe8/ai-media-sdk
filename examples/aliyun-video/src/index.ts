@@ -9,7 +9,7 @@ import {
 import { saveBatchSummary, saveResult } from "./save.js";
 
 const prompt =
-  process.argv.slice(2).join(" ") || "一座由硬纸板搭建的微型城市在夜晚焕发生机";
+  process.argv.slice(2).join(" ") || "左侧背景不变,图片右侧的每个视频框内分别动态播放各自屏幕中的视频内容，视频框本身不动";
 const models = readAliyunVideoModels();
 const exampleInputs = readAliyunVideoExampleInputs();
 const batchStartedAt = Date.now();
@@ -24,9 +24,13 @@ try {
     try {
       const isVideoEdit = modelId.includes("video-edit");
       const isR2v = modelId.includes("r2v");
+      const isI2v = modelId.includes("i2v");
       const task = await submitVideoTask({
         model: provider.video(modelId),
         prompt,
+        ...(isI2v && exampleInputs.firstFrameUrl
+          ? { firstFrame: { url: exampleInputs.firstFrameUrl } }
+          : {}),
         ...(isVideoEdit && exampleInputs.inputVideoUrl
           ? { inputVideo: { url: exampleInputs.inputVideoUrl } }
           : {}),
