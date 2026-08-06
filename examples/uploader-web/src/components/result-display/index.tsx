@@ -1,5 +1,6 @@
 import { CopyIcon, CheckIcon } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@workspace/ui/components/shadcn/alert";
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { Button } from "@workspace/ui/components/shadcn/button";
 import { Separator } from "@workspace/ui/components/shadcn/separator";
@@ -112,6 +113,17 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
             ))}
           </div>
         </div>
+      ) : null}
+
+      {provider === "aliyun" ? (
+        <Alert>
+          <AlertDescription>
+            Aliyun 临时文件是私有的 <code>oss://</code>{" "}
+            引用，不能通过拼接协议转换为 HTTP
+            下载地址，也不支持查询或下载。它只能在调用模型时使用；如需 HTTP
+            URL，请将文件上传到阿里云 OSS 等持久化存储。
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <Separator />
