@@ -27,7 +27,11 @@ export async function uploadFileToOss(
   form.set("x-oss-forbid-overwrite", policyData.xOssForbidOverwrite);
   form.set("key", key);
   form.set("success_action_status", "200");
-  form.set("file", new Blob([fileBytes], {}), fileName);
+  const fileBuffer = fileBytes.buffer.slice(
+    fileBytes.byteOffset,
+    fileBytes.byteOffset + fileBytes.byteLength
+  ) as ArrayBuffer;
+  form.set("file", new Blob([fileBuffer], {}), fileName);
 
   let response: Response;
   try {

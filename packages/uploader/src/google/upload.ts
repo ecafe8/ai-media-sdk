@@ -113,6 +113,10 @@ export async function uploadFile(
     });
   }
 
+  const fileBuffer = fileBytes.buffer.slice(
+    fileBytes.byteOffset,
+    fileBytes.byteOffset + fileBytes.byteLength
+  ) as ArrayBuffer;
   let finalizeResponse: Response;
   try {
     finalizeResponse = await fetchImpl(uploadUrl, {
@@ -122,7 +126,7 @@ export async function uploadFile(
         "X-Goog-Upload-Offset": "0",
         "X-Goog-Upload-Command": "upload, finalize",
       },
-      body: fileBytes,
+      body: fileBuffer,
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (cause) {
