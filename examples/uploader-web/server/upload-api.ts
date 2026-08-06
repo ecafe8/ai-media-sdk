@@ -27,6 +27,11 @@ import {
 const ALIYUN_API_KEY_ENV = "ALIYUN_BAILIAN_API_KEY";
 const GOOGLE_API_KEY_ENV = "GEMINI_API_KEY";
 
+export interface UploadApiEnv {
+  readonly ALIYUN_BAILIAN_API_KEY?: string;
+  readonly GEMINI_API_KEY?: string;
+}
+
 interface ApiErrorBody {
   readonly code: string;
   readonly message: string;
@@ -98,9 +103,10 @@ async function toWebRequest(
 
 async function handleAliyunUpload(
   req: import("node:http").IncomingMessage,
-  res: import("node:http").ServerResponse
+  res: import("node:http").ServerResponse,
+  env: UploadApiEnv
 ): Promise<void> {
-  const apiKey = process.env[ALIYUN_API_KEY_ENV];
+  const apiKey = env[ALIYUN_API_KEY_ENV as keyof UploadApiEnv];
   if (!apiKey) {
     return json(res, 503, {
       code: UPLOADER_ERROR_CODES.INVALID_REQUEST,
@@ -155,9 +161,10 @@ async function handleAliyunUpload(
 
 async function handleGoogleUpload(
   req: import("node:http").IncomingMessage,
-  res: import("node:http").ServerResponse
+  res: import("node:http").ServerResponse,
+  env: UploadApiEnv
 ): Promise<void> {
-  const apiKey = process.env[GOOGLE_API_KEY_ENV];
+  const apiKey = env[GOOGLE_API_KEY_ENV as keyof UploadApiEnv];
   if (!apiKey) {
     return json(res, 503, {
       code: UPLOADER_ERROR_CODES.INVALID_REQUEST,
@@ -212,7 +219,7 @@ async function handleGoogleUpload(
   return json(res, 200, result);
 }
 
-export function uploadApiPlugin(): Plugin {
+export function uploadApiPlugin(env: UploadApiEnv): Plugin {
   return {
     name: "uploader-web/upload-api",
     configureServer(server: ViteDevServer) {
@@ -221,10 +228,10 @@ export function uploadApiPlugin(): Plugin {
           if (req.method !== "POST") return next();
           try {
             if (req.url === "/api/upload/aliyun") {
-              return await handleAliyunUpload(req, res);
+              return await handleAliyunUpload(req, res, env);
             }
             if (req.url === "/api/upload/google") {
-              return await handleGoogleUpload(req, res);
+              return await handleGoogleUpload(req, res, env);
             }
           } catch (error) {
             const { status, body } = errorBody(error);

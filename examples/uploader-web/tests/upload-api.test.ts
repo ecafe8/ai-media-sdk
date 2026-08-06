@@ -12,8 +12,8 @@ describe("uploader web API contract", () => {
     const source = await Bun.file(
       new URL("../server/upload-api.ts", import.meta.url)
     ).text();
-    expect(source).toContain("process.env[ALIYUN_API_KEY_ENV]");
-    expect(source).toContain("process.env[GOOGLE_API_KEY_ENV]");
+    expect(source).toContain("ALIYUN_BAILIAN_API_KEY");
+    expect(source).toContain("GEMINI_API_KEY");
     expect(source).not.toContain("import.meta.env");
   });
 });
