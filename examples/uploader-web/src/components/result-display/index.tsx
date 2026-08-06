@@ -115,16 +115,25 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
         </div>
       ) : null}
 
-      {provider === "aliyun" ? (
-        <Alert>
-          <AlertDescription>
-            Aliyun 临时文件是私有的 <code>oss://</code>{" "}
-            引用，不能通过拼接协议转换为 HTTP
-            下载地址，也不支持查询或下载。它只能在调用模型时使用；如需 HTTP
-            URL，请将文件上传到阿里云 OSS 等持久化存储。
-          </AlertDescription>
-        </Alert>
-      ) : null}
+      <Alert>
+        <AlertDescription>
+          {provider === "aliyun" ? (
+            <>
+              Aliyun 临时文件是私有的 <code>oss://</code>{" "}
+              引用，不能通过拼接协议转换为 HTTP
+              下载地址，也不支持查询或下载。它只能在调用模型时使用；如需 HTTP
+              URL，请将文件上传到阿里云 OSS 等持久化存储。
+            </>
+          ) : (
+            <>
+              Google 文件 URI 只能通过 Gemini API 携带对应 API Key
+              使用，不能作为公开 HTTP 下载地址直接访问。文件会在 48
+              小时后自动清理；如需长期或公开访问， 请使用 Google Cloud Storage
+              等持久化存储。
+            </>
+          )}
+        </AlertDescription>
+      </Alert>
 
       <Separator />
 
