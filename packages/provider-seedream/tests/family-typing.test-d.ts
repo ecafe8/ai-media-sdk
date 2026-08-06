@@ -45,7 +45,11 @@ const model45 = seedream.image("doubao-seedream-4-5-251128");
 generateImage({ model: model45, prompt: "p", size: "2K" });
 // 4.x family omits output_format.
 // @ts-expect-error Seedream45Params does not include output_format
-generateImage({ model: model45, prompt: "p", providerOptions: { seedream: { output_format: "png" } } });
+generateImage({
+  model: model45,
+  prompt: "p",
+  providerOptions: { seedream: { output_format: "png" } },
+});
 
 // 4.0 overload: tier enum ["1K", "2K", "4K"].
 const model40 = seedream.image("doubao-seedream-4-0-250828");

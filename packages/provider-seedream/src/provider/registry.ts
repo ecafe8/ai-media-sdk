@@ -1,4 +1,9 @@
-import type { ModelCapability, ModelId, ModelRegistry, SupportedModel } from "@ai-media/sdk";
+import type {
+  ModelCapability,
+  ModelId,
+  ModelRegistry,
+  SupportedModel,
+} from "@ai-media/sdk";
 
 /**
  * In-package model capability registry for Doubao-Seedream.

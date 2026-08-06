@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
-import { getClientPlaygroundModels, getPlaygroundModel, PLAYGROUND_MODELS } from "./registry";
+import {
+  getClientPlaygroundModels,
+  getPlaygroundModel,
+  PLAYGROUND_MODELS,
+} from "./registry";
 
 describe("Playground capability registry", () => {
   test("marks only configured Providers as available", () => {
@@ -14,7 +18,9 @@ describe("Playground capability registry", () => {
   });
 
   test("does not carry drifted placeholder models", () => {
-    expect(getPlaygroundModel("aliyun-bailian", "z-image-turbo")).toBeUndefined();
+    expect(
+      getPlaygroundModel("aliyun-bailian", "z-image-turbo")
+    ).toBeUndefined();
     expect(
       getPlaygroundModel("aliyun-bailian", "wan2.7-t2v-2026-06-12")
     ).toBeUndefined();
@@ -112,7 +118,9 @@ describe("Playground capability registry", () => {
 
   test("PLAYGROUND_MODELS derives every model from the SDK registries with matching capabilities", () => {
     // gpt-image-2 is the only Azure entry; it is generate-only (no edit).
-    const azure = PLAYGROUND_MODELS.filter((m) => m.provider === "azure-openai");
+    const azure = PLAYGROUND_MODELS.filter(
+      (m) => m.provider === "azure-openai"
+    );
     expect(azure).toHaveLength(1);
     expect(azure[0]?.id).toBe("gpt-image-2");
     expect(azure[0]?.supportsGenerate).toBe(true);

@@ -21,7 +21,8 @@ export async function POST(request: Request): Promise<Response> {
           status: "failed",
           error: {
             code: "VALIDATION_ERROR",
-            message: "Provide a Provider, model, modality, and non-empty prompt.",
+            message:
+              "Provide a Provider, model, modality, and non-empty prompt.",
           },
         },
         { status: 422 }

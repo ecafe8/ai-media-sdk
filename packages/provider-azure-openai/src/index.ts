@@ -10,4 +10,7 @@ export {
   AZURE_MODEL_REGISTRY,
   azureModelRegistry,
 } from "./provider/registry.ts";
-export { createAzureOpenAIProvider, createAzureModel } from "./provider/index.ts";
+export {
+  createAzureOpenAIProvider,
+  createAzureModel,
+} from "./provider/index.ts";

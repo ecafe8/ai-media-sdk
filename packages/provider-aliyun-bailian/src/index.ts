@@ -23,5 +23,8 @@ export type {
   AliyunModelFamily,
   AliyunParamSupport,
 } from "./provider/registry.ts";
-export { ALIYUN_MODEL_REGISTRY, aliyunModelRegistry } from "./provider/registry.ts";
+export {
+  ALIYUN_MODEL_REGISTRY,
+  aliyunModelRegistry,
+} from "./provider/registry.ts";
 export { createAliyunBailianProvider } from "./provider/index.ts";

@@ -66,10 +66,18 @@ export interface SeedreamProvider extends ProviderAdapter<ImageContent[]> {
    * keeps the default `ImageGenerationInput` shape for dynamic ids.
    */
   image: {
-    (modelId: "doubao-seedream-5-0-pro-260628"): ImageModelInstance<Seedream5ProParams>;
-    (modelId: "doubao-seedream-5-0-260128" | "doubao-seedream-5-0-lite-260128"): ImageModelInstance<Seedream5LiteParams>;
-    (modelId: "doubao-seedream-4-5-251128"): ImageModelInstance<Seedream45Params>;
-    (modelId: "doubao-seedream-4-0-250828"): ImageModelInstance<Seedream40Params>;
+    (
+      modelId: "doubao-seedream-5-0-pro-260628"
+    ): ImageModelInstance<Seedream5ProParams>;
+    (
+      modelId: "doubao-seedream-5-0-260128" | "doubao-seedream-5-0-lite-260128"
+    ): ImageModelInstance<Seedream5LiteParams>;
+    (
+      modelId: "doubao-seedream-4-5-251128"
+    ): ImageModelInstance<Seedream45Params>;
+    (
+      modelId: "doubao-seedream-4-0-250828"
+    ): ImageModelInstance<Seedream40Params>;
     (modelId: string): ImageModelInstance;
   };
   /** Enumerate the supported models projected from the Seedream registry. */

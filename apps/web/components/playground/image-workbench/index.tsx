@@ -37,7 +37,10 @@ interface ImageWorkbenchProps {
  */
 export function ImageWorkbench({ models }: ImageWorkbenchProps) {
   const imageModels = useMemo(
-    () => models.filter((m) => m.modality === "image" && (m.supportsGenerate || m.supportsEdit)),
+    () =>
+      models.filter(
+        (m) => m.modality === "image" && (m.supportsGenerate || m.supportsEdit)
+      ),
     [models]
   );
   const configuredModels = imageModels.filter((m) => m.configured);
@@ -90,7 +93,9 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
   }
 
   const canEdit = currentModel?.supportsEdit ?? false;
-  const advancedFields = currentModel ? imageAdvancedFieldSet(currentModel) : [];
+  const advancedFields = currentModel
+    ? imageAdvancedFieldSet(currentModel)
+    : [];
 
   function changeProvider(nextProvider: PlaygroundProvider) {
     const nextModels = imageModels.filter((m) => m.provider === nextProvider);
@@ -320,7 +325,9 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
           {advancedFields.length > 0 ? (
             <details
               open={advancedOpen}
-              onToggle={(e) => setAdvancedOpen((e.currentTarget as HTMLDetailsElement).open)}
+              onToggle={(e) =>
+                setAdvancedOpen((e.currentTarget as HTMLDetailsElement).open)
+              }
               className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2"
             >
               <summary className="cursor-pointer text-sm font-medium text-slate-700">
@@ -333,7 +340,10 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
                     field={field}
                     value={advancedValues[field.id]}
                     onChange={(value) =>
-                      setAdvancedValues((prev) => ({ ...prev, [field.id]: value }))
+                      setAdvancedValues((prev) => ({
+                        ...prev,
+                        [field.id]: value,
+                      }))
                     }
                   />
                 ))}
@@ -456,7 +466,9 @@ function AdvancedFieldControl({
           value={typeof value === "number" ? String(value) : ""}
           className={inputClassName}
           onChange={(event) =>
-            onChange(event.target.value === "" ? "" : Number(event.target.value))
+            onChange(
+              event.target.value === "" ? "" : Number(event.target.value)
+            )
           }
         />
       </Field>

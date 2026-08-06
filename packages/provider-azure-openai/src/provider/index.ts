@@ -66,7 +66,7 @@ export interface AzureOpenAIProvider extends ProviderAdapter<ImageContent[]> {
   image: {
     (deployment: "gpt-image-2"): ImageModelInstance<AzureGptImage2Params>;
     (deployment: string): ImageModelInstance;
-  },
+  };
   /**
    * Register a custom deployment and bind an image model instance. Bypasses
    * the known-deployment whitelist; the registered entry is visible to
@@ -142,7 +142,8 @@ export function createAzureOpenAIProvider(
       deployment: string,
       capabilities?: ModelCapability
     ): ImageModelInstance => {
-      const resolvedCapabilities = capabilities ?? DEFAULT_AZURE_CUSTOM_CAPABILITY;
+      const resolvedCapabilities =
+        capabilities ?? DEFAULT_AZURE_CUSTOM_CAPABILITY;
       runtimeRegistry.set(deployment, { capabilities: resolvedCapabilities });
       return {
         providerId: AZURE_PROVIDER_ID,

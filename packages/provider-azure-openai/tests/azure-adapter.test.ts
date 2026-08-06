@@ -3,7 +3,10 @@
 import { describe, expect, test } from "bun:test";
 
 import { SdkError, type AdapterRequest } from "@ai-media/sdk";
-import { createAzureOpenAIProvider, createAzureModel } from "@ai-media/provider-azure-openai";
+import {
+  createAzureOpenAIProvider,
+  createAzureModel,
+} from "@ai-media/provider-azure-openai";
 
 import {
   createFakeTransport,

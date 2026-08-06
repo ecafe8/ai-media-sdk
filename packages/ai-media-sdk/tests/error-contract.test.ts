@@ -33,7 +33,9 @@ describe("core error contract", () => {
     const error = unknownModel("foo", "aliyun-bailian");
 
     expect(error.code).toBe("UNKNOWN_MODEL");
-    expect(error.message).toBe('Unknown model id "foo" for provider "aliyun-bailian"');
+    expect(error.message).toBe(
+      'Unknown model id "foo" for provider "aliyun-bailian"'
+    );
     expect(error.message).not.toContain("apiKey");
   });
 

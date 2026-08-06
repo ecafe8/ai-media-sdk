@@ -101,7 +101,10 @@ export interface ImageAdvancedField {
   readonly id: ImageAdvancedFieldId;
   readonly label: string;
   readonly kind: "text" | "number" | "boolean" | "select";
-  readonly options?: readonly { readonly value: string; readonly label: string }[];
+  readonly options?: readonly {
+    readonly value: string;
+    readonly label: string;
+  }[];
 }
 
 /**

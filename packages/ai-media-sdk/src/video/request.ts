@@ -21,8 +21,10 @@ import type {
 /**
  * A provider-bound video model instance, specialized to `VideoContent[]`.
  */
-export type VideoModelInstance<TParams = DefaultVideoParams> =
-  ModelInstance<VideoContent[], TParams>;
+export type VideoModelInstance<TParams = DefaultVideoParams> = ModelInstance<
+  VideoContent[],
+  TParams
+>;
 
 /**
  * Provider-agnostic video generation payload carried in `AdapterRequest.input`.

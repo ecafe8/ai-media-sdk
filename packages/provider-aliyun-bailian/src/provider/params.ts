@@ -93,15 +93,7 @@ export interface AliyunWan26T2VParams extends ImageGenerationInput {
  * (auto-follows the first frame) and video-edit has no `ratio` parameter.
  */
 type HappyHorseRatio =
-  | "16:9"
-  | "9:16"
-  | "1:1"
-  | "4:3"
-  | "3:4"
-  | "4:5"
-  | "5:4"
-  | "9:21"
-  | "21:9";
+  "16:9" | "9:16" | "1:1" | "4:3" | "3:4" | "4:5" | "5:4" | "9:21" | "21:9";
 
 /**
  * Aliyun-native video provider options forwarded under

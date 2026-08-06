@@ -75,8 +75,12 @@ describe("seedream provider", () => {
     // 5 registry entries (canonical + lite alias)
     expect(models.length).toBe(5);
     expect(models.every((m) => m.providerId === "doubao-seedream")).toBe(true);
-    expect(models.some((m) => m.id === "doubao-seedream-5-0-260128")).toBe(true);
-    expect(models.some((m) => m.id === "doubao-seedream-5-0-lite-260128")).toBe(true);
+    expect(models.some((m) => m.id === "doubao-seedream-5-0-260128")).toBe(
+      true
+    );
+    expect(models.some((m) => m.id === "doubao-seedream-5-0-lite-260128")).toBe(
+      true
+    );
   });
 
   test("binds all four registered Seedream models and the lite alias", () => {

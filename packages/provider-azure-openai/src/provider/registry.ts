@@ -33,12 +33,7 @@ const GPT_IMAGE_2_CAPABILITY: ModelCapability = {
   modality: "image",
   generate: true,
   edit: false,
-  supportedSizes: [
-    "1024x1024",
-    "1024x1536",
-    "1536x1024",
-    "auto",
-  ],
+  supportedSizes: ["1024x1024", "1024x1536", "1536x1024", "auto"],
   maxN: 1,
 };
 
@@ -58,9 +53,10 @@ export const DEFAULT_AZURE_CUSTOM_CAPABILITY: ModelCapability = {
  * The static known-deployment whitelist. Live-confirmed deployment is
  * `gpt-image-2` (Serverless Global Standard, API version `2024-02-01`).
  */
-export const AZURE_MODEL_REGISTRY: Readonly<Record<ModelId, AzureModelEntry>> = {
-  "gpt-image-2": { capabilities: GPT_IMAGE_2_CAPABILITY },
-};
+export const AZURE_MODEL_REGISTRY: Readonly<Record<ModelId, AzureModelEntry>> =
+  {
+    "gpt-image-2": { capabilities: GPT_IMAGE_2_CAPABILITY },
+  };
 
 const AZURE_PROVIDER_ID: ModelRegistry["providerId"] = "azure-openai";
 

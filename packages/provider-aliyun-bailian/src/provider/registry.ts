@@ -1,4 +1,9 @@
-import type { ModelCapability, ModelId, ModelRegistry, SupportedModel } from "@ai-media/sdk";
+import type {
+  ModelCapability,
+  ModelId,
+  ModelRegistry,
+  SupportedModel,
+} from "@ai-media/sdk";
 
 /**
  * In-package model capability registry for Aliyun Bailian.
@@ -115,16 +120,9 @@ const HAPPYHORSE_RATIOS: readonly string[] = [
   "21:9",
 ];
 
-const HAPPYHORSE_RESOLUTIONS: readonly string[] = [
-  "480P",
-  "720P",
-  "1080P",
-];
+const HAPPYHORSE_RESOLUTIONS: readonly string[] = ["480P", "720P", "1080P"];
 
-const HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS: readonly string[] = [
-  "720P",
-  "1080P",
-];
+const HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS: readonly string[] = ["720P", "1080P"];
 
 /**
  * The model registry. Qwen models run the synchronous `multimodal-generation`
@@ -137,27 +135,52 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
   "qwen-image-3.0-pro": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+    paramSupport: {
+      n: true,
+      size: true,
+      negative_prompt: true,
+      prompt_extend: true,
+    },
   },
   "qwen-image-3.0": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+    paramSupport: {
+      n: true,
+      size: true,
+      negative_prompt: true,
+      prompt_extend: true,
+    },
   },
   "qwen-image-2.0-pro": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+    paramSupport: {
+      n: true,
+      size: true,
+      negative_prompt: true,
+      prompt_extend: true,
+    },
   },
   "qwen-image-2.0-pro-2026-06-22": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+    paramSupport: {
+      n: true,
+      size: true,
+      negative_prompt: true,
+      prompt_extend: true,
+    },
   },
   "qwen-image-2.0": {
     family: "qwen-multimodal",
     capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+    paramSupport: {
+      n: true,
+      size: true,
+      negative_prompt: true,
+      prompt_extend: true,
+    },
   },
   "wan2.7-image-pro": {
     family: "wan-image",
@@ -172,7 +195,12 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
   "wan2.6-t2i": {
     family: "wan-image",
     capabilities: WAN26_T2I_GENERATE_CAPABILITY,
-    paramSupport: { n: true, size: true, negative_prompt: true, prompt_extend: true },
+    paramSupport: {
+      n: true,
+      size: true,
+      negative_prompt: true,
+      prompt_extend: true,
+    },
   },
   "happyhorse-1.1-t2v": {
     family: "happyhorse-video",

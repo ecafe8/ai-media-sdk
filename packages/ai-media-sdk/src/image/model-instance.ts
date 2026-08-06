@@ -1,4 +1,7 @@
-import type { ModelInstance, DefaultImageParams } from "../contracts/model-instance.ts";
+import type {
+  ModelInstance,
+  DefaultImageParams,
+} from "../contracts/model-instance.ts";
 import type { ImageContent } from "../contracts/content.ts";
 
 /**
@@ -12,5 +15,7 @@ import type { ImageContent } from "../contracts/content.ts";
  * `generateImage`/`editImage`/`submitImageTask` to narrow the request shape
  * at compile time when callers select a model by literal id.
  */
-export type ImageModelInstance<TParams = DefaultImageParams> =
-  ModelInstance<ImageContent[], TParams>;
+export type ImageModelInstance<TParams = DefaultImageParams> = ModelInstance<
+  ImageContent[],
+  TParams
+>;

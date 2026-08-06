@@ -1,9 +1,6 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
-import {
-  uploadToAliyun,
-  uploadToGoogle,
-} from "@/lib/upload";
+import { uploadToAliyun, uploadToGoogle } from "@/lib/upload";
 
 const originalFetch = globalThis.fetch;
 

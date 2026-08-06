@@ -77,7 +77,9 @@ export function collectSupportedModels(
   const seen = new Set<string>();
   const out: SupportedModel[] = [];
   for (const source of sources) {
-    const models = isModelListable(source) ? source.listModels() : source.models;
+    const models = isModelListable(source)
+      ? source.listModels()
+      : source.models;
     for (const model of models) {
       const key = `${model.providerId}:${model.id}`;
       if (seen.has(key)) continue;

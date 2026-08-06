@@ -11,7 +11,12 @@ import type {
   PlaygroundProvider,
   PlaygroundResponse,
 } from "@/lib/playground/types";
-import { Field, inputClassName, selectClassName, textareaClassName } from "../lib/field";
+import {
+  Field,
+  inputClassName,
+  selectClassName,
+  textareaClassName,
+} from "../lib/field";
 import { isValidHttpUrl } from "../lib/http";
 import { ResultFeed } from "../result-feed";
 import {
@@ -54,7 +59,9 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
   const [provider, setProvider] = useState<PlaygroundProvider>(
     firstModel?.provider ?? "aliyun-bailian"
   );
-  const [modelId, setModelId] = useState(firstModel?.id ?? "happyhorse-1.1-t2v");
+  const [modelId, setModelId] = useState(
+    firstModel?.id ?? "happyhorse-1.1-t2v"
+  );
   const [prompt, setPrompt] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
   const [referenceImageUrlsText, setReferenceImageUrlsText] = useState("");
@@ -72,18 +79,28 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
     [videoModels, provider, modelId]
   );
 
-  const resolutionOptions = currentModel ? videoResolutionOptions(currentModel) : [];
+  const resolutionOptions = currentModel
+    ? videoResolutionOptions(currentModel)
+    : [];
   const ratioOptions = currentModel ? videoRatioOptions(currentModel) : [];
   const durationOptions = videoDurationOptions();
   const audioOptions = videoAudioSettingOptions();
   const showsRatio = currentModel ? videoShowsRatio(currentModel) : false;
   const showsDuration = currentModel ? videoShowsDuration(currentModel) : true;
-  const showsAudioSetting = currentModel ? videoShowsAudioSetting(currentModel) : false;
+  const showsAudioSetting = currentModel
+    ? videoShowsAudioSetting(currentModel)
+    : false;
 
-  const [resolution, setResolution] = useState(resolutionOptions[0]?.value ?? "720P");
+  const [resolution, setResolution] = useState(
+    resolutionOptions[0]?.value ?? "720P"
+  );
   const [ratio, setRatio] = useState(ratioOptions[0]?.value ?? "16:9");
-  const [duration, setDuration] = useState(String(durationOptions[0]?.value ?? 5));
-  const [audioSetting, setAudioSetting] = useState(audioOptions[0]?.value ?? "auto");
+  const [duration, setDuration] = useState(
+    String(durationOptions[0]?.value ?? 5)
+  );
+  const [audioSetting, setAudioSetting] = useState(
+    audioOptions[0]?.value ?? "auto"
+  );
 
   // Re-seed resolution/ratio/duration defaults when the model changes.
   // Uses the React-endorsed "adjust state during render" pattern instead
@@ -226,7 +243,9 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
           </div>
           <div>
             <h2 className="font-semibold">视频工作台</h2>
-            <p className="text-xs text-slate-500">{operationLabel(currentModel)}</p>
+            <p className="text-xs text-slate-500">
+              {operationLabel(currentModel)}
+            </p>
           </div>
         </div>
 
@@ -241,7 +260,9 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
               }
             >
               {PLAYGROUND_PROVIDERS.map((item) => {
-                const hasVideo = videoModels.some((m) => m.provider === item.id);
+                const hasVideo = videoModels.some(
+                  (m) => m.provider === item.id
+                );
                 return (
                   <option key={item.id} value={item.id} disabled={!hasVideo}>
                     {hasVideo ? item.label : `${item.label}（无视频模型）`}

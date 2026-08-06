@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 
-import type { PlaygroundModel, PlaygroundModality } from "@/lib/playground/types";
+import type {
+  PlaygroundModel,
+  PlaygroundModality,
+} from "@/lib/playground/types";
 import { ImageWorkbench } from "@/components/playground/image-workbench";
 import { VideoWorkbench } from "@/components/playground/video-workbench";
 

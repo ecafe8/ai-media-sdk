@@ -86,8 +86,17 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
    * fallback keeps the default `ImageGenerationInput` shape for dynamic ids.
    */
   image: {
-    (modelId: "qwen-image-3.0-pro" | "qwen-image-3.0" | "qwen-image-2.0-pro" | "qwen-image-2.0-pro-2026-06-22" | "qwen-image-2.0"): ImageModelInstance<AliyunQwenImageParams>;
-    (modelId: "wan2.7-image-pro"): ImageModelInstance<AliyunWan27ProImageParams>;
+    (
+      modelId:
+        | "qwen-image-3.0-pro"
+        | "qwen-image-3.0"
+        | "qwen-image-2.0-pro"
+        | "qwen-image-2.0-pro-2026-06-22"
+        | "qwen-image-2.0"
+    ): ImageModelInstance<AliyunQwenImageParams>;
+    (
+      modelId: "wan2.7-image-pro"
+    ): ImageModelInstance<AliyunWan27ProImageParams>;
     (modelId: "wan2.7-image"): ImageModelInstance<AliyunWan27ImageParams>;
     (modelId: "wan2.6-t2i"): ImageModelInstance<AliyunWan26T2VParams>;
     (modelId: string): ImageModelInstance;
@@ -103,10 +112,18 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
    * `VideoGenerationInput` shape for dynamic ids.
    */
   video: {
-    (modelId: "happyhorse-1.1-t2v"): VideoModelInstance<AliyunHappyHorseT2VParams>;
-    (modelId: "happyhorse-1.1-i2v"): VideoModelInstance<AliyunHappyHorseI2VParams>;
-    (modelId: "happyhorse-1.1-r2v"): VideoModelInstance<AliyunHappyHorseR2VParams>;
-    (modelId: "happyhorse-1.0-video-edit"): VideoModelInstance<AliyunHappyHorseVideoEditParams>;
+    (
+      modelId: "happyhorse-1.1-t2v"
+    ): VideoModelInstance<AliyunHappyHorseT2VParams>;
+    (
+      modelId: "happyhorse-1.1-i2v"
+    ): VideoModelInstance<AliyunHappyHorseI2VParams>;
+    (
+      modelId: "happyhorse-1.1-r2v"
+    ): VideoModelInstance<AliyunHappyHorseR2VParams>;
+    (
+      modelId: "happyhorse-1.0-video-edit"
+    ): VideoModelInstance<AliyunHappyHorseVideoEditParams>;
     (modelId: string): VideoModelInstance;
   };
   /** Enumerate the supported models projected from the Aliyun registry. */
@@ -384,7 +401,10 @@ function buildWanImageParameters(
   const aliyun = readAliyunOptions(input.providerOptions);
   // Qwen-style fields forwarded only when the model declares support
   // (wan2.6-t2i supports them; wan2.7-image does not).
-  if (entry.paramSupport.negative_prompt && aliyun.negative_prompt !== undefined) {
+  if (
+    entry.paramSupport.negative_prompt &&
+    aliyun.negative_prompt !== undefined
+  ) {
     parameters.negative_prompt = aliyun.negative_prompt;
   }
   if (entry.paramSupport.prompt_extend && aliyun.prompt_extend !== undefined) {
@@ -423,7 +443,9 @@ function readAliyunOptions(
     thinking_mode?: boolean;
     color_palette?: ReadonlyArray<{ hex: string; ratio: string }>;
     enable_sequential?: boolean;
-    bbox_list?: ReadonlyArray<ReadonlyArray<readonly [number, number, number, number]>>;
+    bbox_list?: ReadonlyArray<
+      ReadonlyArray<readonly [number, number, number, number]>
+    >;
   } = {};
   if (typeof candidate.negative_prompt === "string") {
     options.negative_prompt = candidate.negative_prompt;
@@ -431,7 +453,10 @@ function readAliyunOptions(
   if (typeof candidate.prompt_extend === "boolean") {
     options.prompt_extend = candidate.prompt_extend;
   }
-  if (candidate.prompt_extend_mode === "direct" || candidate.prompt_extend_mode === "agent") {
+  if (
+    candidate.prompt_extend_mode === "direct" ||
+    candidate.prompt_extend_mode === "agent"
+  ) {
     options.prompt_extend_mode = candidate.prompt_extend_mode;
   }
   if (typeof candidate.watermark === "boolean") {

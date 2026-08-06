@@ -50,7 +50,11 @@ generateImage({
 
 // Out-of-namespace providerOptions is a compile-time error.
 // @ts-expect-error QwenImageParams only allows the `aliyun` namespace
-generateImage({ model: qwenModel, prompt: "p", providerOptions: { azure: { quality: "high" } } });
+generateImage({
+  model: qwenModel,
+  prompt: "p",
+  providerOptions: { azure: { quality: "high" } },
+});
 
 // n beyond the Qwen cap of 6 is a compile-time error.
 // @ts-expect-error AliyunQwenImageParams only allows n: 1..6
@@ -70,11 +74,17 @@ const t2vModel = aliyun.video("happyhorse-1.1-t2v");
 submitVideoTask({
   model: t2vModel,
   prompt: "p",
-  providerOptions: { aliyun: { resolution: "1080P", ratio: "16:9", duration: 5 } },
+  providerOptions: {
+    aliyun: { resolution: "1080P", ratio: "16:9", duration: 5 },
+  },
 });
 // t2v ratio is constrained to the HappyHorse literal union.
 // @ts-expect-error "4:1" is not a valid HappyHorse ratio
-submitVideoTask({ model: t2vModel, prompt: "p", providerOptions: { aliyun: { ratio: "4:1" } } });
+submitVideoTask({
+  model: t2vModel,
+  prompt: "p",
+  providerOptions: { aliyun: { ratio: "4:1" } },
+});
 
 const r2vModel = aliyun.video("happyhorse-1.1-r2v");
 submitVideoTask({
@@ -96,7 +106,12 @@ submitVideoTask({
 });
 // video-edit resolution is constrained to 720P/1080P.
 // @ts-expect-error video-edit family narrows resolution to "720P" | "1080P"
-submitVideoTask({ model: videoEditModel, prompt: "p", inputVideo: { url: "https://x/src.mp4" }, providerOptions: { aliyun: { resolution: "480P" } } });
+submitVideoTask({
+  model: videoEditModel,
+  prompt: "p",
+  inputVideo: { url: "https://x/src.mp4" },
+  providerOptions: { aliyun: { resolution: "480P" } },
+});
 
 // Wan 2.6 T2I overload: pixel-only size (no tier), Qwen-style options.
 const wan26Model = aliyun.image("wan2.6-t2i");
@@ -105,10 +120,16 @@ generateImage({ model: wan26Model, prompt: "p", size: "1280*1280", n: 1 });
 submitImageTask({
   model: wan26Model,
   prompt: "p",
-  providerOptions: { aliyun: { negative_prompt: "flowers", prompt_extend: true } },
+  providerOptions: {
+    aliyun: { negative_prompt: "flowers", prompt_extend: true },
+  },
 });
 // @ts-expect-error wan2.6-t2i does not support thinking_mode (wan2.7 only)
-submitImageTask({ model: wan26Model, prompt: "p", providerOptions: { aliyun: { thinking_mode: true } } });
+submitImageTask({
+  model: wan26Model,
+  prompt: "p",
+  providerOptions: { aliyun: { thinking_mode: true } },
+});
 
 // String fallback overload returns the untyped default.
 declare const dynamicImageId: string;

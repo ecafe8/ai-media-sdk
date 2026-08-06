@@ -42,10 +42,7 @@ const SUPPORTED_PUBLIC_PARAMS = new Set<keyof ImageGenerationInput>([
  * wire format. The pixel-form regex below independently accepts both `x` and
  * `X` as the separator for free-form `WxH` values.
  */
-function isSupportedSize(
-  size: string,
-  supported: readonly string[]
-): boolean {
+function isSupportedSize(size: string, supported: readonly string[]): boolean {
   return supported.includes(size);
 }
 
@@ -75,7 +72,10 @@ function validateSize(
   const size = input.size;
   if (size === undefined) return;
 
-  if (capabilities.supportedSizes && isSupportedSize(size, capabilities.supportedSizes)) {
+  if (
+    capabilities.supportedSizes &&
+    isSupportedSize(size, capabilities.supportedSizes)
+  ) {
     return;
   }
 

@@ -35,7 +35,8 @@ const PLAYGROUND_LABELS: Readonly<
   },
   "aliyun-bailian:qwen-image-3.0": {
     label: "Qwen Image 3.0",
-    recommendation: "Standard generation and editing; balanced quality and speed",
+    recommendation:
+      "Standard generation and editing; balanced quality and speed",
   },
   "aliyun-bailian:qwen-image-2.0-pro": {
     label: "Qwen Image 2.0 Pro",
@@ -100,7 +101,10 @@ const PLAYGROUND_LABELS: Readonly<
   },
 };
 
-function labelFor(provider: PlaygroundProvider, id: string): {
+function labelFor(
+  provider: PlaygroundProvider,
+  id: string
+): {
   readonly label: string;
   readonly recommendation: string;
 } {

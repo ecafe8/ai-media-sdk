@@ -8,7 +8,11 @@
  * ("Unused '@ts-expect-error' directive").
  */
 
-import { generateImage, submitImageTask, type ImageGenerationInput } from "@ai-media/sdk";
+import {
+  generateImage,
+  submitImageTask,
+  type ImageGenerationInput,
+} from "@ai-media/sdk";
 import {
   createAzureOpenAIProvider,
   type AzureGptImage2Params,
@@ -56,12 +60,21 @@ generateImage({ model: gptImage2Model, prompt: "p", n: 2 });
 
 // Out-of-namespace providerOptions is a compile-time error.
 // @ts-expect-error AzureGptImage2Params only allows the `azure` namespace
-generateImage({ model: gptImage2Model, prompt: "p", providerOptions: { aliyun: { watermark: false } } });
+generateImage({
+  model: gptImage2Model,
+  prompt: "p",
+  providerOptions: { aliyun: { watermark: false } },
+});
 
 // String fallback overload returns the untyped default.
 declare const dynamicId: string;
 const dynamicModel = azure.image(dynamicId);
-generateImage({ model: dynamicModel, prompt: "p", size: "anything-goes", n: 4 });
+generateImage({
+  model: dynamicModel,
+  prompt: "p",
+  size: "anything-goes",
+  n: 4,
+});
 
 // `submitImageTask` honours the same narrowing.
 submitImageTask({ model: gptImage2Model, prompt: "p", size: "1024x1536" });
