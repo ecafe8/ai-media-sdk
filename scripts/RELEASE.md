@@ -2,6 +2,49 @@
 
 本文档说明 AI Media SDK monorepo 的 npm 发布流程。
 
+## 日常发布主流程
+
+日常发布只需要执行以下步骤：
+
+1. 确认已登录 npm，并确认工作区没有无关修改：
+
+   ```bash
+   npm whoami
+   git status --short
+   ```
+
+2. 自动递增 5 个包的 patch 版本：
+
+   ```bash
+   bun run release:version
+   ```
+
+3. 先执行 dry-run，确认检查和发布内容没有问题：
+
+   ```bash
+   bun run release -- --dry-run
+   ```
+
+4. 正式发布。脚本会发布 npm 包、创建 release commit 和 Git tag，默认不 push：
+
+   ```bash
+   bun run release
+   ```
+
+5. 确认本地 commit 和 tag 后推送：
+
+   ```bash
+   git push origin main v0.1.1
+   ```
+
+也可以让脚本在发布成功后自动推送：
+
+```bash
+bun run release -- --push
+```
+
+其中 `v0.1.1` 替换为本次实际发布版本。版本升级、检查项、beta 发布和故障处理见后续章节。
+
 ## 发布包
 
 当前发布以下 5 个公开包：
