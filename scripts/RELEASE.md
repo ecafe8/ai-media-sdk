@@ -42,7 +42,7 @@ git status --short
 ```bash
 npm login
 npm whoami
-npm access ls-packages
+npm access list packages
 ```
 
 如果 npm 账号启用了双因素认证，发布时按提示输入 OTP。
