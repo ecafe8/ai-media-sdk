@@ -194,8 +194,8 @@ bun run release
 1. 检查工作区是否存在未预期的修改
 2. 执行 `release:check`
 3. 按依赖顺序发布 5 个包到 npm `latest` tag
-4. 验证每个包的版本已经可以从 npm registry 获取
-5. 创建发布 commit：`chore: release v<version>`
+4. 轮询 npm registry（每 5 秒一次，最长 2 分钟）验证每个包的版本可以获取；超时仍未可见时给出警告并继续
+5. 创建发布 commit：`chore: release v<version>`；如果版本号已经在提交历史中，则跳过该步骤，避免空提交
 6. 创建 Git tag：`v<version>`
 
 脚本默认不 push。确认本地 commit 和 tag 无误后执行：
@@ -320,6 +320,21 @@ npm access list packages
 ```bash
 bun run build
 bun run release:pack
+```
+
+### 发布成功但验证 404
+
+新包发布后，npm registry 存在短暂的传播延迟，`npm view` 可能立即返回 404。`release` 脚本会轮询等待最长 2 分钟；如果超时仍未可见，脚本会警告并继续创建 commit 和 tag，之后手动确认：
+
+```bash
+npm view @ai-media/sdk version
+```
+
+如果旧版脚本在验证失败后中断，导致包已发布但没有 Git tag，可以手动补齐：
+
+```bash
+git tag -a v<version> -m "Release v<version>"
+git push origin v<version>
 ```
 
 ### 测试或类型检查失败

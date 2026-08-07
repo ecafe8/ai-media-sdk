@@ -118,17 +118,48 @@ function publish(manifests: PackageManifest[], options: ReleaseOptions): void {
   }
 }
 
+const VERIFY_INTERVAL_MS = 5_000;
+const VERIFY_TIMEOUT_MS = 120_000;
+
+function sleepSync(milliseconds: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
+}
+
 function verifyRegistry(manifests: PackageManifest[], tag: string): void {
   for (const manifest of manifests) {
     const spec = `${manifest.name}@${manifest.version}`;
-    const result = run("npm", ["view", spec, "version", "--json"], false);
-    const publishedVersion = JSON.parse(result) as string;
-    if (publishedVersion !== manifest.version) {
-      throw new Error(
-        `${spec} resolved to ${publishedVersion}, not ${manifest.version}`
+    const deadline = Date.now() + VERIFY_TIMEOUT_MS;
+    let verified = false;
+
+    while (true) {
+      const result = spawnSync("npm", ["view", spec, "version", "--json"], {
+        cwd: ROOT,
+        encoding: "utf8",
+      });
+
+      if (result.status === 0) {
+        const publishedVersion = JSON.parse(result.stdout.trim()) as string;
+        if (publishedVersion !== manifest.version) {
+          throw new Error(
+            `${spec} resolved to ${publishedVersion}, not ${manifest.version}`
+          );
+        }
+        verified = true;
+        console.log(`✓ ${spec} is available on npm (${tag})`);
+        break;
+      }
+
+      if (Date.now() + VERIFY_INTERVAL_MS > deadline) break;
+      console.log(`waiting for ${spec} to appear on npm...`);
+      sleepSync(VERIFY_INTERVAL_MS);
+    }
+
+    if (!verified) {
+      console.warn(
+        `warning: ${spec} is not visible on npm yet (registry propagation). ` +
+          `Continuing with commit/tag; verify later with: npm view ${spec} version`
       );
     }
-    console.log(`✓ ${spec} is available on npm (${tag})`);
   }
 }
 
@@ -137,8 +168,19 @@ function commitAndTag(version: string): void {
   const existingTag = run("git", ["tag", "--list", tag], false);
   if (existingTag === tag) throw new Error(`Git tag already exists: ${tag}`);
 
-  run("git", ["add", ...PACKAGE_JSON_PATHS]);
-  run("git", ["commit", "-m", `chore: release ${tag}`]);
+  const pending = run(
+    "git",
+    ["status", "--porcelain", "--", ...PACKAGE_JSON_PATHS],
+    false
+  );
+  if (pending) {
+    run("git", ["add", ...PACKAGE_JSON_PATHS]);
+    run("git", ["commit", "-m", `chore: release ${tag}`]);
+  } else {
+    console.log(
+      "Package versions are already committed; skipping the release commit."
+    );
+  }
   run("git", ["tag", "-a", tag, "-m", `Release ${tag}`]);
 }
 
