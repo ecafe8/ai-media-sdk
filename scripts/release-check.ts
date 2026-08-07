@@ -15,7 +15,7 @@ interface PackageManifest {
   dependencies?: Record<string, string>;
 }
 
-const ROOT = resolve(import.meta.dir, "..");
+const ROOT = resolve(__dirname, "..");
 const PACKAGES: string[] = [
   "packages/ai-media-sdk",
   "packages/uploader",
@@ -98,6 +98,7 @@ function checkPackedFiles(
   }
 
   const output = JSON.parse(result.stdout) as Array<{
+    size?: number;
     files?: Array<{ path: string }>;
   }>;
   const files = output[0]?.files?.map((file) => file.path) ?? [];
