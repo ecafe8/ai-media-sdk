@@ -25,7 +25,7 @@
    bun run release -- --dry-run
    ```
 
-4. 正式发布。脚本会发布 npm 包、创建 release commit 和 Git tag，默认不 push：
+4. 正式发布。脚本会 执行 release:check 并 发布 npm 包、创建 release commit 和 Git tag，默认不 push：
 
    ```bash
    bun run release
