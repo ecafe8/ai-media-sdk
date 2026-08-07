@@ -10,6 +10,8 @@
 - **视频输入约束**：SDK 契约 `inputVideo: { url }` 仅接受公网 http/https URL（`params.ts` 明示），DashScope 视频输入不接受 base64；DashScope 临时 OSS 上传 host 不发 CORS 头，浏览器无法直传。
 - **仓库先例**：`examples/uploader-web` 提供 Vite + React + `@workspace/ui`/`@ai-media/*` 源码别名的可复用配方。
 
+端点安全约束：Provider 的默认端点必须由代码固定并按 Provider 校验；用户填写的自定义 endpoint/baseUrl 必须经过协议、host、端口和凭证字段校验。若允许非默认 host，设置面板必须展示完整目标 URL 并要求用户显式确认“Key 将发送到该地址”。最终请求前仍需再次校验，不能只依赖表单校验。
+
 ## Goals / Non-Goals
 
 **Goals:**
@@ -29,7 +31,7 @@
 
 ### D1: 纯前端直连架构，不保留任何服务端中转
 
-**理由**：CORS 实测全通；免服务器成本与部署复杂度；Key 不经任何第三方服务器，隐私叙事最干净；请求体不受 Vercel 4.5MB 限制（约束转为 Provider 侧请求大小，见 R2）。
+**理由**：CORS 实测全通；免服务器成本与部署复杂度；Key 不经本项目服务器，隐私叙事最干净；请求体不受 Vercel Function 4.5MB 限制，但仍受浏览器内存、网络超时、Provider payload 限制与 CORS 策略影响（见 R2）。
 
 **备选**：
 - *Next.js `output: 'export'` 静态导出*：否决——Next 静态导出限制多（无 API 路由是前提但 bundle 更重），且仓库已有 Vite 先例，GH Pages 场景 Vite 更简单。
@@ -37,7 +39,7 @@
 
 ### D2: 新工作区 `apps/site`，Vite + React 19，复制改造 `apps/web` 组件
 
-**理由**：`apps/*` 自动接入 bun workspaces 与 turbo 任务；复制改造最快落地，两版形态允许适度分化（服务端代理 vs 直连）。组件本身是纯 React（`"use client"` 指令在 Vite 中为无害字符串），改造点集中在数据层：去掉 `/api/playground/generate` fetch，替换为客户端 executor 直调 SDK。
+**理由**：`apps/*` 自动接入 bun workspaces 与 turbo 任务；复制改造最快落地，两版形态允许适度分化（服务端代理 vs 直连）。组件本身是纯 React（`"use client"` 指令在 Vite 中为无害字符串），改造点集中在数据层：去掉 `/api/playground/generate` fetch，替换为客户端 executor 直调 SDK。站点不复制完整 `apps/web` 注册表，而是从三家 provider registry 生成最小 projection，避免模型清单漂移。
 
 **备选**：
 - *抽 `packages/playground-ui` 共享包*：否决（本期）——两版数据流差异（代理 vs 直连、每请求凭证 vs 全局 key store）需要抽象注入点，重构面大；待两版稳定后再评估。
@@ -45,7 +47,7 @@
 
 ### D3: BYO Key 存 localStorage，设置面板一次填写，按 Provider 隔离使用
 
-**理由**：Key 为体验者自有，存其本地浏览器可接受且体验好（跨会话免重填）；外部 store 模式（`useSyncExternalStore` + localStorage）已在 `apps/web` 验证。提交生成请求时仅注入目标 Provider 的凭证构造 provider 实例，天然隔离。
+**理由**：Key 为体验者自有，存其本地浏览器可接受且体验好（跨会话免重填）；外部 store 模式（`useSyncExternalStore` + localStorage）已在 `apps/web` 验证。提交生成请求时仅注入目标 Provider 的凭证构造 provider 实例，天然隔离。localStorage 不是安全边界：同源 XSS 可读取 Key，因此站点不引入分析/广告脚本，并在设置面板明确提示这一点。
 
 **备选**：
 - *sessionStorage/内存态*：否决——刷新即失，体验差。
@@ -64,7 +66,7 @@
 ### D5: 媒体缓存 = OPFS 原始字节 + IndexedDB 元数据，请求时才转 base64
 
 **理由**：
-- OPFS 免权限、跨会话持久、磁盘级配额，文件以 `<sha256>.<ext>` 命名存储原始字节——静态存储零膨胀（不存 base64），大文件友好；"存路径、按需读"正是 OPFS 的语义。
+- OPFS 通常免用户选择目录授权，适合跨会话缓存；文件以 `<sha256>.<ext>` 命名存储原始字节——静态存储零膨胀（不存 base64），大文件友好；“存路径、按需读”正是 OPFS 的语义。但浏览器可能因存储压力、隐私模式或用户清理站点数据回收内容，不能承诺永久持久。
 - IndexedDB 只存 `{hash, name, mime, size, thumb, addedAt, lastUsedAt}` 元数据（每条几 KB），驱动缩略图列表与 LRU。
 - base64 编码成本只发生在构造请求时（那是必须付出的传输载荷成本）。
 
@@ -73,7 +75,7 @@
 - *只存 FileSystemFileHandle（真实本地路径）*：否决——仅 Chrome 支持持久化且每会话需重新授权，不跨浏览器。
 - *localStorage 存 base64*：否决——5MB 配额、33% 膨胀，完全不可行。
 
-**降级**：OPFS 不可用（旧浏览器/隐私模式）→ 内存级会话缓存，流程不中断（fail-soft）。
+**降级**：OPFS/IndexedDB 不可用或元数据与文件不一致 → 清理坏条目并降级为内存级会话缓存，流程不中断（fail-soft）。启动时可尝试 `navigator.storage.persist()`，但必须处理被拒绝的结果。
 
 **容量**：条目数与总字节双上限（初始 100 条 / 500MB），按 `lastUsedAt` LRU 淘汰。
 
@@ -83,11 +85,11 @@
 
 ### D7: 单图 5MB 上限，客户端在发送前校验
 
-**理由**：用户选定值。纯前端无服务端请求体限制，约束来自 Provider 侧请求大小与浏览器内存；5MB base64 后约 6.7MB，对 DashScope 图像输入在可接受范围。上限为可配置常量，后续可按实测调整。
+**理由**：用户选定值。纯前端无服务端请求体限制，但约束来自 Provider 侧请求大小、浏览器内存与总请求体；5MB base64 后约 6.7MB，不能保证所有 Provider/模型都接受。因此除单图 5MB 上限外，还必须计算所有引用图片的总原始字节与估算编码后大小，超出总上限时在提交前阻止并提示压缩或减少图片。
 
 ### D8: GitHub Pages 部署——Actions 工作流 + 可配 base path + 404.html 兜底
 
-**理由**：GH Pages 纯静态托管匹配产物形态；`actions/deploy-pages` 为官方推荐路径；Vite `base` 由环境变量注入（默认 `/ai-media-sdk/`，取自仓库名），本地 dev 保持根路径；SPA 深链靠构建时复制 `index.html` → `404.html` 兜底（GH Pages 标准做法）。
+**理由**：GH Pages 纯静态托管匹配产物形态；`actions/deploy-pages` 为官方推荐路径；Vite `base` 由环境变量注入（默认 `/ai-media-sdk/`，取自仓库名），本地 dev 保持根路径；SPA 深链靠构建时复制 `index.html` → `404.html` 兜底。Router 的 `basename` 必须由同一 `BASE_URL` 派生，确保项目站点子路径下刷新和导航都能匹配。
 
 **备选**：*HashRouter 免兜底*：否决——URL 不美观，Landing 页需要正常路径。
 
@@ -100,6 +102,8 @@
 - **R5 GH Pages base path 漂移**（仓库改名/换 org）→ base 由环境变量注入，workflow 单点维护；README 记录修改方法。
 - **R6 组件复制导致两版分化** → 接受为短期成本；`apps/web` 冻结大改，待两版稳定后评估抽共享包（D2 备选）。
 - **R7 视频异步任务浏览器轮询耗时较长**（分钟级）→ 复用 SDK `task.wait` 的轮询间隔与超时语义，UI 明确 processing 状态，用户可停留等待或放弃；与 `apps/web` 行为一致。
+- **R8 自定义端点导致凭证外发** → 默认 host allowlist + 最终请求前 URL 校验；自定义 host 展示完整地址并要求显式确认；错误配置不得自动发送 Key。
+- **R9 多图 base64 请求过大** → 同时限制单图与总引用图片大小，提交前估算 base64 后载荷；超限时阻止请求并提示压缩/减少图片。
 
 ## Migration Plan
 
@@ -113,5 +117,5 @@
 
 ## Open Questions
 
-- DashScope 请求 payload 上限的精确值（影响 R2 的上限调优）——可在实施冒烟阶段用大图实测确认，不改变 spec。
+- DashScope 与 Ark 请求 payload 上限的精确值（影响 R2 的上限调优）——可在实施冒烟阶段用大图实测确认，但必须先实现单图与总载荷保护。
 - Landing 页是否需要 i18n（当前仅中文）——后续独立变更，不影响本期结构。

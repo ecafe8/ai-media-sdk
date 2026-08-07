@@ -20,12 +20,17 @@
 
 ### Requirement: SPA routing with landing and playground routes
 
-站点 SHALL 提供 `/`（Landing）与 `/playground` 两个客户端路由，支持浏览器前进/后退与深链访问；部署环境下直接访问 `/playground` SHALL 能正常渲染 Playground 而非平台错误页。
+站点 SHALL 提供 `/`（Landing）与 `/playground` 两个客户端路由，支持浏览器前进/后退与深链访问。Router basename SHALL 从与 Vite base 相同的配置派生；部署环境下直接访问项目子路径下的 `/playground` SHALL 能正常渲染 Playground 而非平台错误页。
 
 #### Scenario: Deep link to the playground renders
 
 - **WHEN** 访问者在部署环境直接打开 `/playground` 深链
 - **THEN** 站点 SHALL 渲染 Playground 页而不是 404 或平台错误页
+
+#### Scenario: Project-site basename remains aligned
+
+- **WHEN** 站点部署在 `/<repo>/` 子路径并直接刷新 `/<repo>/playground`
+- **THEN** 静态资源 SHALL 返回成功，客户端 Router SHALL 匹配 Playground 路由而不是回到 Landing 或显示路由错误
 
 ### Requirement: Playground shell shows BYO environment state
 

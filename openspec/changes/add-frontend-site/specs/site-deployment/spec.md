@@ -6,7 +6,7 @@
 
 ### Requirement: Automated deployment via GitHub Actions
 
-仓库 SHALL 提供 GitHub Actions 工作流，在推送到 main 分支与手动触发时构建站点并发布到 GitHub Pages。构建 SHALL 使用仓库工具链（Bun + Turbo）并遵循 monorepo 工作区依赖解析。
+仓库 SHALL 提供 GitHub Actions 工作流，在推送到 main 分支与手动触发时构建站点并发布到 GitHub Pages。构建 SHALL 使用仓库工具链（Bun + Turbo）并遵循 monorepo 工作区依赖解析。工作流 SHALL 声明 `contents: read`、`pages: write`、`id-token: write` 权限，并校验部署 artifact 包含 `index.html` 与 `404.html`。
 
 #### Scenario: Push to main publishes the site
 
@@ -20,12 +20,17 @@
 
 ### Requirement: Base path is configurable with a repository-derived default
 
-构建的资源 base path SHALL 可配置，默认值 SHALL 适配 GitHub Pages 的项目站点路径（`/<仓库名>/`）。本地开发 SHALL 不受部署 base path 影响。
+构建的资源 base path SHALL 可配置，默认值 SHALL 适配 GitHub Pages 的项目站点路径（`/<仓库名>/`）。客户端 Router 的 basename SHALL 从同一 base 配置派生。本地开发 SHALL 使用根 base path，且不受部署 base path 影响。
 
 #### Scenario: Deployed assets resolve under the project path
 
 - **WHEN** 站点发布到 `https://<user>.github.io/<repo>/`
 - **THEN** 页面与其静态资源 SHALL 全部从该 base path 正确加载，无 404
+
+#### Scenario: Router basename matches the asset base
+
+- **WHEN** 访问者在项目站点子路径下打开并刷新 `/ai-media-sdk/playground`
+- **THEN** Router SHALL 匹配 Playground，所有 chunk、样式和图片 SHALL 从同一 base path 加载
 
 #### Scenario: Local dev uses root base path
 

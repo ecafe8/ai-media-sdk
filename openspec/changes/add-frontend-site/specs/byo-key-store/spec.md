@@ -39,9 +39,19 @@
 
 ### Requirement: Credentials are sent only to their own provider
 
-当发起对某 Provider 的生成请求时，系统 SHALL 仅使用该 Provider 自己的凭证构造请求；MUST NOT 将 A Provider 的凭证附带在发往 B Provider 的请求中。
+当发起对某 Provider 的生成请求时，系统 SHALL 仅使用该 Provider 自己的凭证构造请求；MUST NOT 将 A Provider 的凭证附带在发往 B Provider 的请求中。默认端点 SHALL 使用受支持的 Provider host；用户填写自定义 endpoint/baseUrl 时，系统 SHALL 校验协议、host、端口和路径，并在非默认 host 上发送前要求显式风险确认。
 
 #### Scenario: Request to one provider carries only its credentials
 
 - **WHEN** 体验者向 `aliyun-bailian` 发起生成请求
 - **THEN** 请求 SHALL 仅携带 Bailian 凭证，不包含 Azure 或 Seedream 凭证
+
+#### Scenario: Untrusted custom endpoint requires confirmation
+
+- **WHEN** 体验者填写不属于默认 Provider host 的自定义 endpoint/baseUrl
+- **THEN** 系统 SHALL 展示完整目标地址与 Key 外发风险，并在确认前阻止请求
+
+#### Scenario: Invalid endpoint never receives a key
+
+- **WHEN** endpoint/baseUrl 使用非 HTTPS 协议、非法 host、嵌入式用户名密码或不允许的端口
+- **THEN** 系统 SHALL 拒绝保存或提交，且 SHALL NOT 发起带凭证的网络请求

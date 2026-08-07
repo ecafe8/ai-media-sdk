@@ -39,12 +39,17 @@ r2v 参考图输入 SHALL 为有序卡片列表，顺序即 prompt 中 `[Image N
 
 ### Requirement: Uploaded images respect a size limit
 
-本地上传 SHALL 施加单文件大小上限（默认 5MB，可配置）。超限文件 SHALL 在选择时被拒绝并提示大小限制；校验 SHALL 在发送到 Provider 之前完成。
+本地上传 SHALL 施加单文件大小上限（默认 5MB，可配置），并 SHALL 对当前请求中全部引用图片施加总大小与估算 base64 载荷上限。超限文件或请求 SHALL 在选择/提交时被拒绝并提示大小限制；校验 SHALL 在发送到 Provider 之前完成。
 
 #### Scenario: Oversized file is rejected before upload
 
 - **WHEN** 体验者选择超过大小上限的文件
 - **THEN** 系统 SHALL 拒绝该文件并显示大小限制提示，不发起任何请求
+
+#### Scenario: Combined reference images exceed the request limit
+
+- **WHEN** 多张 r2v/视频参考图单图均未超限但合计估算 base64 载荷超过请求上限
+- **THEN** 系统 SHALL 阻止提交并提示压缩图片或减少参考图数量，不发起 Provider 请求
 
 ### Requirement: Cache integration marks reused files
 
@@ -63,3 +68,17 @@ video-edit 源视频输入 SHALL 仅支持公网 URL 粘贴，MUST NOT 提供本
 
 - **WHEN** 体验者使用 video-edit 模型
 - **THEN** 源视频输入 SHALL 仅为 URL 输入框并附公网 URL 说明，无上传按钮
+
+### Requirement: Image request values map to SDK content types
+
+输入组件 SHALL 将公网 URL 映射为 `{ url }`，将本地文件映射为 `{ base64, mimeType }`，并按所选操作传入 SDK：图像编辑使用 `images`，i2v 使用 `firstFrame`，r2v 使用有序 `referenceImages`。Azure 图像编辑当前未实现，不得把该能力宣传为可用。
+
+#### Scenario: Local reference image reaches the correct SDK field
+
+- **WHEN** 体验者为图像编辑、i2v 或 r2v 选择本地图片并提交
+- **THEN** executor SHALL 将图片以正确顺序映射到对应的 SDK ImageContent 字段
+
+#### Scenario: Unsupported Azure edit is not presented as available
+
+- **WHEN** 体验者选择 Azure 模型
+- **THEN** 图像编辑入口 SHALL 保持禁用或明确提示 SDK 当前不支持该能力

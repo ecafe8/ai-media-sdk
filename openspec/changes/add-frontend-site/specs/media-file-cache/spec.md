@@ -20,7 +20,7 @@
 
 ### Requirement: Cache persists across sessions without permission prompts
 
-缓存 SHALL 使用免用户授权的浏览器持久存储（OPFS），在关闭并重新打开站点后仍可复用。缓存条目 SHALL 包含文件字节、原始文件名、MIME 类型、大小、缩略图与写入时间。
+缓存 SHALL 优先使用无需用户选择目录授权的浏览器持久存储（OPFS），在内容未被浏览器回收且存储可用时，关闭并重新打开站点后仍可复用。文件字节 SHALL 存于 OPFS；IndexedDB SHALL 仅存文件名、OPFS 文件名/版本、MIME 类型、大小、缩略图与写入时间等元数据。系统 SHALL 处理 `navigator.storage.persist()` 被拒绝、配额不足或站点数据被清理的情况。
 
 #### Scenario: Cached file survives a new session
 
@@ -62,3 +62,13 @@
 
 - **WHEN** 持久存储不可用且体验者选择文件提交
 - **THEN** 生成流程 SHALL 正常完成，仅缓存不跨会话保留
+
+#### Scenario: Missing OPFS file is repaired
+
+- **WHEN** IndexedDB 元数据存在但对应 OPFS 文件已被清理或无法读取
+- **THEN** 系统 SHALL 删除或标记该坏条目，提示重新选择文件，并 SHALL NOT 发送空文件或抛出未处理异常
+
+#### Scenario: Persistence request is denied
+
+- **WHEN** 浏览器拒绝持久化存储请求
+- **THEN** 系统 SHALL 继续使用可用的临时存储，并向体验者说明缓存可能被浏览器回收
