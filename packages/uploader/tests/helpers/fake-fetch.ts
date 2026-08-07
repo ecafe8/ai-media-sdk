@@ -121,6 +121,9 @@ function extractBody(body: unknown): unknown {
   if (body instanceof Uint8Array) {
     return `[bytes:${body.byteLength}]`;
   }
+  if (body instanceof ArrayBuffer) {
+    return `[bytes:${body.byteLength}]`;
+  }
   if (body instanceof Blob) {
     return `[blob:${body.size}]`;
   }

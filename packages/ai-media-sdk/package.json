@@ -1,15 +1,31 @@
 {
   "name": "@ai-media/sdk",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
-  "private": true,
+  "description": "Provider-independent AI image and video media SDK",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --out-dir dist --clean",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "typecheck:release": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "devDependencies": {

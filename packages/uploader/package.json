@@ -1,18 +1,43 @@
 {
   "name": "@ai-media/uploader",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
-  "private": true,
+  "description": "Upload helpers for AI media provider inputs",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./core": "./src/core/index.ts",
-    "./aliyun": "./src/aliyun/index.ts",
-    "./google": "./src/google/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./aliyun": {
+      "types": "./dist/aliyun/index.d.ts",
+      "import": "./dist/aliyun/index.js"
+    },
+    "./google": {
+      "types": "./dist/google/index.d.ts",
+      "import": "./dist/google/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
+    "build": "tsup src/index.ts src/core/index.ts src/aliyun/index.ts src/google/index.ts --format esm --dts --out-dir dist --clean",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "typecheck:release": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
   },
   "devDependencies": {

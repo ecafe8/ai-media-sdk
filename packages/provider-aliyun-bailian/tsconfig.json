@@ -1,8 +1,9 @@
 {
   "extends": "@workspace/typescript-config/node-library.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
-      "@ai-media/sdk": ["../../ai-media-sdk/src/index.ts"]
+      "@ai-media/sdk": ["../ai-media-sdk/src/index.ts"]
     }
   },
   "include": ["src"],
