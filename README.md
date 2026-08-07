@@ -1,84 +1,141 @@
 # AI Media SDK
 
-多 Provider 多模态生成 SDK（图像 + 视频）。基于 Bun + Turborepo monorepo，UI 使用 shadcn/ui。详见 `docs/prd/`。
+多 Provider 多模态生成 SDK（图像 + 视频）。统一的 Provider 工厂、模型实例与任务抽象，屏蔽各平台在认证、同步/异步流程、输入输出格式和错误语义上的差异。基于 Bun + Turborepo monorepo 开发。
 
-## SDK Examples
+> **项目状态**
+>
+> 本项目当前是 vibe-coding 项目，且处于快速迭代期间，**API 可能随时发生变更**，暂不保证向后兼容。生产环境使用请务必锁定版本，并在升级前仔细核对变更。
 
-The runnable Provider examples live under `examples/`. Copy the matching
-`.env.example` to `.env` in that example directory, fill in server-side
-credentials, then run one request:
+## 包一览
+
+以下 5 个包发布到 npm（`@ai-media` scope）：
+
+| 包名                                | 说明                                               |
+| ----------------------------------- | -------------------------------------------------- |
+| `@ai-media/sdk`                     | Provider 无关的核心契约与图像/视频任务抽象         |
+| `@ai-media/provider-azure-openai`   | Azure OpenAI 图像生成 Provider（同步 API）         |
+| `@ai-media/provider-aliyun-bailian` | 阿里云百炼（DashScope）图像 + 视频 Provider        |
+| `@ai-media/provider-seedream`       | 火山引擎方舟 Doubao-Seedream 图像生成 Provider     |
+| `@ai-media/uploader`                | Provider 输入文件的临时上传辅助（Aliyun / Google） |
+
+各包的使用说明见对应包目录下的 `README.md`。
+
+## 快速开始
+
+SDK 的调用模型是三层结构：**Provider 工厂 → 模型实例 → 生成函数**。所有配置（API Key、endpoint 等）都以参数对象传入，SDK 不读取任何运行时配置。
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-azure-openai
+```
+
+```ts
+import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { generateImage } from "@ai-media/sdk";
+
+const provider = createAzureOpenAIProvider({
+  apiKey: "<your-api-key>",
+  endpoint: "https://<resource>.cognitiveservices.azure.com",
+  apiVersion: "2024-02-01",
+});
+
+const result = await generateImage({
+  model: provider.image("gpt-image-2"),
+  prompt: "A quiet riverside town at sunrise",
+  n: 1,
+  size: "1024x1024",
+});
+
+console.log(result.content); // ImageContent[]，含 url 或 base64
+```
+
+异步模型（如阿里云 Wan 图像、HappyHorse 视频）使用 `submitImageTask` / `submitVideoTask` 提交任务，返回统一的 `TaskHandle`，通过 `handle.wait()` 轮询到终态。
+
+## 可运行示例
+
+示例应用位于 `examples/`。将对应目录下的 `.env.example` 复制为 `.env` 并填入服务端凭据后运行：
 
 ```bash
 bun install
+
+# Azure OpenAI 图像生成（同步）
 cp examples/azure-image/.env.example examples/azure-image/.env
 bun run --cwd examples/azure-image start
 
+# 阿里云百炼图像生成（Qwen 同步 + Wan 异步）
 cp examples/aliyun-bailian-image/.env.example examples/aliyun-bailian-image/.env
 bun run --cwd examples/aliyun-bailian-image start
 
+# 阿里云百炼视频生成（HappyHorse 四种模式）
 cp examples/aliyun-video/.env.example examples/aliyun-video/.env
 bun run --cwd examples/aliyun-video start
+
+# 火山方舟 Doubao-Seedream 图像生成（同步）
+cp examples/seedream-image/.env.example examples/seedream-image/.env
+bun run --cwd examples/seedream-image start
+
+# 上传本地文件后作为编辑输入（Aliyun 临时上传）
+cp examples/uploader-aliyun/.env.example examples/uploader-aliyun/.env
+bun run --cwd examples/uploader-aliyun start
+
+# 上传器 Web 示例（Vite + 本地 server）
+bun run --cwd examples/uploader-web dev
 ```
 
-Both image examples submit one image request with one output by default. A prompt can
-be passed as command-line text. Missing environment variables fail before any
-network request, and errors are printed without credentials or raw Provider
-responses.
+图像示例默认提交一次请求、输出一张图，可通过命令行参数传入 prompt。缺少凭据时会在发起任何网络请求前失败，错误输出不包含凭据或 Provider 原始响应。
 
-The Alibaba image example defaults to `qwen-image-2.0-pro`, which supports generation
-and editing. The recommended Wan models are `wan2.7-image-pro` for quality and
-`wan2.7-image` for balanced generation. `z-image-turbo` is a fast,
-generation-only model and is not offered for editing.
+示例默认模型：阿里云图像示例默认 `qwen-image-2.0-pro-2026-06-22`（支持生成与编辑），可用 `ALIYUN_BAILIAN_IMAGE_MODEL` 覆盖；Wan 系列推荐 `wan2.7-image-pro`（高质量）与 `wan2.7-image`（均衡），走异步任务路径；Seedream 示例默认 `doubao-seedream-5-0-pro-260628`。
 
-### Video examples
+### 视频示例
 
-The Alibaba video example supports four HappyHorse modes via
-`ALIYUN_BAILIAN_VIDEO_MODEL`:
+阿里云视频示例通过 `ALIYUN_BAILIAN_VIDEO_MODEL` 支持四种 HappyHorse 模式：
 
-- `happyhorse-1.1-t2v` — text-to-video (prompt only).
-- `happyhorse-1.1-i2v` — first-frame image-to-video (one image URL).
-- `happyhorse-1.1-r2v` — reference-to-video (1-9 reference image URLs; use
-  `[Image N]` in the prompt to refer to each image by order).
-- `happyhorse-1.0-video-edit` — source video editing (one public `http:`/`https:`
-  video URL + 0-5 optional reference image URLs; supports `audio_setting`
-  `auto`/`origin`; does not accept `ratio` or `duration`).
+- `happyhorse-1.1-t2v` — 文生视频（仅 prompt）。
+- `happyhorse-1.1-i2v` — 首帧图生视频（一张图片 URL）。
+- `happyhorse-1.1-r2v` — 参考图生视频（1-9 张参考图 URL；prompt 中用 `[Image N]` 按顺序指代各图）。
+- `happyhorse-1.0-video-edit` — 源视频编辑（一个公开 `http:`/`https:` 视频 URL + 0-5 张可选参考图 URL；支持 `audio_setting` 取 `auto`/`origin`；不接受 `ratio` 或 `duration`）。
 
-r2v and video-edit inputs are provided via environment variables:
+r2v 与 video-edit 的输入通过环境变量提供：
 
-- `ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS` — comma-separated reference image URLs.
-- `ALIYUN_BAILIAN_INPUT_VIDEO_URL` — public source video URL (not base64 or
-  local file).
+- `ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS` — 逗号分隔的参考图 URL。
+- `ALIYUN_BAILIAN_FIRST_FRAME_URL` — i2v 首帧图 URL（未设置时回退到第一张参考图）。
+- `ALIYUN_BAILIAN_INPUT_VIDEO_URL` — 公开的源视频 URL（不支持 base64 或本地文件）。
 
-Task IDs and result URLs expire after 24 hours; the caller is responsible for
-downloading and persisting results.
+任务 ID 与结果 URL 在 24 小时后过期，下载与持久化由调用方负责。
 
-## Controlled Web Playground
+## 受控 Web Playground
 
-Run `bun run dev` and open `http://localhost:3000`. The Playground is a
-controlled developer tool, not a public multi-tenant service. Its browser only
-sends prompt and model parameters to the Next.js server route; Provider API
-keys are read from server environment variables and never enter the browser.
+运行 `bun run dev` 并打开 `http://localhost:3000`。Playground 是受控的开发工具，不是面向公众的多租户服务：浏览器端只向 Next.js 服务端路由发送 prompt 与模型参数，Provider API Key 从服务端环境变量读取，绝不进入浏览器。
 
-The UI supports text-to-image for configured Providers and URL-based reference
-images for models whose capability registry supports editing. Video modes
-(t2v/i2v/r2v/video-edit) are available for configured Aliyun models. Results are
-temporary remote previews. Prompts, images, tasks, and results are not stored
-as history.
+UI 支持已配置 Provider 的文生图，以及能力注册表支持编辑的模型的 URL 参考图输入；已配置的阿里云模型还提供视频模式（t2v/i2v/r2v/video-edit）。结果为临时远程预览，prompt、图片、任务与结果均不作为历史存储。
 
-## Adding components
+## 开发
 
-To add components to your app, run the following command at the root of your `web` app:
+环境要求：Bun `1.3.14`、Node.js `>=20`。
 
 ```bash
-bunx --bun shadcn@latest add button --cwd packages/ui
+bun install          # 安装依赖（根 bun.lock 为唯一事实来源）
+bun run dev          # 启动 apps/web Playground（http://localhost:3000）
+bun run lint         # 全仓库 lint
+bun run typecheck    # 全仓库类型检查
+bun run build        # 全仓库构建
+bun run test         # 全仓库测试
+bun run format       # Prettier 格式化
+bun run docs         # 基于 docs/ 生成文档
 ```
 
-This will place the ui components in the `packages/ui/src/components` directory.
+单个工作区任务可用 `bunx turbo <task> --filter=<workspace>` 或 `bun run --cwd <workspace> <task>` 执行。
 
-## Using components
+npm 发布流程见 `scripts/RELEASE.md`。
 
-To use the components in your app, import them from the `ui` package.
+## 目录结构
 
-```tsx
-import { Button } from "@workspace/ui/components/shadcn/button";
+```
+apps/web                # Next.js 受控 Playground（凭据仅在服务端）
+packages/ai-media-sdk   # 核心契约与任务抽象（@ai-media/sdk）
+packages/provider-*     # Provider 适配器（原生 fetch，不依赖平台 SDK）
+packages/uploader       # 上传实现（@ai-media/uploader）
+packages/ui             # 共享 UI（仅仓库内部使用，不发布）
+examples/*              # 可运行的 Provider / 上传器示例
+docs/prd                # 产品需求文档
+scripts                 # 发布脚本与发布流程文档
 ```
