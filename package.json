@@ -12,6 +12,7 @@
     "release:check": "bun scripts/release-check.ts",
     "release:pack": "bun scripts/release-check.ts --pack",
     "release:version": "bun scripts/release-version.ts",
+    "release": "bun scripts/release.ts",
     "docs": "mdts docs"
   },
   "devDependencies": {

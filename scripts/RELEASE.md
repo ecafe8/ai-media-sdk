@@ -140,6 +140,59 @@ npm pack --dry-run --json --workspace=@ai-media/provider-seedream
 
 ## 正式发布
 
+推荐使用自动化发布脚本：
+
+```bash
+bun run release
+```
+
+该命令要求 5 个包已经使用同一个版本号，并按以下顺序执行：
+
+1. 检查工作区是否存在未预期的修改
+2. 执行 `release:check`
+3. 按依赖顺序发布 5 个包到 npm `latest` tag
+4. 验证每个包的版本已经可以从 npm registry 获取
+5. 创建发布 commit：`chore: release v<version>`
+6. 创建 Git tag：`v<version>`
+
+脚本默认不 push。确认本地 commit 和 tag 无误后执行：
+
+```bash
+git push origin main v0.1.1
+```
+
+也可以让脚本自动 push：
+
+```bash
+bun run release -- --push
+```
+
+正式发布前可使用 dry-run。它会执行检查和 `npm publish --dry-run`，不会发布 npm 包，也不会创建 commit、tag 或 push：
+
+```bash
+bun run release -- --dry-run
+```
+
+发布 beta 或其他 npm dist-tag：
+
+```bash
+bun run release -- --tag beta
+```
+
+用户可以通过以下方式安装 beta 版本：
+
+```bash
+npm install @ai-media/sdk@beta
+```
+
+版本号不会由 `release` 自动修改。先运行 `release:version`，检查版本变更后，再运行 `release`：
+
+```bash
+bun run release:version
+git diff -- packages/*/package.json
+bun run release
+```
+
 必须按照依赖顺序发布。先发布 SDK 和 uploader，再发布 provider：
 
 ```bash
