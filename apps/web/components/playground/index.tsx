@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type {
+  PlaygroundCredentials,
   PlaygroundModel,
   PlaygroundModality,
+  PlaygroundProvider,
 } from "@/lib/playground/types";
 import { ImageWorkbench } from "@/components/playground/image-workbench";
 import { VideoWorkbench } from "@/components/playground/video-workbench";
+import {
+  clearStoredCredentials,
+  isCredentialsComplete,
+  normalizeCredentials,
+  setStoredCredentials,
+  useStoredCredentials,
+} from "./lib/credentials";
 
 interface PlaygroundProps {
   readonly models: readonly PlaygroundModel[];
@@ -26,6 +35,46 @@ interface PlaygroundProps {
  * reserves `"audio"` for a future phase.
  */
 export function Playground({ models }: PlaygroundProps) {
+  // Providers configured server-side (from env). These never require BYO
+  // credentials; BYO input is optional and takes precedence when supplied.
+  const serverConfiguredProviders = useMemo(
+    () =>
+      new Set<PlaygroundProvider>(
+        models.filter((m) => m.configured).map((m) => m.provider)
+      ),
+    [models]
+  );
+
+  // Visitor-supplied BYO credentials, backed by a localStorage external
+  // store. Server render observes an empty map, so hydration is stable.
+  const credentialsMap = useStoredCredentials();
+
+  const handleCredentialsChange = useCallback(
+    (provider: PlaygroundProvider, credentials: PlaygroundCredentials) => {
+      setStoredCredentials(provider, credentials);
+    },
+    []
+  );
+
+  const handleCredentialsClear = useCallback((provider: PlaygroundProvider) => {
+    clearStoredCredentials(provider);
+  }, []);
+
+  // Re-project the `configured` flag so a Provider with complete BYO
+  // credentials behaves like a server-configured one in the workbenches.
+  const effectiveModels = useMemo(
+    () =>
+      models.map((model) => {
+        if (model.configured) return model;
+        const byoComplete = isCredentialsComplete(
+          model.provider,
+          normalizeCredentials(credentialsMap[model.provider])
+        );
+        return byoComplete ? { ...model, configured: true } : model;
+      }),
+    [models, credentialsMap]
+  );
+
   const [modality, setModality] = useState<PlaygroundModality>(() => {
     // Default to video if any configured video model exists; otherwise image.
     const hasConfiguredVideo = models.some(
@@ -47,8 +96,16 @@ export function Playground({ models }: PlaygroundProps) {
             </h1>
           </div>
           <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
-            <span className="h-2 w-2 rounded-full bg-emerald-500" />
-            Controlled developer environment
+            <span
+              className={`h-2 w-2 rounded-full ${
+                serverConfiguredProviders.size > 0
+                  ? "bg-emerald-500"
+                  : "bg-amber-500"
+              }`}
+            />
+            {serverConfiguredProviders.size > 0
+              ? "Controlled developer environment"
+              : "自带 Key 体验环境"}
           </div>
         </div>
         <div className="mx-auto mt-4 max-w-[1440px]">
@@ -77,12 +134,29 @@ export function Playground({ models }: PlaygroundProps) {
         </div>
       </header>
 
-      {modality === "image" ? <ImageWorkbench models={models} /> : null}
-      {modality === "video" ? <VideoWorkbench models={models} /> : null}
+      {modality === "image" ? (
+        <ImageWorkbench
+          models={effectiveModels}
+          credentialsMap={credentialsMap}
+          serverConfiguredProviders={serverConfiguredProviders}
+          onCredentialsChange={handleCredentialsChange}
+          onCredentialsClear={handleCredentialsClear}
+        />
+      ) : null}
+      {modality === "video" ? (
+        <VideoWorkbench
+          models={effectiveModels}
+          credentialsMap={credentialsMap}
+          serverConfiguredProviders={serverConfiguredProviders}
+          onCredentialsChange={handleCredentialsChange}
+          onCredentialsClear={handleCredentialsClear}
+        />
+      ) : null}
 
       <footer className="mx-auto max-w-[1440px] px-5 pb-6 text-xs text-slate-400">
-        API Key 仅从服务端环境读取，浏览器不会接触 Provider 凭证。Playground
-        不保存历史结果。
+        {serverConfiguredProviders.size > 0
+          ? "服务端已配置部分 Provider；也可填写自己的 API Key（填写后优先使用）。自带 Key 仅保存在你的浏览器本地，并随请求转发给服务端代理。Playground 不保存历史结果。"
+          : "本环境未配置服务端 API Key，请填写你自己的 Provider API Key 后体验。Key 仅保存在你的浏览器本地，并随请求转发给服务端代理，不会被服务端存储。Playground 不保存历史结果。"}
       </footer>
     </main>
   );

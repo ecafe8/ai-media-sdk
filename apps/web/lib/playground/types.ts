@@ -69,11 +69,34 @@ export interface PlaygroundModel {
   readonly configured: boolean;
 }
 
+/**
+ * Visitor-supplied Provider credentials (BYO Key). Only sent when the
+ * visitor wants to use their own API key; the server proxies the Provider
+ * call with these values and never persists or logs them. User-supplied
+ * credentials take precedence over server-side environment configuration.
+ *
+ * Required fields per Provider:
+ * - `azure-openai`: `apiKey` + `endpoint` + `apiVersion`
+ * - `aliyun-bailian`: `apiKey` + `baseUrl`
+ * - `doubao-seedream`: `apiKey` (`baseUrl` optional)
+ */
+export interface PlaygroundCredentials {
+  readonly apiKey: string;
+  /** Azure OpenAI resource endpoint. */
+  readonly endpoint?: string;
+  /** Azure OpenAI API version. */
+  readonly apiVersion?: string;
+  /** Bailian DashScope / Seedream Ark base URL. */
+  readonly baseUrl?: string;
+}
+
 export interface PlaygroundRequest {
   readonly provider: PlaygroundProvider;
   readonly model: string;
   readonly modality: "image" | "video";
   readonly prompt: string;
+  /** Optional visitor-supplied credentials; takes precedence over env. */
+  readonly credentials?: PlaygroundCredentials;
   /** Image modality: `generate` (default) or `edit`. */
   readonly imageOperation?: ImageOperation;
   /** Image edit: reference image URL. */

@@ -7,10 +7,17 @@ import { Button } from "@workspace/ui/components/shadcn/button";
 
 import { PLAYGROUND_PROVIDERS } from "@/lib/playground/registry";
 import type {
+  PlaygroundCredentials,
   PlaygroundModel,
   PlaygroundProvider,
   PlaygroundResponse,
 } from "@/lib/playground/types";
+import { CredentialsPanel } from "../credentials-panel";
+import {
+  isCredentialsComplete,
+  normalizeCredentials,
+  type StoredCredentialsMap,
+} from "../lib/credentials";
 import {
   Field,
   inputClassName,
@@ -33,6 +40,13 @@ const PROMPTS = ["霓虹城市的雨夜街景，电影感", "纸飞机穿越森�
 
 interface VideoWorkbenchProps {
   readonly models: readonly PlaygroundModel[];
+  readonly credentialsMap: StoredCredentialsMap;
+  readonly serverConfiguredProviders: ReadonlySet<PlaygroundProvider>;
+  readonly onCredentialsChange: (
+    provider: PlaygroundProvider,
+    credentials: PlaygroundCredentials
+  ) => void;
+  readonly onCredentialsClear: (provider: PlaygroundProvider) => void;
 }
 
 /**
@@ -48,7 +62,13 @@ interface VideoWorkbenchProps {
  * from the new model's metadata and reset to the first option. video-edit
  * hides 480P/ratio/duration and shows `audio_setting` instead.
  */
-export function VideoWorkbench({ models }: VideoWorkbenchProps) {
+export function VideoWorkbench({
+  models,
+  credentialsMap,
+  serverConfiguredProviders,
+  onCredentialsChange,
+  onCredentialsClear,
+}: VideoWorkbenchProps) {
   const videoModels = useMemo(
     () => models.filter((m) => m.modality === "video"),
     [models]
@@ -176,6 +196,15 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
       return;
     }
 
+    const byoCredentials = normalizeCredentials(credentialsMap[provider]);
+    const serverConfigured = serverConfiguredProviders.has(provider);
+    if (!serverConfigured && !isCredentialsComplete(provider, byoCredentials)) {
+      setValidationError(
+        "当前 Provider 未在服务端配置，请先填写完整的 API Key 凭证。"
+      );
+      return;
+    }
+
     setValidationError("");
     setIsSubmitting(true);
     setResult({ status: "processing" });
@@ -185,6 +214,9 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
         model: modelId,
         modality: "video",
         prompt: trimmedPrompt,
+        ...(byoCredentials && isCredentialsComplete(provider, byoCredentials)
+          ? { credentials: byoCredentials }
+          : {}),
       };
       if (needsFirstFrame && referenceImageUrl) {
         body.referenceImageUrl = referenceImageUrl;
@@ -271,6 +303,19 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
               })}
             </select>
           </Field>
+
+          <CredentialsPanel
+            key={provider}
+            provider={provider}
+            providerLabel={
+              PLAYGROUND_PROVIDERS.find((item) => item.id === provider)
+                ?.label ?? provider
+            }
+            configured={serverConfiguredProviders.has(provider)}
+            credentials={credentialsMap[provider]}
+            onChange={(next) => onCredentialsChange(provider, next)}
+            onClear={() => onCredentialsClear(provider)}
+          />
 
           <Field label="模型">
             <select
@@ -469,8 +514,8 @@ export function VideoWorkbench({ models }: VideoWorkbenchProps) {
           </div>
           {!currentModel?.configured ? (
             <p className="text-xs leading-5 text-amber-700">
-              当前 Provider 未配置。请先按 README 中的 `.env.example`
-              配置服务端环境变量。
+              当前 Provider 未在服务端配置。请在上方「填写你的 API
+              Key」中提供完整凭证后开始体验。
             </p>
           ) : null}
         </div>

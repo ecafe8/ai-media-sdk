@@ -7,10 +7,17 @@ import { Button } from "@workspace/ui/components/shadcn/button";
 
 import { PLAYGROUND_PROVIDERS } from "@/lib/playground/registry";
 import type {
+  PlaygroundCredentials,
   PlaygroundModel,
   PlaygroundProvider,
   PlaygroundResponse,
 } from "@/lib/playground/types";
+import { CredentialsPanel } from "../credentials-panel";
+import {
+  isCredentialsComplete,
+  normalizeCredentials,
+  type StoredCredentialsMap,
+} from "../lib/credentials";
 import { isValidHttpUrl } from "../lib/http";
 import {
   imageAdvancedFieldSet,
@@ -25,6 +32,13 @@ const PROMPTS = ["竖版的王国保卫战游戏界面", "一张可爱的人像�
 
 interface ImageWorkbenchProps {
   readonly models: readonly PlaygroundModel[];
+  readonly credentialsMap: StoredCredentialsMap;
+  readonly serverConfiguredProviders: ReadonlySet<PlaygroundProvider>;
+  readonly onCredentialsChange: (
+    provider: PlaygroundProvider,
+    credentials: PlaygroundCredentials
+  ) => void;
+  readonly onCredentialsClear: (provider: PlaygroundProvider) => void;
 }
 
 /**
@@ -35,7 +49,13 @@ interface ImageWorkbenchProps {
  * dropdowns are re-derived from the new model's metadata and reset to the
  * first option. Mounts the ResultFeed in the right pane.
  */
-export function ImageWorkbench({ models }: ImageWorkbenchProps) {
+export function ImageWorkbench({
+  models,
+  credentialsMap,
+  serverConfiguredProviders,
+  onCredentialsChange,
+  onCredentialsClear,
+}: ImageWorkbenchProps) {
   const imageModels = useMemo(
     () =>
       models.filter(
@@ -131,6 +151,15 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
       return;
     }
 
+    const byoCredentials = normalizeCredentials(credentialsMap[provider]);
+    const serverConfigured = serverConfiguredProviders.has(provider);
+    if (!serverConfigured && !isCredentialsComplete(provider, byoCredentials)) {
+      setValidationError(
+        "当前 Provider 未在服务端配置，请先填写完整的 API Key 凭证。"
+      );
+      return;
+    }
+
     setValidationError("");
     setIsSubmitting(true);
     setResult({ status: "processing" });
@@ -141,6 +170,9 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
         modality: "image",
         imageOperation: operation,
         prompt: trimmedPrompt,
+        ...(byoCredentials && isCredentialsComplete(provider, byoCredentials)
+          ? { credentials: byoCredentials }
+          : {}),
       };
       if (operation === "edit") {
         body.referenceImageUrl = referenceImageUrl;
@@ -227,6 +259,19 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
               ))}
             </select>
           </Field>
+
+          <CredentialsPanel
+            key={provider}
+            provider={provider}
+            providerLabel={
+              PLAYGROUND_PROVIDERS.find((item) => item.id === provider)
+                ?.label ?? provider
+            }
+            configured={serverConfiguredProviders.has(provider)}
+            credentials={credentialsMap[provider]}
+            onChange={(next) => onCredentialsChange(provider, next)}
+            onClear={() => onCredentialsClear(provider)}
+          />
 
           <Field label="模型">
             <select
@@ -386,8 +431,8 @@ export function ImageWorkbench({ models }: ImageWorkbenchProps) {
           </div>
           {!currentModel?.configured ? (
             <p className="text-xs leading-5 text-amber-700">
-              当前 Provider 未配置。请先按 README 中的 `.env.example`
-              配置服务端环境变量。
+              当前 Provider 未在服务端配置。请在上方「填写你的 API
+              Key」中提供完整凭证后开始体验。
             </p>
           ) : null}
         </div>

@@ -25,6 +25,13 @@ import {
 
 import { loadConfig } from "@/lib/config";
 import { getPlaygroundModel } from "./registry";
+import {
+  isProviderConfiguredByEnv,
+  PlaygroundConfigurationError,
+  resolveAliyunCredentials,
+  resolveAzureCredentials,
+  resolveSeedreamCredentials,
+} from "./provider-credentials";
 import type {
   PlaygroundModel,
   PlaygroundProvider,
@@ -40,19 +47,14 @@ interface ProviderSelection {
 export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
   const config = loadConfig();
   const configured = new Set<PlaygroundProvider>();
-  if (
-    config.AZURE_OPENAI_API_KEY &&
-    config.AZURE_OPENAI_ENDPOINT &&
-    config.AZURE_OPENAI_API_VERSION &&
-    config.AZURE_OPENAI_DEPLOYMENT
-  ) {
-    configured.add("azure-openai");
-  }
-  if (config.ALIYUN_BAILIAN_API_KEY && config.ALIYUN_BAILIAN_BASE_URL) {
-    configured.add("aliyun-bailian");
-  }
-  if (config.ARK_API_KEY) {
-    configured.add("doubao-seedream");
+  for (const provider of [
+    "azure-openai",
+    "aliyun-bailian",
+    "doubao-seedream",
+  ] as const) {
+    if (isProviderConfiguredByEnv(provider, config)) {
+      configured.add(provider);
+    }
   }
   return configured;
 }
@@ -61,13 +63,6 @@ export function createProviderSelection(
   request: PlaygroundRequest
 ): ProviderSelection {
   const config = loadConfig();
-  const configured = getConfiguredProviders();
-  if (!configured.has(request.provider)) {
-    throw new SdkError({
-      code: "INVALID_REQUEST",
-      message: "The selected Provider is not configured on the server",
-    });
-  }
 
   const model = getPlaygroundModel(request.provider, request.model);
   if (!model) {
@@ -105,10 +100,7 @@ export function createProviderSelection(
       });
     }
     const provider: AliyunBailianProvider = createAliyunBailianProvider(
-      {
-        apiKey: config.ALIYUN_BAILIAN_API_KEY!,
-        baseUrl: config.ALIYUN_BAILIAN_BASE_URL!,
-      },
+      resolveAliyunCredentials(request.credentials, config),
       {
         transport: createTransport({
           defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
@@ -120,11 +112,7 @@ export function createProviderSelection(
 
   if (request.provider === "azure-openai") {
     const provider: AzureOpenAIProvider = createAzureOpenAIProvider(
-      {
-        apiKey: config.AZURE_OPENAI_API_KEY!,
-        endpoint: config.AZURE_OPENAI_ENDPOINT!,
-        apiVersion: config.AZURE_OPENAI_API_VERSION!,
-      },
+      resolveAzureCredentials(request.credentials, config),
       {
         transport: createTransport({
           defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
@@ -136,10 +124,7 @@ export function createProviderSelection(
 
   if (request.provider === "doubao-seedream") {
     const provider: SeedreamProvider = createSeedreamProvider(
-      {
-        apiKey: config.ARK_API_KEY!,
-        ...(config.ARK_BASE_URL ? { baseUrl: config.ARK_BASE_URL } : {}),
-      },
+      resolveSeedreamCredentials(request.credentials, config),
       {
         transport: createTransport({
           defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
@@ -150,10 +135,7 @@ export function createProviderSelection(
   }
 
   const provider: AliyunBailianProvider = createAliyunBailianProvider(
-    {
-      apiKey: config.ALIYUN_BAILIAN_API_KEY!,
-      baseUrl: config.ALIYUN_BAILIAN_BASE_URL!,
-    },
+    resolveAliyunCredentials(request.credentials, config),
     {
       transport: createTransport({
         defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
@@ -280,6 +262,16 @@ export async function executePlaygroundRequest(
     });
     return response;
   } catch (error) {
+    if (error instanceof PlaygroundConfigurationError) {
+      logPlaygroundEvent("failure", request, {
+        code: "CONFIGURATION_ERROR",
+        durationMs: Date.now() - startedAt,
+      });
+      return {
+        status: "failed",
+        error: { code: "CONFIGURATION_ERROR", message: error.message },
+      };
+    }
     const safeError = toSafeError(error);
     logPlaygroundEvent("failure", request, {
       code: safeError.code,

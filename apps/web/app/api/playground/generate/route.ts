@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { executePlaygroundRequest } from "@/lib/playground/server";
-import type { PlaygroundRequest } from "@/lib/playground/types";
+import type {
+  PlaygroundCredentials,
+  PlaygroundRequest,
+} from "@/lib/playground/types";
 
 const PROVIDERS = new Set([
   "azure-openai",
@@ -123,6 +126,10 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   ) {
     return undefined;
   }
+  const credentials = parseCredentials(candidate.credentials);
+  if (candidate.credentials !== undefined && !credentials) {
+    return undefined;
+  }
   let referenceImageUrls: string[] | undefined;
   if (candidate.referenceImageUrls !== undefined) {
     if (
@@ -166,7 +173,57 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
       typeof candidate.audioSetting === "string"
         ? candidate.audioSetting
         : undefined,
+    credentials,
   };
+}
+
+/**
+ * Parse and validate visitor-supplied BYO credentials. Returns `undefined`
+ * when the field is absent or malformed. Only the field shapes are checked
+ * here; per-Provider completeness (which fields a given Provider requires)
+ * is enforced by the credential resolver, which produces actionable
+ * `CONFIGURATION_ERROR` messages.
+ */
+function parseCredentials(value: unknown): PlaygroundCredentials | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "object" || value === null) return undefined;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate.apiKey !== "string" ||
+    candidate.apiKey.trim().length === 0 ||
+    candidate.apiKey.length > 512
+  ) {
+    return undefined;
+  }
+  const endpoint = parseOptionalUrl(candidate.endpoint);
+  const baseUrl = parseOptionalUrl(candidate.baseUrl);
+  if (candidate.endpoint !== undefined && endpoint === undefined) {
+    return undefined;
+  }
+  if (candidate.baseUrl !== undefined && baseUrl === undefined) {
+    return undefined;
+  }
+  if (
+    candidate.apiVersion !== undefined &&
+    (typeof candidate.apiVersion !== "string" ||
+      candidate.apiVersion.length > 64)
+  ) {
+    return undefined;
+  }
+  return {
+    apiKey: candidate.apiKey,
+    ...(endpoint !== undefined ? { endpoint } : {}),
+    ...(baseUrl !== undefined ? { baseUrl } : {}),
+    ...(typeof candidate.apiVersion === "string"
+      ? { apiVersion: candidate.apiVersion }
+      : {}),
+  };
+}
+
+function parseOptionalUrl(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || !isPublicHttpUrl(value)) return undefined;
+  return value;
 }
 
 function isPublicHttpUrl(value: string): boolean {
