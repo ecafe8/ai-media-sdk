@@ -210,7 +210,7 @@ bun run release:check
 
 ```bash
 npm whoami
-npm access ls-packages
+npm access list packages
 ```
 
 ### provider 找不到 SDK
