@@ -49,19 +49,29 @@ npm access list packages
 
 ## 修改版本
 
-发布前修改 5 个包的 `version`。npm 不允许重复发布同一个包的同一个版本。
+发布前使用版本脚本修改 5 个包的 `version`。npm 不允许重复发布同一个包的同一个版本。
 
-例如将版本从 `0.1.0` 升级到 `0.1.1`：
+默认不传参数时，脚本读取 `@ai-media/sdk` 当前版本并自动递增 patch 版本。例如当前版本为 `0.1.0`：
 
 ```bash
-npm version 0.1.1 --workspace=@ai-media/sdk --no-git-tag-version
-npm version 0.1.1 --workspace=@ai-media/uploader --no-git-tag-version
-npm version 0.1.1 --workspace=@ai-media/provider-azure-openai --no-git-tag-version
-npm version 0.1.1 --workspace=@ai-media/provider-aliyun-bailian --no-git-tag-version
-npm version 0.1.1 --workspace=@ai-media/provider-seedream --no-git-tag-version
+bun run release:version
+# 5 个包都会更新为 0.1.1
 ```
 
-也可以直接手动修改各包的 `package.json`，然后用 `git diff` 检查版本变更。
+也可以指定升级类型或明确版本号：
+
+```bash
+bun run release:version -- patch  # 0.1.0 -> 0.1.1
+bun run release:version -- minor  # 0.1.0 -> 0.2.0
+bun run release:version -- major  # 0.1.0 -> 1.0.0
+bun run release:version -- 0.2.0
+```
+
+脚本会同时更新 provider 对 `@ai-media/sdk` 的依赖，例如更新为 `^0.1.1`。脚本不会自动提交或创建 Git tag。执行后检查修改：
+
+```bash
+git diff -- packages/*/package.json
+```
 
 provider 包依赖 `@ai-media/sdk`。发布新版本时，provider 的依赖版本必须指向已经发布到 npm 的 SDK 版本，例如：
 
