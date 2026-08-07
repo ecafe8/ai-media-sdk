@@ -15,6 +15,11 @@ interface PackageManifest {
   dependencies?: Record<string, string>;
 }
 
+interface RegistryVersionResult {
+  version: string;
+  published: boolean;
+}
+
 const ROOT = resolve(__dirname, "..");
 const PACKAGES: string[] = [
   "packages/ai-media-sdk",
@@ -79,6 +84,63 @@ function validateManifest(
   }
 }
 
+function compareVersions(left: string, right: string): number {
+  const leftParts = left.split(/[.-]/).map((part) => Number(part) || 0);
+  const rightParts = right.split(/[.-]/).map((part) => Number(part) || 0);
+  const length = Math.max(leftParts.length, rightParts.length);
+
+  for (let index = 0; index < length; index += 1) {
+    const difference = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (difference !== 0) return difference > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+function getLatestPublishedVersion(name: string): RegistryVersionResult {
+  const result = spawnSync("npm", ["view", name, "version", "--json"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+
+  if (result.status === 0) {
+    const version = JSON.parse(result.stdout) as string | string[];
+    const latestVersion = Array.isArray(version) ? version.at(-1) : version;
+    if (!latestVersion) throw new Error(`${name}: npm returned no version`);
+    return { version: latestVersion, published: true };
+  }
+
+  if (/E404|not found/i.test(result.stderr)) {
+    return { version: "", published: false };
+  }
+
+  throw new Error(
+    `${name}: unable to read npm registry version. ${result.stderr.trim()}`
+  );
+}
+
+function validateRegistryVersions(
+  packageDirectory: string,
+  manifest: PackageManifest
+): void {
+  const latest = getLatestPublishedVersion(manifest.name);
+  if (!latest.published) {
+    console.log(`✓ ${manifest.name}@${manifest.version}: first npm publish`);
+    return;
+  }
+
+  const comparison = compareVersions(manifest.version, latest.version);
+  if (comparison <= 0) {
+    throw new Error(
+      `${packageDirectory}: local version ${manifest.version} conflicts with ` +
+        `latest npm version ${latest.version}; run bun run release:version`
+    );
+  }
+
+  console.log(
+    `✓ ${manifest.name}: local ${manifest.version} is newer than npm ${latest.version}`
+  );
+}
+
 function checkPackedFiles(
   packageDirectory: string,
   manifest: PackageManifest
@@ -136,6 +198,7 @@ function main(): void {
   for (const packageDirectory of PACKAGES) {
     const manifest = readManifest(packageDirectory);
     validateManifest(packageDirectory, manifest);
+    validateRegistryVersions(packageDirectory, manifest);
     if (!existsSync(resolve(ROOT, packageDirectory, "README.md"))) {
       throw new Error(packageDirectory + ": README.md is missing");
     }

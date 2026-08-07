@@ -101,6 +101,7 @@ bun run release:check
 - workspace build
 - workspace test
 - 包元数据检查
+- 查询 npm registry 最新版本，检查本地版本是否冲突
 - `npm pack --dry-run --json`
 - tarball 文件清单检查
 - `dist/*.js` 和 `dist/*.d.ts` 检查
@@ -108,6 +109,14 @@ bun run release:check
 - `.env`、`src`、测试文件和 `node_modules` 排除检查
 
 检查失败时不要继续发布。先修复问题，再重新执行该命令。
+
+如果本地版本小于或等于 npm registry 的最新版本，检查会失败并提示执行：
+
+```bash
+bun run release:version
+```
+
+尚未发布到 npm 的包会标记为首次发布。registry 查询失败时检查也会失败，避免网络或权限问题被误判为首次发布。
 
 ## 查看发布内容
 
