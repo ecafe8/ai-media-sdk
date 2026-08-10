@@ -16,5 +16,5 @@ The Aliyun adapter `submit()` SHALL route all supported `video`-modality request
 
 #### Scenario: Unknown video model id is rejected
 
-- **WHEN** `provider.image("not-a-real-video-model")` is called
+- **WHEN** `provider.video("not-a-real-video-model")` is called
 - **THEN** it SHALL throw an `SdkError` with code `UNKNOWN_MODEL` and SHALL not send a request

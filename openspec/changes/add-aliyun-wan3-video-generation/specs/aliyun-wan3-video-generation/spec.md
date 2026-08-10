@@ -6,7 +6,7 @@ Provide a typed and validated Alibaba Bailian Wan 3.0 video integration that sup
 
 ### Requirement: Wan 3.0 is registered as a distinct asynchronous video model
 
-The Alibaba provider SHALL expose `wan3.0-video` as a video model with asynchronous generation capability, separate from the existing Wan image and HappyHorse video families. Binding the model SHALL preserve the provider id and SHALL reject unknown or non-video model ids before transport dispatch.
+The Alibaba provider SHALL expose `wan3.0-video` as a video model with asynchronous generation capability and family `wan3-video`, separate from the existing Wan image and HappyHorse video families. Binding the model SHALL preserve the provider id and SHALL reject unknown or non-video model ids before transport dispatch.
 
 #### Scenario: Wan 3.0 model is discoverable
 
@@ -20,7 +20,7 @@ The Alibaba provider SHALL expose `wan3.0-video` as a video model with asynchron
 
 ### Requirement: Wan 3.0 accepts text and ordered heterogeneous media inputs
 
-The provider SHALL submit a Wan 3.0 request when `input.prompt` or `input.media` is present. Each media entry SHALL preserve caller order and SHALL support `first_frame`, `last_frame`, `reference_image`, `reference_video`, `reference_audio`, `file`, or `link` with its URL or supported data value.
+The provider SHALL submit a Wan 3.0 request when `input.prompt` or `input.media` is present. Each media entry SHALL preserve caller order and SHALL support `first_frame`, `last_frame`, `reference_image`, `reference_video`, `reference_audio`, `file`, or `link` with a public `http`/`https` URL, an `oss://` URL, or a supported image data URI. Image media SHALL support JPEG/JPG/PNG/BMP/WEBP subject to the provider's documented dimensions, aspect-ratio, transparency, and size limits. Video media SHALL support MP4/MOV, audio media SHALL support WAV/MP3, and file media SHALL support the documented office/document formats and size/page limits. Base64 data URIs SHALL be accepted only for image media. In reference mode, image and video references SHALL retain independent one-based numbering for prompt references such as `图1` and `视频1`.
 
 #### Scenario: Text-to-video omits media
 
@@ -32,6 +32,26 @@ The provider SHALL submit a Wan 3.0 request when `input.prompt` or `input.media`
 - **WHEN** a caller submits image, video, audio, file, and link media in a specific order
 - **THEN** the provider SHALL send the corresponding `input.media` entries in exactly that order with their documented media types
 
+#### Scenario: Reference prompt numbering is modality-specific
+
+- **WHEN** a caller submits two reference images followed by two reference videos and uses `图1`, `图2`, `视频1`, and `视频2` in the prompt
+- **THEN** the provider SHALL preserve media order and the documented independent image/video numbering semantics
+
+#### Scenario: Base64 image media is mapped to a data URI
+
+- **WHEN** a caller submits a supported image media entry with base64 content
+- **THEN** the provider SHALL send a `data:{mime};base64,{data}` URL and SHALL reject base64 content for video, audio, file, or link media
+
+#### Scenario: OSS media enables resource resolution
+
+- **WHEN** any Wan 3.0 media entry uses an `oss://` URL
+- **THEN** the provider SHALL include `X-DashScope-OssResourceResolve: enable` in the submit request
+
+#### Scenario: Unsupported media content is rejected
+
+- **WHEN** a caller submits a non-image base64 value or a media URL/file format outside the documented Wan 3.0 formats
+- **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request
+
 #### Scenario: Media-only generation is accepted
 
 - **WHEN** a caller submits valid media without a prompt
@@ -39,7 +59,7 @@ The provider SHALL submit a Wan 3.0 request when `input.prompt` or `input.media`
 
 ### Requirement: Wan 3.0 enforces media mode exclusivity and limits
 
-The provider SHALL reject invalid media combinations before transport dispatch. `first_frame` and `last_frame` entries SHALL be mutually exclusive with all `reference_*`, `file`, and `link` entries; `file` and `link` SHALL be mutually exclusive. The provider SHALL enforce at most one first frame, one last frame, one file, one link, ten reference images, five reference videos, and five reference audio entries. Reference videos and reference audio SHALL each have a total input duration of no more than 15 seconds when duration metadata is available to the SDK.
+The provider SHALL reject invalid media combinations before transport dispatch. `first_frame` and `last_frame` entries SHALL be mutually exclusive with all `reference_*`, `file`, and `link` entries; `file` and `link` SHALL be mutually exclusive. The provider SHALL enforce at most one first frame, one last frame, one file, one link, ten reference images, five reference videos, and five reference audio entries. Each reference video SHALL be 1-15 seconds and reference videos SHALL total no more than 15 seconds; each reference audio SHALL be 1-15 seconds and reference audio SHALL total no more than 15 seconds when caller-supplied duration metadata is available. The SDK SHALL not download remote media solely to discover metadata; provider-side validation remains authoritative when metadata is unavailable.
 
 #### Scenario: First and last frame are accepted together
 
@@ -56,24 +76,44 @@ The provider SHALL reject invalid media combinations before transport dispatch. 
 - **WHEN** a caller submits both a `file` and a `link`
 - **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request
 
-#### Scenario: Media count limits are enforced
+#### Scenario: Reference image limit is enforced
 
-- **WHEN** a caller exceeds any documented Wan 3.0 media count limit
+- **WHEN** a caller submits 11 `reference_image` entries
+- **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request
+
+#### Scenario: Reference video limit is enforced
+
+- **WHEN** a caller submits 6 `reference_video` entries
+- **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request
+
+#### Scenario: Reference audio limit is enforced
+
+- **WHEN** a caller submits 6 `reference_audio` entries
 - **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request
 
 ### Requirement: Wan 3.0 forwards and validates generation parameters
 
-The provider SHALL support `resolution` values `480P`, `720P`, and `1080P`; `ratio` values `adaptive`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16`; integer `duration` values from 2 through 30 or `-1`; boolean `audio` and `watermark`; and integer `seed` values from 0 through 2147483647. Supplied values outside these ranges SHALL be rejected before transport dispatch.
+The provider SHALL support `resolution` values `480P`, `720P`, and `1080P` with `1080P` as the default; `ratio` values `adaptive`, `16:9`, `4:3`, `1:1`, `3:4`, and `9:16` with `adaptive` as the default; integer `duration` values from 2 through 30 or `-1`; boolean `audio` with default `true`; boolean `watermark` with default `false`; and integer `seed` values from 0 through 2147483647. When reference videos are supplied, input video duration plus output duration SHALL NOT exceed 30 seconds when caller-supplied duration metadata is available. Supplied values outside these ranges SHALL be rejected before transport dispatch.
 
 #### Scenario: Wan 3.0 parameters are forwarded
 
 - **WHEN** a caller supplies valid resolution, ratio, duration, audio, seed, and watermark values
 - **THEN** the provider SHALL forward them under the request `parameters` object unchanged
 
+#### Scenario: Wan 3.0 uses documented defaults
+
+- **WHEN** a caller omits resolution, ratio, audio, and watermark
+- **THEN** the generated request SHALL preserve the documented effective defaults of `1080P`, `adaptive`, `true`, and `false` without forwarding HappyHorse's `audio_setting`
+
 #### Scenario: Invalid duration is rejected
 
 - **WHEN** a caller supplies a duration below 2, above 30, or other than `-1` as the smart-duration sentinel
 - **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request
+
+#### Scenario: Video input duration leaves room for output
+
+- **WHEN** caller-supplied reference video metadata totals 28 seconds and the requested output duration is 3 seconds
+- **THEN** the provider SHALL return `INVALID_REQUEST` before sending a request because the combined duration exceeds 30 seconds
 
 #### Scenario: Invalid seed is rejected
 
