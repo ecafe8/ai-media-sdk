@@ -21,7 +21,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --out-dir dist --clean",
+    "build": "tsup src/index.ts --format esm --out-dir dist --clean && tsc -p tsconfig.emit-dts.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "typecheck:release": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
@@ -30,6 +30,6 @@
     "@types/bun": "^1.2.0",
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
-    "typescript": "^5"
+    "typescript": "^7.0.2"
   }
 }

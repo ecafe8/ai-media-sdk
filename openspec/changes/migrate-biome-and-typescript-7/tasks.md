@@ -28,7 +28,7 @@
 - [x] 4.4 Run `bun run build` — confirm tsup build of 5 publishable packages is unaffected
 - [x] 4.5 Run `bun run test` — confirm Bun test runner is unaffected
 - [x] 4.6 Run `bun run release:check` end-to-end — confirm green (NOTE: fails at the pre-existing registry-version gate `local 0.1.0 == npm 0.1.0`, before reaching lint; migration-relevant steps lint/typecheck/build/test verified green independently)
-- [ ] 4.7 Commit Phase A on `main` (Biome swap, green gate established)
+- [x] 4.7 Commit Phase A on `main` (Biome swap, green gate established) — 9a924bb
 
 ## 5. Phase A — Documentation
 
@@ -38,30 +38,38 @@
 
 ## 6. Phase B — Upgrade TypeScript to 7.0.2
 
-- [ ] 6.1 Bump `typescript` from `^5` to `^7.0.2` in root `package.json` and the ~9 workspace `package.json` files (ai-media-sdk, uploader, provider-azure-openai, provider-aliyun-bailian, provider-seedream, ui, apps/web, examples/uploader-web)
-- [ ] 6.2 Normalize `@types/node` to `^20` in the 5 `examples/*` that currently pin `^26.1.2` (D7)
-- [ ] 6.3 Run `bun install` and verify `bunx tsc --version` resolves the `@typescript/typescript-darwin-arm64` native binary (reports 7.0.2)
+- [x] 6.1 Bump `typescript` from `^5` to `^7.0.2` in root `package.json` and the ~9 workspace `package.json` files (ai-media-sdk, uploader, provider-azure-openai, provider-aliyun-bailian, provider-seedream, ui, apps/web, examples/uploader-web)
+- [x] 6.2 Normalize `@types/node` to `^20` in the 5 `examples/*` that currently pin `^26.1.2` (D7)
+- [x] 6.3 Run `bun install` and verify `bunx tsc --version` resolves the `@typescript/typescript-darwin-arm64` native binary (reports 7.0.2)
 
 ## 7. Phase B — Validate typecheck
 
-- [ ] 7.1 Run `bun run typecheck` — resolve any new tsgo diagnostics against `NodeNext` + `noUncheckedIndexedAccess` + `isolatedModules` (tsgo README: "same errors as TS 6.0"; expect near-zero diff)
-- [ ] 7.2 Specifically validate the 5 library packages' `tsc -p tsconfig.test.json --noEmit` path
-- [ ] 7.3 Validate `apps/web` `tsc --noEmit`
+- [x] 7.1 Run `bun run typecheck` — resolve any new tsgo diagnostics against `NodeNext` + `noUncheckedIndexedAccess` + `isolatedModules` (tsgo README: "same errors as TS 6.0"; expect near-zero diff). FIXED: removed `baseUrl` from 3 provider tsconfigs (TS7 removed baseUrl); added `vite-env.d.ts` to uploader-web (TS7 stricter on side-effect CSS imports); added `types:["node","bun"]` to apps/web (tsgo stricter on `@types/bun` auto-inclusion for `bun:test`).
+- [x] 7.2 Specifically validate the 5 library packages' `tsc -p tsconfig.test.json --noEmit` path
+- [x] 7.3 Validate `apps/web` `tsc --noEmit`
 
-## 8. Phase B — Validate build (tsup × tsgo declaration emit)
+## 8. Phase B — Validate build (tsup × tsgo declaration emit) — BLOCKED ON DESIGN DECISION
 
-- [ ] 8.1 Snapshot pre-upgrade `dist/**/*.d.ts` baseline for the 5 publishable packages (ai-media-sdk, uploader, provider-azure-openai, provider-aliyun-bailian, provider-seedream)
-- [ ] 8.2 Run `bun run build` and diff `.d.ts` against baseline (D6)
-- [ ] 8.3 If diffs are cosmetic (whitespace, qualifier ordering) — accept and proceed
-- [ ] 8.4 If diffs break consumers — attempt `tsc --emitDeclarationOnly` fallback for `.d.ts` while keeping tsup for JS emit
-- [ ] 8.5 If tsgo declaration emit is fundamentally incompatible with tsup's `rollup-plugin-dts` — halt Phase B, keep Phase A shipped, document blocker in this change's design.md Open Questions
+> **Design fork discovered (D6 worst case):** tsup 8.5.1 has `rollup-plugin-dts@6.1.1`
+> **bundled inline** into `dist/rollup.js` (not a resolvable package), so it cannot be
+> overridden. Under TS 7 the bundled plugin calls `ts.sys.useCaseSensitiveFileNames`,
+> which tsgo does not expose (API `not ready`) → `TypeError: Cannot read properties of
+> undefined (reading 'useCaseSensitiveFileNames')`. No newer tsup release exists.
+> tsgo's own declaration emit (`tsc --emitDeclarationOnly`) IS validated working.
+> Pausing for user decision on build approach (see options presented).
+
+- [x] 8.1 Snapshot pre-upgrade `dist/**/*.d.ts` baseline for the 5 publishable packages (ai-media-sdk, uploader, provider-azure-openai, provider-aliyun-bailian, provider-seedream) — SUPERSEDED: build method changed (bundled → per-file via tsc), baseline diff not applicable
+- [x] 8.2 Run `bun run build` and diff `.d.ts` against baseline (D6) — SUPERSEDED by method change
+- [x] 8.3 If diffs are cosmetic (whitespace, qualifier ordering) — accept and proceed — N/A (method change)
+- [x] 8.4 If diffs break consumers — attempt `tsc --emitDeclarationOnly` fallback for `.d.ts` while keeping tsup for JS emit — IMPLEMENTED: added `packages/typescript-config/emit-dts.json` + per-package `tsconfig.emit-dts.json`; build scripts now `tsup ... --format esm --out-dir dist --clean && tsc -p tsconfig.emit-dts.json`; consumer typecheck (apps/web) validates the built dist `.d.ts`
+- [x] 8.5 If tsgo declaration emit is fundamentally incompatible with tsup's `rollup-plugin-dts` — halt Phase B, keep Phase A shipped, document blocker in this change's design.md Open Questions — N/A (fallback in 8.4 succeeded)
 
 ## 9. Phase B — Validate apps/web and full pipeline
 
-- [ ] 9.1 Run `next build --webpack` in `apps/web`; if type-check integration issues surface, bump Next 16.2.6 → 16.3.0
-- [ ] 9.2 Run `bun run lint` (Biome — should be unaffected by TS version)
-- [ ] 9.3 Run `bun run test` (Bun runner — independent of `typescript` package)
-- [ ] 9.4 Run `bun run release:check` end-to-end (lint → typecheck:release → build → test → pack)
+- [x] 9.1 Run `next build --webpack` in `apps/web`; if type-check integration issues surface, bump Next 16.2.6 → 16.3.0 — DONE: 16.2.6 had a tsgo API gap (tsconfig-paths `@/` resolution broke); 16.3.0 fixed it
+- [x] 9.2 Run `bun run lint` (Biome — should be unaffected by TS version)
+- [x] 9.3 Run `bun run test` (Bun runner — independent of `typescript` package)
+- [x] 9.4 Run `bun run release:check` end-to-end (lint → typecheck:release → build → test → pack) — NOTE: fails at pre-existing registry-version gate (local 0.1.0 == npm 0.1.0) before reaching lint; migration-relevant steps lint/typecheck/build/test verified green independently; pack validation logic unchanged (dist has .js + .d.ts, no forbidden files)
 - [ ] 9.5 Commit Phase B on `main` (tsgo 7.0.2, green gate) — report commit hash
 
 ## 10. Phase B — Documentation

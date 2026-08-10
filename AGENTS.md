@@ -3,6 +3,7 @@
 ## Toolchain
 
 - Use Bun `1.3.14` and Node.js `>=20`; run `bun install` after dependency changes.
+- TypeScript `^7.0.2` (tsgo native binary); `tsc --noEmit` is the type-check gate, `tsup` bundles JS, and `tsc --emitDeclarationOnly` (via each package's `tsconfig.emit-dts.json`) emits `.d.ts`.
 - This is a Bun/Turborepo monorepo. Workspaces are under `apps/*`, `packages/*`, and `examples/*`.
 - The root `bun.lock` is authoritative. Do not replace Bun commands with pnpm/npm commands.
 
