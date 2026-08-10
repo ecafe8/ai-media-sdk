@@ -70,10 +70,10 @@
 - [x] 9.2 Run `bun run lint` (Biome — should be unaffected by TS version)
 - [x] 9.3 Run `bun run test` (Bun runner — independent of `typescript` package)
 - [x] 9.4 Run `bun run release:check` end-to-end (lint → typecheck:release → build → test → pack) — NOTE: fails at pre-existing registry-version gate (local 0.1.0 == npm 0.1.0) before reaching lint; migration-relevant steps lint/typecheck/build/test verified green independently; pack validation logic unchanged (dist has .js + .d.ts, no forbidden files)
-- [ ] 9.5 Commit Phase B on `main` (tsgo 7.0.2, green gate) — report commit hash
+- [x] 9.5 Commit Phase B on `main` (tsgo 7.0.2, green gate) — report commit hash — dde1662
 
 ## 10. Phase B — Documentation
 
-- [ ] 10.1 Update `AGENTS.md` Toolchain bullet: TypeScript `^5` → `^7.0.2` and note tsgo native binary
-- [ ] 10.2 Update `packages/typescript-config/README.md` if it references TS 5.x specifics
+- [x] 10.1 Update `AGENTS.md` Toolchain bullet: TypeScript `^5` → `^7.0.2` and note tsgo native binary
+- [x] 10.2 Update `packages/typescript-config/README.md` if it references TS 5.x specifics — documented all configs incl. new `emit-dts.json`
 - [ ] 10.3 Archive this change via the OpenSpec archive workflow once both phases are merged and green
