@@ -14,11 +14,11 @@ import type {
  * `AdapterRequest`, and dispatches to the bound adapter `submit()`, returning a
  * `TaskHandle<VideoContent[]>`. Model-specific media presence, prompt
  * requirement, and provider-native parameter validation are enforced by the
- * adapter, not the core (prompt is optional for i2v, required for t2v/r2v/
- * video-edit). Generic over `TParams` (defaults to `VideoGenerationInput`) so
- * callers selecting a video model by literal id get compile-time narrowing of
- * `providerOptions.<namespace>` (e.g. `aliyun.resolution`,
- * `aliyun.audio_setting`).
+ * adapter, not the core (prompt is optional for i2v and Wan 3.0 media-only,
+ * required for t2v/r2v/video-edit). Generic over `TParams` (defaults to
+ * `VideoGenerationInput`) so callers selecting a video model by literal id
+ * get compile-time narrowing of `providerOptions.<namespace>` (e.g.
+ * `aliyun.resolution`, `aliyun.ratio`, `aliyun.audio`).
  */
 export async function submitVideoTask<
   TParams extends VideoGenerationInput = VideoGenerationInput,
@@ -31,6 +31,7 @@ export async function submitVideoTask<
     firstFrame,
     referenceImages,
     inputVideo,
+    media,
     providerOptions,
   } = request;
 
@@ -53,6 +54,7 @@ export async function submitVideoTask<
     firstFrame,
     referenceImages,
     inputVideo,
+    media,
     providerOptions,
   };
   return submitTask<VideoContent[]>({ model, modality: "video", input });

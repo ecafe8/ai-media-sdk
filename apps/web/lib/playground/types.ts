@@ -26,6 +26,7 @@ export type PlaygroundModelFamily =
   | "wan-image-2.7"
   | "wan-image-2.6"
   | "happyhorse-video"
+  | "wan3-video"
   | "doubao-seedream-5-pro"
   | "doubao-seedream-5-lite"
   | "doubao-seedream-4-5"

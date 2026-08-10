@@ -47,7 +47,7 @@ describe("aliyun adapter X-DashScope-OssResourceResolve header", () => {
     });
 
     expect(requests).toHaveLength(1);
-    expect(requests[0]!.headers["X-DashScope-OssResourceResolve"]).toBe(
+    expect(requests[0]!.headers!["X-DashScope-OssResourceResolve"]).toBe(
       "enable"
     );
   });
@@ -63,7 +63,7 @@ describe("aliyun adapter X-DashScope-OssResourceResolve header", () => {
     });
 
     expect(requests).toHaveLength(1);
-    expect(requests[0]!.headers["X-DashScope-OssResourceResolve"]).toBe(
+    expect(requests[0]!.headers!["X-DashScope-OssResourceResolve"]).toBe(
       undefined
     );
   });
@@ -79,7 +79,7 @@ describe("aliyun adapter X-DashScope-OssResourceResolve header", () => {
     });
 
     expect(requests).toHaveLength(1);
-    expect(requests[0]!.headers["X-DashScope-OssResourceResolve"]).toBe(
+    expect(requests[0]!.headers!["X-DashScope-OssResourceResolve"]).toBe(
       undefined
     );
   });
@@ -97,7 +97,7 @@ describe("aliyun adapter X-DashScope-OssResourceResolve header", () => {
       ],
     });
 
-    expect(requests[0]!.headers["X-DashScope-OssResourceResolve"]).toBe(
+    expect(requests[0]!.headers!["X-DashScope-OssResourceResolve"]).toBe(
       "enable"
     );
   });

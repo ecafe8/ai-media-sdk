@@ -79,6 +79,11 @@ const PLAYGROUND_LABELS: Readonly<
     recommendation:
       "1 个源视频（仅公网 URL）+ 0-5 参考图；无 ratio/duration，支持 audio_setting",
   },
+  "aliyun-bailian:wan3.0-video": {
+    label: "Wan 3.0 Video（万相 3.0 视频）",
+    recommendation:
+      "全能参考视频生成；支持文生/图生/首尾帧/参考生视频；Playground 暂不支持",
+  },
   "doubao-seedream:doubao-seedream-5-0-pro-260628": {
     label: "Doubao Seedream 5.0 Pro",
     recommendation: "高精度生成与交互编辑；组图/流式/联网搜索暂不支持",
@@ -125,7 +130,11 @@ function labelFor(
  * `wan-image` Aliyun family (used for adapter routing).
  */
 function aliyunFamilySlug(
-  family: "qwen-multimodal" | "wan-image" | "happyhorse-video",
+  family:
+    | "qwen-multimodal"
+    | "wan-image"
+    | "happyhorse-video"
+    | "wan3-video",
   id: string
 ): PlaygroundModelFamily {
   if (family === "wan-image") {
@@ -238,19 +247,26 @@ function fromAzure(
 }
 
 /**
+ * Aliyun model ids excluded from the Playground projection until their media
+ * input UI is implemented in a follow-up change. Wan 3.0 supports
+ * heterogeneous `media[]` entries that the current form cannot represent.
+ */
+const ALIYUN_PLAYGROUND_EXCLUDED = new Set<string>(["wan3.0-video"]);
+
+/**
  * The derived model list. Model ids, modalities, and capabilities come from the
  * Provider full in-package registries (single source of truth). UI labels and
- * recommendations come from the sidecar `PLAYGROUND_LABELS`. Placeholder
- * entries that previously drifted (`z-image-turbo`, `wan2.7-t2v-2026-06-12`,
- * `wan2.7-r2v-2026-06-12`) are absent because they are not in any registry.
+ * recommendations come from the sidecar `PLAYGROUND_LABELS`. Models excluded
+ * by `ALIYUN_PLAYGROUND_EXCLUDED` are filtered out because the current form
+ * cannot represent their media inputs.
  */
 export const PLAYGROUND_MODELS: readonly PlaygroundModel[] = [
   ...Object.entries(AZURE_MODEL_REGISTRY).map(([id, entry]) =>
     fromAzure(id, entry)
   ),
-  ...Object.entries(ALIYUN_MODEL_REGISTRY).map(([id, entry]) =>
-    fromAliyun(id, entry)
-  ),
+  ...Object.entries(ALIYUN_MODEL_REGISTRY)
+    .filter(([id]) => !ALIYUN_PLAYGROUND_EXCLUDED.has(id))
+    .map(([id, entry]) => fromAliyun(id, entry)),
   ...Object.entries(SEEDREAM_MODEL_REGISTRY).map(([id, entry]) =>
     fromSeedream(id, entry)
   ),

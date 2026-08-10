@@ -17,6 +17,8 @@ export type {
   AliyunWan26T2VParams,
   AliyunWan27ImageParams,
   AliyunWan27ProImageParams,
+  AliyunWan3VideoOptions,
+  AliyunWan3VideoParams,
 } from "./provider/params.ts";
 export type {
   AliyunModelEntry,

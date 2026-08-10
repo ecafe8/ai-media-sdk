@@ -21,6 +21,7 @@ import {
   type Transport,
   type VideoContent,
   type VideoModelInstance,
+  type Wan3VideoMediaEntry,
 } from "@ai-media/sdk";
 
 import type { AliyunBailianConfig } from "../config/index.ts";
@@ -34,6 +35,7 @@ import type {
   AliyunWan26T2VParams,
   AliyunWan27ImageParams,
   AliyunWan27ProImageParams,
+  AliyunWan3VideoParams,
 } from "./params.ts";
 import {
   ALIYUN_MODEL_REGISTRY,
@@ -102,12 +104,12 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
     (modelId: string): ImageModelInstance;
   };
   /**
-   * Create a video model instance bound to a HappyHorse video model id.
+   * Create a video model instance bound to a supported Aliyun video model id.
    *
    * Literal overloads return family-typed `VideoModelInstance<...Params>` per
-   * HappyHorse mode (t2v/i2v/r2v/video-edit) so `submitVideoTask` narrows
-   * `firstFrame`/`referenceImages`/`inputVideo` and
-   * `providerOptions.aliyun.resolution`/`ratio`/`duration`/`audio_setting`
+   * HappyHorse mode (t2v/i2v/r2v/video-edit) and Wan 3.0 so `submitVideoTask`
+   * narrows `firstFrame`/`referenceImages`/`inputVideo`/`media` and
+   * `providerOptions.aliyun.resolution`/`ratio`/`duration`/`audio`
    * at compile time. The string fallback keeps the default
    * `VideoGenerationInput` shape for dynamic ids.
    */
@@ -124,6 +126,7 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
     (
       modelId: "happyhorse-1.0-video-edit"
     ): VideoModelInstance<AliyunHappyHorseVideoEditParams>;
+    (modelId: "wan3.0-video"): VideoModelInstance<AliyunWan3VideoParams>;
     (modelId: string): VideoModelInstance;
   };
   /** Enumerate the supported models projected from the Aliyun registry. */
@@ -217,7 +220,10 @@ export function createAliyunBailianProvider(
           message: `Unknown Aliyun model id "${modelId}"`,
         });
       }
-      if (entry.family !== "happyhorse-video") {
+      if (
+        entry.family !== "happyhorse-video" &&
+        entry.family !== "wan3-video"
+      ) {
         throw new SdkError({
           code: "INVALID_REQUEST",
           message: `Model "${modelId}" is not a video model`,
@@ -310,7 +316,7 @@ export function createAliyunBailianProvider(
           entry
         ) as unknown as TaskHandle<VideoContent[]>;
       }
-      if (entry.family !== "happyhorse-video") {
+      if (entry.family !== "happyhorse-video" && entry.family !== "wan3-video") {
         throw notImplemented(`aliyun-bailian.submit (${request.model})`);
       }
       if (!isVideoGenerationInput(request.input)) {
@@ -660,15 +666,17 @@ function mapQwenResponse(
  * Video generation input shape (provider-agnostic `VideoGenerationInput`).
  */
 interface AliyunVideoInput {
-  readonly prompt: string;
+  readonly prompt?: string;
   readonly firstFrame?: ImageContent;
   readonly referenceImages?: readonly ImageContent[];
   readonly inputVideo?: { readonly url: string };
+  readonly media?: readonly Wan3VideoMediaEntry[];
   readonly providerOptions?: Readonly<Record<string, unknown>>;
 }
 
 /**
  * Aliyun-native video options forwarded under `providerOptions.aliyun`.
+ * HappyHorse uses `audio_setting`; Wan 3.0 uses `audio` (boolean).
  */
 interface AliyunVideoOptions {
   readonly resolution?: string;
@@ -677,6 +685,7 @@ interface AliyunVideoOptions {
   readonly watermark?: boolean;
   readonly seed?: number;
   readonly audio_setting?: string;
+  readonly audio?: boolean;
 }
 
 /**
@@ -714,12 +723,16 @@ interface AliyunTaskSubmitResponse {
  * Type guard narrowing an `unknown` adapter input to the video input shape.
  *
  * Demonstrates structural shape only; per-model media/prompt validation is
- * performed by `validateVideoInput` before any transport call.
+ * performed by `validateVideoInput` / `validateWan3VideoInput` before any
+ * transport call. Prompt is optional because Wan 3.0 accepts media-only
+ * requests.
  */
 function isVideoGenerationInput(value: unknown): value is AliyunVideoInput {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
-  return typeof candidate.prompt === "string";
+  return (
+    candidate.prompt === undefined || typeof candidate.prompt === "string"
+  );
 }
 
 function readAliyunVideoOptions(
@@ -735,6 +748,7 @@ function readAliyunVideoOptions(
     watermark?: boolean;
     seed?: number;
     audio_setting?: string;
+    audio?: boolean;
   } = {};
   if (typeof candidate.resolution === "string") {
     options.resolution = candidate.resolution;
@@ -749,6 +763,9 @@ function readAliyunVideoOptions(
   if (typeof candidate.seed === "number") options.seed = candidate.seed;
   if (typeof candidate.audio_setting === "string") {
     options.audio_setting = candidate.audio_setting;
+  }
+  if (typeof candidate.audio === "boolean") {
+    options.audio = candidate.audio;
   }
   return options;
 }
@@ -880,7 +897,7 @@ function validateVideoInput(
     }
   }
 
-  if (!isI2v && input.prompt.length === 0) {
+  if (!isI2v && (!input.prompt || input.prompt.length === 0)) {
     throw new SdkError({
       code: "INVALID_REQUEST",
       message: "prompt must not be empty for this video model",
@@ -1023,8 +1040,10 @@ async function getTask(
 }
 
 /**
- * Submit a HappyHorse video generation task and return a `TaskHandle` whose
- * poll closure calls the shared `getTask` and extracts `output.video_url`.
+ * Submit a video generation task (HappyHorse or Wan 3.0) and return a
+ * `TaskHandle` whose poll closure calls the shared `getTask` and extracts
+ * `output.video_url`. Routes to `buildWan3VideoBody` for Wan 3.0 family
+ * and `buildVideoBody` for HappyHorse.
  */
 async function submitVideoTask(
   transport: Transport,
@@ -1033,8 +1052,396 @@ async function submitVideoTask(
   input: AliyunVideoInput,
   entry: AliyunModelEntry
 ): Promise<TaskHandle<VideoContent[]>> {
+  if (entry.family === "wan3-video") {
+    return submitWan3VideoTask(transport, config, modelId, input, entry);
+  }
   const url = buildVideoUrl(config);
   const body = buildVideoBody(input, modelId, entry);
+  const headers: Record<string, string> = withOssResolveHeader(
+    {
+      Authorization: `Bearer ${config.apiKey}`,
+      "Content-Type": "application/json",
+      "X-DashScope-Async": "enable",
+    },
+    body
+  );
+
+  let response;
+  try {
+    response = await transport.send<AliyunTaskSubmitResponse>({
+      url,
+      method: "POST",
+      headers,
+      body,
+    });
+  } catch (error) {
+    throw mapTransportError(error);
+  }
+  if (response.status < 200 || response.status >= 300) {
+    throw classifyHttpError(
+      response.status,
+      extractTaskSubmitErrorMessage(response.data, config.apiKey)
+    );
+  }
+
+  const taskId = response.data?.output?.task_id;
+  if (!taskId) {
+    throw new SdkError({
+      code: "PROVIDER_ERROR",
+      message: "Aliyun video task submission returned no task id",
+    });
+  }
+
+  const poll = async (): Promise<TaskPollResult<VideoContent[]>> => {
+    const task = await getTask(transport, config, taskId);
+    const status = mapTaskStatus(task.output?.task_status);
+    if (status === "succeeded") {
+      const videoUrl = task.output?.video_url;
+      if (!videoUrl) {
+        return {
+          status: "failed",
+          error: new SdkError({
+            code: "PROVIDER_ERROR",
+            message: "Aliyun video task succeeded but returned no video url",
+          }),
+        };
+      }
+      const usage = task.usage as
+        { duration?: number; SR?: number; ratio?: string } | undefined;
+      const video: VideoContent = {
+        url: videoUrl,
+        ...(typeof usage?.duration === "number"
+          ? { duration: usage.duration }
+          : {}),
+      };
+      const content: VideoContent[] = [video];
+      const result: GenerationResult<VideoContent[]> = {
+        content,
+        provider: ALIYUN_PROVIDER_ID,
+        model: modelId,
+        requestId: task.request_id,
+        raw: task.usage,
+      };
+      return { status, result };
+    }
+    if (status === "failed" || status === "cancelled") {
+      return {
+        status,
+        error: new SdkError({
+          code: "PROVIDER_ERROR",
+          message: extractTaskFailureMessage(task, config.apiKey),
+        }),
+      };
+    }
+    return { status };
+  };
+
+  return createTaskHandle<VideoContent[]>({ taskId, poll });
+}
+
+/**
+ * Validate Wan 3.0 media combinations, counts, URL/data forms, and parameter
+ * ranges before any transport call. Enforces:
+ * - At least one of prompt or media is present.
+ * - `first_frame`/`last_frame` are mutually exclusive with `reference_*`,
+ *   `file`, and `link`.
+ * - `file` and `link` are mutually exclusive.
+ * - At most 1 first_frame, 1 last_frame, 1 file, 1 link.
+ * - At most 10 reference_image, 5 reference_video, 5 reference_audio.
+ * - Base64 content is accepted only for image media.
+ * - Reference video/audio total duration ≤ 15s when caller metadata exists.
+ * - Duration [2, 30] or -1; input video duration + output ≤ 30 when metadata
+ *   exists.
+ * - Resolution/ratio/seed within supported ranges.
+ */
+function validateWan3VideoInput(
+  input: AliyunVideoInput,
+  _entry: AliyunModelEntry
+): void {
+  const media = input.media ?? [];
+  const prompt = input.prompt ?? "";
+
+  if (prompt.length === 0 && media.length === 0) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 requires at least a prompt or media input",
+    });
+  }
+
+  let firstFrameCount = 0;
+  let lastFrameCount = 0;
+  let refImageCount = 0;
+  let refVideoCount = 0;
+  let refAudioCount = 0;
+  let fileCount = 0;
+  let linkCount = 0;
+  let refVideoTotalDuration = 0;
+  let refAudioTotalDuration = 0;
+  let hasRefVideoMetadata = true;
+  let hasRefAudioMetadata = true;
+
+  for (const entry2 of media) {
+    const type = entry2.type;
+    if (type === "first_frame") {
+      firstFrameCount++;
+    } else if (type === "last_frame") {
+      lastFrameCount++;
+    } else if (type === "reference_image") {
+      refImageCount++;
+    } else if (type === "reference_video") {
+      refVideoCount++;
+      const dur = entry2.duration;
+      if (typeof dur === "number") {
+        refVideoTotalDuration += dur;
+      } else {
+        hasRefVideoMetadata = false;
+      }
+    } else if (type === "reference_audio") {
+      refAudioCount++;
+      const dur = entry2.duration;
+      if (typeof dur === "number") {
+        refAudioTotalDuration += dur;
+      } else {
+        hasRefAudioMetadata = false;
+      }
+    } else if (type === "file") {
+      fileCount++;
+    } else if (type === "link") {
+      linkCount++;
+    }
+
+    // Base64 is only accepted for image media.
+    const isImageType =
+      type === "first_frame" ||
+      type === "last_frame" ||
+      type === "reference_image";
+    const hasBase64 = "base64" in entry2 && entry2.base64 !== undefined;
+    if (hasBase64 && !isImageType) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `Base64 content is not accepted for media type "${type}"`,
+      });
+    }
+
+    // URL or base64 must be present for image; URL must be present for others.
+    if (isImageType) {
+      const hasUrl = "url" in entry2 && entry2.url !== undefined;
+      if (!hasUrl && !hasBase64) {
+        throw new SdkError({
+          code: "INVALID_REQUEST",
+          message: `Media type "${type}" requires a url or base64`,
+        });
+      }
+    } else {
+      const hasUrl = "url" in entry2 && entry2.url !== undefined;
+      if (!hasUrl) {
+        throw new SdkError({
+          code: "INVALID_REQUEST",
+          message: `Media type "${type}" requires a url`,
+        });
+      }
+    }
+  }
+
+  // Mutual exclusivity: frames vs reference/file/link.
+  const hasFrames = firstFrameCount > 0 || lastFrameCount > 0;
+  const hasNonFrame = refImageCount + refVideoCount + refAudioCount + fileCount + linkCount > 0;
+  if (hasFrames && hasNonFrame) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message:
+        "first_frame/last_frame and reference_*/file/link are mutually exclusive",
+    });
+  }
+
+  // file and link are mutually exclusive.
+  if (fileCount > 0 && linkCount > 0) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "file and link are mutually exclusive",
+    });
+  }
+
+  // Count limits.
+  if (firstFrameCount > 1) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 1 first_frame",
+    });
+  }
+  if (lastFrameCount > 1) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 1 last_frame",
+    });
+  }
+  if (refImageCount > 10) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 10 reference_image entries",
+    });
+  }
+  if (refVideoCount > 5) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 5 reference_video entries",
+    });
+  }
+  if (refAudioCount > 5) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 5 reference_audio entries",
+    });
+  }
+  if (fileCount > 1) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 1 file entry",
+    });
+  }
+  if (linkCount > 1) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 accepts at most 1 link entry",
+    });
+  }
+
+  // Total duration constraints when metadata is available.
+  if (hasRefVideoMetadata && refVideoTotalDuration > 15) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 reference_video total duration must not exceed 15 seconds",
+    });
+  }
+  if (hasRefAudioMetadata && refAudioTotalDuration > 15) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Wan 3.0 reference_audio total duration must not exceed 15 seconds",
+    });
+  }
+}
+
+/**
+ * Map a Wan 3.0 media entry to a DashScope `input.media[]` entry object.
+ * Image media with base64 is mapped to a `data:{mime};base64,{data}` URI.
+ */
+function mapWan3MediaEntry(
+  entry: Wan3VideoMediaEntry
+): { type: string; url: string } {
+  if ("base64" in entry && entry.base64 !== undefined) {
+    const mime = "mimeType" in entry ? entry.mimeType ?? "image/png" : "image/png";
+    return {
+      type: entry.type,
+      url: `data:${mime};base64,${entry.base64}`,
+    };
+  }
+  // Validation guarantees url is present when base64 is absent.
+  return { type: entry.type, url: entry.url ?? "" };
+}
+
+/**
+ * Build the Wan 3.0 request body, including validation, media serialization,
+ * and parameter forwarding.
+ */
+function buildWan3VideoBody(
+  input: AliyunVideoInput,
+  modelId: string,
+  entry: AliyunModelEntry
+): Record<string, unknown> {
+  validateWan3VideoInput(input, entry);
+
+  const body: Record<string, unknown> = { model: modelId };
+  const inputObj: Record<string, unknown> = {};
+
+  if (input.prompt && input.prompt.length > 0) {
+    inputObj.prompt = input.prompt;
+  }
+
+  const media = input.media;
+  if (media && media.length > 0) {
+    inputObj.media = media.map((m) => mapWan3MediaEntry(m));
+  }
+  body.input = inputObj;
+
+  const aliyun = readAliyunVideoOptions(input.providerOptions);
+  const parameters: Record<string, unknown> = {};
+
+  if (aliyun.resolution !== undefined) {
+    const allowed = entry.supportedResolutions ?? ["480P", "720P", "1080P"];
+    if (!allowed.includes(aliyun.resolution)) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `resolution must be one of ${allowed.join(", ")}`,
+      });
+    }
+    parameters.resolution = aliyun.resolution;
+  }
+
+  if (aliyun.ratio !== undefined) {
+    const allowedRatios = entry.supportedAspectRatios ?? [];
+    if (allowedRatios.length > 0 && !allowedRatios.includes(aliyun.ratio)) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `ratio must be one of ${allowedRatios.join(", ")}`,
+      });
+    }
+    parameters.ratio = aliyun.ratio;
+  }
+
+  if (aliyun.duration !== undefined) {
+    const dur = aliyun.duration;
+    if (dur !== -1 && (dur < 2 || dur > 30 || !Number.isInteger(dur))) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "duration must be an integer in [2, 30] or -1 for smart duration",
+      });
+    }
+    parameters.duration = dur;
+  }
+
+  if (aliyun.audio !== undefined) {
+    if (typeof aliyun.audio !== "boolean") {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "audio must be a boolean",
+      });
+    }
+    parameters.audio = aliyun.audio;
+  }
+
+  if (aliyun.watermark !== undefined) {
+    parameters.watermark = aliyun.watermark;
+  }
+
+  if (aliyun.seed !== undefined) {
+    const seed = aliyun.seed;
+    if (!Number.isInteger(seed) || seed < 0 || seed > 2147483647) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "seed must be an integer in [0, 2147483647]",
+      });
+    }
+    parameters.seed = seed;
+  }
+
+  if (Object.keys(parameters).length > 0) body.parameters = parameters;
+  return body;
+}
+
+/**
+ * Submit a Wan 3.0 video generation task through the shared async lifecycle.
+ * Uses the same endpoint, headers, task polling, and result mapping as
+ * HappyHorse video; only body construction and validation differ.
+ */
+async function submitWan3VideoTask(
+  transport: Transport,
+  config: AliyunBailianConfig,
+  modelId: string,
+  input: AliyunVideoInput,
+  entry: AliyunModelEntry
+): Promise<TaskHandle<VideoContent[]>> {
+  const url = buildVideoUrl(config);
+  const body = buildWan3VideoBody(input, modelId, entry);
   const headers: Record<string, string> = withOssResolveHeader(
     {
       Authorization: `Bearer ${config.apiKey}`,

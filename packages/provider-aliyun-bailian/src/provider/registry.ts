@@ -19,7 +19,10 @@ import type {
  * The endpoint family a model targets.
  */
 export type AliyunModelFamily =
-  "qwen-multimodal" | "wan-image" | "happyhorse-video";
+  | "qwen-multimodal"
+  | "wan-image"
+  | "happyhorse-video"
+  | "wan3-video";
 
 /**
  * Supported public parameters per model (drives what the adapter forwards).
@@ -68,7 +71,7 @@ const QWEN_T2I_I2I_CAPABILITY: ModelCapability = {
   maxN: 6,
 };
 
-const WAN_PRO_GENERATE_CAPABILITY: ModelCapability = {
+const WAN2_7_PRO_GENERATE_CAPABILITY: ModelCapability = {
   modality: "image",
   generate: true,
   edit: false,
@@ -78,7 +81,7 @@ const WAN_PRO_GENERATE_CAPABILITY: ModelCapability = {
   maxN: 4,
 };
 
-const WAN_GENERATE_CAPABILITY: ModelCapability = {
+const WAN2_7_IMAGE_GENERATE_CAPABILITY: ModelCapability = {
   modality: "image",
   generate: true,
   edit: false,
@@ -94,7 +97,7 @@ const WAN_GENERATE_CAPABILITY: ModelCapability = {
  * `negative_prompt`/`prompt_extend` params (unlike wan2.7 which uses
  * `thinking_mode`/`color_palette`/`enable_sequential`).
  */
-const WAN26_T2I_GENERATE_CAPABILITY: ModelCapability = {
+const WAN2_6_T2I_GENERATE_CAPABILITY: ModelCapability = {
   modality: "image",
   generate: true,
   edit: false,
@@ -123,6 +126,32 @@ const HAPPYHORSE_RATIOS: readonly string[] = [
 const HAPPYHORSE_RESOLUTIONS: readonly string[] = ["480P", "720P", "1080P"];
 
 const HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS: readonly string[] = ["720P", "1080P"];
+
+/**
+ * Wan 3.0 video capability: asynchronous video generation supporting
+ * text-to-video, first/last-frame, and heterogeneous reference media.
+ */
+const WAN3_0_VIDEO_GENERATE_CAPABILITY: ModelCapability = {
+  modality: "video",
+  generate: true,
+  edit: false,
+  async: true,
+};
+
+/**
+ * Aspect ratios accepted by Wan 3.0 video generation. `adaptive` lets the
+ * API auto-recommend a ratio from the input media and intent.
+ */
+const WAN3_VIDEO_RATIOS: readonly string[] = [
+  "adaptive",
+  "16:9",
+  "4:3",
+  "1:1",
+  "3:4",
+  "9:16",
+];
+
+const WAN3_VIDEO_RESOLUTIONS: readonly string[] = ["480P", "720P", "1080P"];
 
 /**
  * The model registry. Qwen models run the synchronous `multimodal-generation`
@@ -184,17 +213,17 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
   },
   "wan2.7-image-pro": {
     family: "wan-image",
-    capabilities: WAN_PRO_GENERATE_CAPABILITY,
+    capabilities: WAN2_7_PRO_GENERATE_CAPABILITY,
     paramSupport: { n: true, size: true },
   },
   "wan2.7-image": {
     family: "wan-image",
-    capabilities: WAN_GENERATE_CAPABILITY,
+    capabilities: WAN2_7_IMAGE_GENERATE_CAPABILITY,
     paramSupport: { n: true, size: true },
   },
   "wan2.6-t2i": {
     family: "wan-image",
-    capabilities: WAN26_T2I_GENERATE_CAPABILITY,
+    capabilities: WAN2_6_T2I_GENERATE_CAPABILITY,
     paramSupport: {
       n: true,
       size: true,
@@ -254,6 +283,13 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     maxReferenceImages: 5,
     supportedResolutions: HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS,
     supportedAspectRatios: [],
+  },
+  "wan3.0-video": {
+    family: "wan3-video",
+    capabilities: WAN3_0_VIDEO_GENERATE_CAPABILITY,
+    paramSupport: {},
+    supportedResolutions: WAN3_VIDEO_RESOLUTIONS,
+    supportedAspectRatios: WAN3_VIDEO_RATIOS,
   },
 };
 

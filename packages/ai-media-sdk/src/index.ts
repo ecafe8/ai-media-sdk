@@ -20,6 +20,12 @@ export type {
   VideoGenerationInput,
   VideoGenerationRequest,
   VideoModelInstance,
+  Wan3VideoImageMedia,
+  Wan3VideoReferenceAudioMedia,
+  Wan3VideoReferenceVideoMedia,
+  Wan3VideoFileMedia,
+  Wan3VideoLinkMedia,
+  Wan3VideoMediaEntry,
 } from "./video/index.ts";
 export { submitVideoTask } from "./video/index.ts";
 export {

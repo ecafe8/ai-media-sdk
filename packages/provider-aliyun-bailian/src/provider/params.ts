@@ -2,6 +2,7 @@ import type {
   ImageContent,
   ImageGenerationInput,
   VideoGenerationInput,
+  Wan3VideoMediaEntry,
 } from "@ai-media/sdk";
 
 import type {
@@ -116,6 +117,7 @@ export interface AliyunVideoFamilyOptions {
  * `watermark`, `seed`; no media inputs.
  */
 export interface AliyunHappyHorseT2VParams extends VideoGenerationInput {
+  readonly prompt: string;
   readonly providerOptions?: {
     readonly aliyun?: Omit<AliyunVideoFamilyOptions, "audio_setting">;
   };
@@ -139,6 +141,7 @@ export interface AliyunHappyHorseI2VParams extends VideoGenerationInput {
  * letting r2v auto-derive from the references).
  */
 export interface AliyunHappyHorseR2VParams extends VideoGenerationInput {
+  readonly prompt: string;
   readonly referenceImages: readonly ImageContent[];
   readonly providerOptions?: {
     readonly aliyun?: Omit<AliyunVideoFamilyOptions, "audio_setting">;
@@ -152,6 +155,7 @@ export interface AliyunHappyHorseR2VParams extends VideoGenerationInput {
  * `720P`/`1080P`, `ratio`/`duration` are replaced by `audio_setting`.
  */
 export interface AliyunHappyHorseVideoEditParams extends VideoGenerationInput {
+  readonly prompt: string;
   readonly inputVideo: { readonly url: string };
   readonly referenceImages?: readonly ImageContent[];
   readonly providerOptions?: {
@@ -166,3 +170,43 @@ export interface AliyunHappyHorseVideoEditParams extends VideoGenerationInput {
 
 // Re-export option sub-types so consumers can import them from params.ts.
 export type { AliyunBbox, AliyunColorPaletteEntry };
+
+/**
+ * Aspect ratios accepted by Wan 3.0 video generation. `adaptive` lets the API
+ * auto-recommend a ratio from the input media and intent.
+ */
+type Wan3VideoRatio =
+  | "adaptive"
+  | "16:9"
+  | "4:3"
+  | "1:1"
+  | "3:4"
+  | "9:16";
+
+/**
+ * Wan 3.0-native video provider options forwarded under
+ * `providerOptions.aliyun`. Uses `audio` (boolean) instead of HappyHorse's
+ * `audio_setting` ("auto" | "origin"). Defaults: resolution `1080P`,
+ * ratio `adaptive`, audio `true`, watermark `false`.
+ */
+export interface AliyunWan3VideoOptions {
+  readonly resolution?: "480P" | "720P" | "1080P";
+  readonly ratio?: Wan3VideoRatio;
+  readonly duration?: number;
+  readonly audio?: boolean;
+  readonly watermark?: boolean;
+  readonly seed?: number;
+}
+
+/**
+ * Family-typed params for Wan 3.0 video (`wan3.0-video`). Accepts an
+ * optional prompt and an optional ordered `media` array; at least one of
+ * prompt or media must be present (validated by the adapter). Uses the
+ * Wan 3.0-specific options shape with `audio` boolean.
+ */
+export interface AliyunWan3VideoParams extends VideoGenerationInput {
+  readonly media?: readonly Wan3VideoMediaEntry[];
+  readonly providerOptions?: {
+    readonly aliyun?: AliyunWan3VideoOptions;
+  };
+}

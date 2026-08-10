@@ -130,4 +130,13 @@ describe("Playground capability registry", () => {
     const ids = PLAYGROUND_MODELS.map((m) => `${m.provider}:${m.id}`);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  test("excludes wan3.0-video from the Playground projection until its media UI exists", () => {
+    expect(
+      getPlaygroundModel("aliyun-bailian", "wan3.0-video")
+    ).toBeUndefined();
+    expect(
+      PLAYGROUND_MODELS.find((m) => m.id === "wan3.0-video")
+    ).toBeUndefined();
+  });
 });
