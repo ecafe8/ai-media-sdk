@@ -1,6 +1,6 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 
 interface PackageManifest {
   name: string;
@@ -200,7 +200,7 @@ function main(): void {
     validateManifest(packageDirectory, manifest);
     validateRegistryVersions(packageDirectory, manifest);
     if (!existsSync(resolve(ROOT, packageDirectory, "README.md"))) {
-      throw new Error(packageDirectory + ": README.md is missing");
+      throw new Error(`${packageDirectory}: README.md is missing`);
     }
   }
 

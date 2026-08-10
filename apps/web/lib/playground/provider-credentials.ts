@@ -141,8 +141,8 @@ export function isProviderConfiguredByEnv(
     case "azure-openai":
       return Boolean(
         config.AZURE_OPENAI_API_KEY &&
-        config.AZURE_OPENAI_ENDPOINT &&
-        config.AZURE_OPENAI_API_VERSION
+          config.AZURE_OPENAI_ENDPOINT &&
+          config.AZURE_OPENAI_API_VERSION
       );
     case "aliyun-bailian":
       return Boolean(

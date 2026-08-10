@@ -31,7 +31,7 @@
 - Keep Next App Router files and build/config files in their framework-required names. `apps/web` uses `next build --webpack`.
 - `packages/ui/src/components/shadcn/` is the exception: shadcn components remain single files and are imported as `@workspace/ui/components/shadcn/<name>`.
 - Use `@workspace/ui/*` exports for shared UI and `@ai-media/*` workspace packages; do not create ad-hoc aliases.
-- Prettier is authoritative: double quotes, semicolons, 2 spaces, ES5 trailing commas, width 80, and Tailwind class sorting via `prettier-plugin-tailwindcss`.
+- Biome is authoritative for both formatting and linting: the root `biome.json` defines double quotes, semicolons, 2 spaces, ES5 trailing commas, width 80, LF line endings, and Tailwind class sorting via the `useSortedClasses` rule (covering `cn`/`cva`/`clsx`/`tw`). Run `bun run lint` to check and `bun run format` to apply safe fixes.
 - TypeScript is strict with `noUncheckedIndexedAccess`; provider and SDK packages also typecheck their `tsconfig.test.json`.
 
 ## Environment And Provider Gotchas

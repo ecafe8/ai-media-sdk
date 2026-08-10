@@ -9,7 +9,8 @@ import {
 import { saveBatchSummary, saveResult } from "./save.js";
 
 const prompt =
-  process.argv.slice(2).join(" ") || "左侧背景不变,图片右侧的每个视频框内分别动态循环播放各自屏幕中的视频内容，视频框本身不动";
+  process.argv.slice(2).join(" ") ||
+  "左侧背景不变,图片右侧的每个视频框内分别动态循环播放各自屏幕中的视频内容，视频框本身不动";
 const models = readAliyunVideoModels();
 const exampleInputs = readAliyunVideoExampleInputs();
 const batchStartedAt = Date.now();
@@ -36,9 +37,9 @@ try {
           : {}),
         ...(isR2v && exampleInputs.referenceImageUrls.length > 0
           ? {
-              referenceImages: exampleInputs.referenceImageUrls.map(
-                (url) => ({ url })
-              ),
+              referenceImages: exampleInputs.referenceImageUrls.map((url) => ({
+                url,
+              })),
             }
           : {}),
         providerOptions: {

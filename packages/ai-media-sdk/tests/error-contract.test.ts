@@ -3,9 +3,9 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  SdkError,
   classifyHttpError,
   notImplemented,
+  SdkError,
   unknownModel,
 } from "@ai-media/sdk";
 

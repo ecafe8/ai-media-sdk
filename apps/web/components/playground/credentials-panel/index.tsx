@@ -121,13 +121,13 @@ export function CredentialsPanel({
       open={!configured}
       className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2"
     >
-      <summary className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+      <summary className="flex cursor-pointer items-center gap-2 font-medium text-slate-700 text-sm">
         <KeyRound className="size-4 text-emerald-600" />
         {configured ? "使用自己的 API Key（优先于服务端）" : "填写你的 API Key"}
       </summary>
 
       {!configured ? (
-        <p className="mt-2 text-xs leading-5 text-amber-700">
+        <p className="mt-2 text-amber-700 text-xs leading-5">
           服务端未配置 {providerLabel}
           。请填写你自己的凭证后体验；Key 仅保存在你的浏览器本地。
         </p>
@@ -146,13 +146,13 @@ export function CredentialsPanel({
               onChange={(event) => setField(spec.key, event.target.value)}
             />
             {spec.hint ? (
-              <p className="mt-1 text-xs text-slate-500">{spec.hint}</p>
+              <p className="mt-1 text-slate-500 text-xs">{spec.hint}</p>
             ) : null}
           </Field>
         ))}
         <button
           type="button"
-          className="self-start text-xs text-slate-500 underline-offset-2 transition hover:text-red-600 hover:underline"
+          className="self-start text-slate-500 text-xs underline-offset-2 transition hover:text-red-600 hover:underline"
           onClick={onClear}
         >
           清除已填写的凭证

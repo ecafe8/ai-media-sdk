@@ -34,8 +34,6 @@
   },
   "scripts": {
     "build": "tsup src/index.ts src/core/index.ts src/aliyun/index.ts src/google/index.ts --format esm --dts --out-dir dist --clean",
-    "lint": "eslint",
-    "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
     "typecheck:release": "tsc -p tsconfig.json --noEmit",
     "test": "bun test"
@@ -43,9 +41,7 @@
   "devDependencies": {
     "@types/bun": "^1.2.0",
     "@types/node": "^20",
-    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "eslint": "^9",
     "typescript": "^5"
   }
 }

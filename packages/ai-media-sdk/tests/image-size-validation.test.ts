@@ -3,17 +3,17 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  editImage,
-  generateImage,
-  pixelSize,
-  tierSize,
   type AdapterRequest,
+  editImage,
   type GenerationResult,
+  generateImage,
   type ImageContent,
   type ImageModelInstance,
   type ModelCapability,
   type ProviderAdapter,
+  pixelSize,
   SdkError,
+  tierSize,
 } from "@ai-media/sdk";
 
 /**

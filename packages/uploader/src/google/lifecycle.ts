@@ -1,16 +1,16 @@
+import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
 import {
   GOOGLE_DEFAULT_TIMEOUT_MS,
   GOOGLE_FILES_BASE_URL,
   GOOGLE_FILES_PATH,
 } from "./constants.ts";
-import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
+import { mapFileResource, toExpiresAt } from "./helpers.ts";
 import type {
   GoogleFileResource,
   GoogleListResponse,
   GoogleUploadedFile,
   GoogleUploaderOptions,
 } from "./types.ts";
-import { mapFileResource, toExpiresAt } from "./helpers.ts";
 
 function buildFilesUrl(baseUrl: string, name?: string): string {
   if (name) {

@@ -1,6 +1,6 @@
 import {
-  SdkError,
   type GenerationResult,
+  SdkError,
   type TaskHandle,
   type TaskPollResult,
   type TaskWaitOptions,
@@ -59,7 +59,6 @@ export function createTaskHandle<TContent>(
       const deadline = Date.now() + timeout;
 
       let first = true;
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         if (signal?.aborted) {
           throw new SdkError({

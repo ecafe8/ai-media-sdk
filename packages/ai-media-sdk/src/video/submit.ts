@@ -1,6 +1,6 @@
-import { SdkError, type TaskHandle } from "../contracts/index.ts";
-import type { VideoContent } from "../contracts/content.ts";
 import { submitTask } from "../async/index.ts";
+import type { VideoContent } from "../contracts/content.ts";
+import { SdkError, type TaskHandle } from "../contracts/index.ts";
 import type {
   VideoGenerationInput,
   VideoGenerationRequest,

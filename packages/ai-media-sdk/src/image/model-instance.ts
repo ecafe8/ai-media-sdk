@@ -1,8 +1,8 @@
-import type {
-  ModelInstance,
-  DefaultImageParams,
-} from "../contracts/model-instance.ts";
 import type { ImageContent } from "../contracts/content.ts";
+import type {
+  DefaultImageParams,
+  ModelInstance,
+} from "../contracts/model-instance.ts";
 
 /**
  * Image model instance contracts.

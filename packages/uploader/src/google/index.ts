@@ -1,11 +1,11 @@
-import { uploadFile } from "./upload.ts";
 import { deleteFile, getFile, listFiles } from "./lifecycle.ts";
 import type {
-  GoogleUploadParams,
   GoogleUploadedFile,
   GoogleUploader,
   GoogleUploaderOptions,
+  GoogleUploadParams,
 } from "./types.ts";
+import { uploadFile } from "./upload.ts";
 
 /**
  * Create a Google Gemini Files API uploader.

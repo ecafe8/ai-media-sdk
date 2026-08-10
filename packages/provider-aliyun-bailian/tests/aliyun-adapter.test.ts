@@ -1,14 +1,13 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-
+import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import {
-  SdkError,
+  type AdapterRequest,
   editImage,
   generateImage,
-  type AdapterRequest,
+  SdkError,
 } from "@ai-media/sdk";
-import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 
 import {
   createFakeTransport,
@@ -143,7 +142,7 @@ describe("aliyun-bailian provider", () => {
       "https://ws-id.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation"
     );
     const headers = request.headers as Record<string, string>;
-    expect(headers["Authorization"]).toBe("Bearer test-key");
+    expect(headers.Authorization).toBe("Bearer test-key");
     expect(headers["Content-Type"]).toBe("application/json");
 
     const body = request.body as Record<string, unknown>;

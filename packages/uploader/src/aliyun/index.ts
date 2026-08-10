@@ -1,15 +1,15 @@
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
+import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
 import { ALIYUN_TTL_HOURS } from "./constants.ts";
 import { getUploadPolicy } from "./get-policy.ts";
-import { uploadFileToOss } from "./upload-oss.ts";
-import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
 import type {
-  AliyunUploadParams,
   AliyunUploadedFile,
   AliyunUploader,
   AliyunUploaderOptions,
+  AliyunUploadParams,
 } from "./types.ts";
+import { uploadFileToOss } from "./upload-oss.ts";
 
 /**
  * Create an Aliyun DashScope temporary-file uploader.

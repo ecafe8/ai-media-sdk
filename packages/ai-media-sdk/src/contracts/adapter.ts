@@ -1,6 +1,6 @@
-import type { ProviderId, ModelId } from "./provider-identity.ts";
-import type { Transport } from "./transport.ts";
 import type { GenerationResult, TaskHandle } from "./generation.ts";
+import type { ModelId, ProviderId } from "./provider-identity.ts";
+import type { Transport } from "./transport.ts";
 
 /**
  * Provider adapter request/result contracts.

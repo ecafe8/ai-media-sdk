@@ -1,10 +1,10 @@
+import type { RetryPolicy } from "../contracts/retry-policy.ts";
+import { DEFAULT_RETRY_POLICY } from "../contracts/retry-policy.ts";
 import type {
   Transport,
   TransportRequest,
   TransportResponse,
 } from "../contracts/transport.ts";
-import { DEFAULT_RETRY_POLICY } from "../contracts/retry-policy.ts";
-import type { RetryPolicy } from "../contracts/retry-policy.ts";
 import { TransportError } from "./transport-error.ts";
 
 /**

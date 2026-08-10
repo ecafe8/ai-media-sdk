@@ -1,24 +1,24 @@
 import {
-  SdkError,
+  type AdapterRequest,
   classifyHttpError,
   createTaskHandle,
   createTransport,
-  isImageEditInput,
-  isImageGenerationInput,
-  notImplemented,
-  toImageUrl,
-  TransportError,
-  type AdapterRequest,
   type GenerationResult,
   type ImageContent,
   type ImageModelInstance,
+  isImageEditInput,
+  isImageGenerationInput,
+  notImplemented,
   type ProviderAdapter,
   type ProviderId,
+  SdkError,
   type SupportedModel,
   type TaskHandle,
   type TaskPollResult,
   type TaskStatus,
   type Transport,
+  TransportError,
+  toImageUrl,
   type VideoContent,
   type VideoModelInstance,
   type Wan3VideoMediaEntry,
@@ -32,15 +32,15 @@ import type {
   AliyunHappyHorseT2VParams,
   AliyunHappyHorseVideoEditParams,
   AliyunQwenImageParams,
+  AliyunWan3VideoParams,
   AliyunWan26T2VParams,
   AliyunWan27ImageParams,
   AliyunWan27ProImageParams,
-  AliyunWan3VideoParams,
 } from "./params.ts";
 import {
   ALIYUN_MODEL_REGISTRY,
-  aliyunModelRegistry,
   type AliyunModelEntry,
+  aliyunModelRegistry,
 } from "./registry.ts";
 
 /**
@@ -316,7 +316,10 @@ export function createAliyunBailianProvider(
           entry
         ) as unknown as TaskHandle<VideoContent[]>;
       }
-      if (entry.family !== "happyhorse-video" && entry.family !== "wan3-video") {
+      if (
+        entry.family !== "happyhorse-video" &&
+        entry.family !== "wan3-video"
+      ) {
         throw notImplemented(`aliyun-bailian.submit (${request.model})`);
       }
       if (!isVideoGenerationInput(request.input)) {
@@ -730,9 +733,7 @@ interface AliyunTaskSubmitResponse {
 function isVideoGenerationInput(value: unknown): value is AliyunVideoInput {
   if (typeof value !== "object" || value === null) return false;
   const candidate = value as Record<string, unknown>;
-  return (
-    candidate.prompt === undefined || typeof candidate.prompt === "string"
-  );
+  return candidate.prompt === undefined || typeof candidate.prompt === "string";
 }
 
 function readAliyunVideoOptions(
@@ -1107,7 +1108,8 @@ async function submitVideoTask(
         };
       }
       const usage = task.usage as
-        { duration?: number; SR?: number; ratio?: string } | undefined;
+        | { duration?: number; SR?: number; ratio?: string }
+        | undefined;
       const video: VideoContent = {
         url: videoUrl,
         ...(typeof usage?.duration === "number"
@@ -1245,7 +1247,8 @@ function validateWan3VideoInput(
 
   // Mutual exclusivity: frames vs reference/file/link.
   const hasFrames = firstFrameCount > 0 || lastFrameCount > 0;
-  const hasNonFrame = refImageCount + refVideoCount + refAudioCount + fileCount + linkCount > 0;
+  const hasNonFrame =
+    refImageCount + refVideoCount + refAudioCount + fileCount + linkCount > 0;
   if (hasFrames && hasNonFrame) {
     throw new SdkError({
       code: "INVALID_REQUEST",
@@ -1310,13 +1313,15 @@ function validateWan3VideoInput(
   if (hasRefVideoMetadata && refVideoTotalDuration > 15) {
     throw new SdkError({
       code: "INVALID_REQUEST",
-      message: "Wan 3.0 reference_video total duration must not exceed 15 seconds",
+      message:
+        "Wan 3.0 reference_video total duration must not exceed 15 seconds",
     });
   }
   if (hasRefAudioMetadata && refAudioTotalDuration > 15) {
     throw new SdkError({
       code: "INVALID_REQUEST",
-      message: "Wan 3.0 reference_audio total duration must not exceed 15 seconds",
+      message:
+        "Wan 3.0 reference_audio total duration must not exceed 15 seconds",
     });
   }
 }
@@ -1325,11 +1330,13 @@ function validateWan3VideoInput(
  * Map a Wan 3.0 media entry to a DashScope `input.media[]` entry object.
  * Image media with base64 is mapped to a `data:{mime};base64,{data}` URI.
  */
-function mapWan3MediaEntry(
-  entry: Wan3VideoMediaEntry
-): { type: string; url: string } {
+function mapWan3MediaEntry(entry: Wan3VideoMediaEntry): {
+  type: string;
+  url: string;
+} {
   if ("base64" in entry && entry.base64 !== undefined) {
-    const mime = "mimeType" in entry ? entry.mimeType ?? "image/png" : "image/png";
+    const mime =
+      "mimeType" in entry ? (entry.mimeType ?? "image/png") : "image/png";
     return {
       type: entry.type,
       url: `data:${mime};base64,${entry.base64}`,
@@ -1393,7 +1400,8 @@ function buildWan3VideoBody(
     if (dur !== -1 && (dur < 2 || dur > 30 || !Number.isInteger(dur))) {
       throw new SdkError({
         code: "INVALID_REQUEST",
-        message: "duration must be an integer in [2, 30] or -1 for smart duration",
+        message:
+          "duration must be an integer in [2, 30] or -1 for smart duration",
       });
     }
     parameters.duration = dur;
@@ -1492,7 +1500,8 @@ async function submitWan3VideoTask(
         };
       }
       const usage = task.usage as
-        { duration?: number; SR?: number; ratio?: string } | undefined;
+        | { duration?: number; SR?: number; ratio?: string }
+        | undefined;
       const video: VideoContent = {
         url: videoUrl,
         ...(typeof usage?.duration === "number"

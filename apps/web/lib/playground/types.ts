@@ -1,7 +1,9 @@
 import type { ImageContent, SdkErrorCode, VideoContent } from "@ai-media/sdk";
 
 export type PlaygroundProvider =
-  "azure-openai" | "aliyun-bailian" | "doubao-seedream";
+  | "azure-openai"
+  | "aliyun-bailian"
+  | "doubao-seedream";
 
 /**
  * Top-level generation modality. Audio is reserved and rendered as a

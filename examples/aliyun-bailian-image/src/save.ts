@@ -117,7 +117,6 @@ function extensionFor(mimeType: string | undefined): string {
       return ".mp4";
     case "video/webm":
       return ".webm";
-    case "image/png":
     default:
       return ".png";
   }

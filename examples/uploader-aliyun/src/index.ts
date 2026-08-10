@@ -23,7 +23,9 @@ async function main(): Promise<void> {
   const provider = createAliyunBailianProvider(config.provider);
   const model = provider.image(config.model);
 
-  console.log(`[uploader] uploading ${config.imagePath} for model ${config.model}`);
+  console.log(
+    `[uploader] uploading ${config.imagePath} for model ${config.model}`
+  );
   const uploaded = await uploader.upload({
     model: config.model,
     filePath: config.imagePath,

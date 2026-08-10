@@ -1,13 +1,12 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-
+import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import {
-  SdkError,
+  type SdkError,
   submitVideoTask,
   type VideoGenerationRequest,
 } from "@ai-media/sdk";
-import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 
 import {
   createFakeTransport,

@@ -43,8 +43,7 @@ describe("Aliyun HappyHorse video example configuration", () => {
     });
     expect(
       readAliyunVideoExampleInputs({
-        ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS:
-          "https://x/a.png, https://x/b.png",
+        ALIYUN_BAILIAN_REFERENCE_IMAGE_URLS: "https://x/a.png, https://x/b.png",
         ALIYUN_BAILIAN_INPUT_VIDEO_URL: "https://x/source.mp4",
       })
     ).toEqual({

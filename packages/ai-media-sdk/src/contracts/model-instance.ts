@@ -1,8 +1,8 @@
-import type { ProviderId, ModelId } from "./provider-identity.ts";
-import type { ModelCapability } from "./capabilities.ts";
-import type { ProviderAdapter } from "./adapter.ts";
 import type { ImageGenerationInput } from "../image/request.ts";
 import type { VideoGenerationInput } from "../video/request.ts";
+import type { ProviderAdapter } from "./adapter.ts";
+import type { ModelCapability } from "./capabilities.ts";
+import type { ModelId, ProviderId } from "./provider-identity.ts";
 
 /**
  * Modality-neutral model-instance contract.
@@ -23,7 +23,7 @@ import type { VideoGenerationInput } from "../video/request.ts";
  * only, and `TParams` is never read at runtime. The default `unknown` keeps
  * existing untyped call sites compiling without narrowing.
  */
-export interface ModelInstance<TContent, TParams = unknown> {
+export interface ModelInstance<TContent, _TParams = unknown> {
   readonly providerId: ProviderId;
   readonly modelId: ModelId;
   readonly adapter: ProviderAdapter<TContent>;

@@ -1,6 +1,6 @@
+import { Toaster } from "@workspace/ui/components/shadcn/sonner";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Toaster } from "@workspace/ui/components/shadcn/sonner";
 
 import "@workspace/ui/globals.css";
 import { App } from "@/app";

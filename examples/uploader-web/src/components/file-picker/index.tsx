@@ -1,7 +1,7 @@
-import { useCallback, useRef, useState } from "react";
-import { UploadCloudIcon } from "lucide-react";
-import { cn } from "@workspace/ui/lib/utils";
 import { Button } from "@workspace/ui/components/shadcn/button";
+import { cn } from "@workspace/ui/lib/utils";
+import { UploadCloudIcon } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
 
 export interface FilePickerProps {
   file: File | null;
@@ -35,6 +35,7 @@ export function FilePicker({
   );
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: Full-area drop target with drag-drop handlers; a button element would interfere with drop events
     <div
       role="button"
       tabIndex={0}
@@ -56,7 +57,7 @@ export function FilePicker({
         handleFiles(event.dataTransfer.files);
       }}
       className={cn(
-        "flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-muted/40 p-6 text-center transition-colors hover:bg-muted/70 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none",
+        "flex flex-col items-center justify-center gap-2 rounded-lg border border-input border-dashed bg-muted/40 p-6 text-center transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
         dragging && "border-primary bg-primary/5",
         disabled && "pointer-events-none opacity-50"
       )}
@@ -71,7 +72,7 @@ export function FilePicker({
           </p>
         </div>
       ) : (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-muted-foreground text-sm">
           点击或拖拽文件到此处上传
         </div>
       )}

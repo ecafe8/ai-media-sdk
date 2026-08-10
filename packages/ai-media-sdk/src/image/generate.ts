@@ -1,8 +1,8 @@
-import { SdkError } from "../contracts/error.ts";
 import type { AdapterRequest } from "../contracts/adapter.ts";
-import type { GenerationResult } from "../contracts/generation.ts";
 import type { ModelCapability } from "../contracts/capabilities.ts";
 import type { ImageContent } from "../contracts/content.ts";
+import { SdkError } from "../contracts/error.ts";
+import type { GenerationResult } from "../contracts/generation.ts";
 import type {
   ImageEditInput,
   ImageEditRequest,

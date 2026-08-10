@@ -1,9 +1,9 @@
+import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
 import {
   ALIYUN_DEFAULT_TIMEOUT_MS,
   ALIYUN_UPLOAD_BASE_URL,
   ALIYUN_UPLOAD_POLICY_PATH,
 } from "./constants.ts";
-import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
 import type {
   AliyunPolicyData,
   AliyunPolicyDataRaw,

@@ -1,15 +1,14 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-
-import type {
-  PlaygroundCredentials,
-  PlaygroundModel,
-  PlaygroundModality,
-  PlaygroundProvider,
-} from "@/lib/playground/types";
 import { ImageWorkbench } from "@/components/playground/image-workbench";
 import { VideoWorkbench } from "@/components/playground/video-workbench";
+import type {
+  PlaygroundCredentials,
+  PlaygroundModality,
+  PlaygroundModel,
+  PlaygroundProvider,
+} from "@/lib/playground/types";
 import {
   clearStoredCredentials,
   isCredentialsComplete,
@@ -85,17 +84,17 @@ export function Playground({ models }: PlaygroundProps) {
 
   return (
     <main className="min-h-svh bg-[#f7f8fa] text-slate-900">
-      <header className="border-b border-slate-200 bg-white px-5 py-4">
+      <header className="border-slate-200 border-b bg-white px-5 py-4">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between">
           <div>
-            <p className="text-xs font-semibold tracking-[0.24em] text-emerald-600 uppercase">
+            <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
               AI Media SDK
             </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight">
+            <h1 className="mt-1 font-semibold text-xl tracking-tight">
               Media Playground
             </h1>
           </div>
-          <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
+          <div className="hidden items-center gap-2 text-slate-500 text-xs sm:flex">
             <span
               className={`h-2 w-2 rounded-full ${
                 serverConfiguredProviders.size > 0
@@ -153,7 +152,7 @@ export function Playground({ models }: PlaygroundProps) {
         />
       ) : null}
 
-      <footer className="mx-auto max-w-[1440px] px-5 pb-6 text-xs text-slate-400">
+      <footer className="mx-auto max-w-[1440px] px-5 pb-6 text-slate-400 text-xs">
         {serverConfiguredProviders.size > 0
           ? "服务端已配置部分 Provider；也可填写自己的 API Key（填写后优先使用）。自带 Key 仅保存在你的浏览器本地，并随请求转发给服务端代理。Playground 不保存历史结果。"
           : "本环境未配置服务端 API Key，请填写你自己的 Provider API Key 后体验。Key 仅保存在你的浏览器本地，并随请求转发给服务端代理，不会被服务端存储。Playground 不保存历史结果。"}

@@ -1,13 +1,12 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-
+import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import {
   SdkError,
   submitVideoTask,
   type VideoGenerationRequest,
 } from "@ai-media/sdk";
-import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 
 import {
   createFakeTransport,
@@ -112,7 +111,7 @@ describe("aliyun-bailian video adapter", () => {
       "https://ws-id.cn-beijing.maas.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis"
     );
     const headers = request.headers as Record<string, string>;
-    expect(headers["Authorization"]).toBe("Bearer test-key");
+    expect(headers.Authorization).toBe("Bearer test-key");
     expect(headers["X-DashScope-Async"]).toBe("enable");
     expect(headers["Content-Type"]).toBe("application/json");
 

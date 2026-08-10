@@ -3,10 +3,10 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  editImage,
-  generateImage,
   type AdapterRequest,
+  editImage,
   type GenerationResult,
+  generateImage,
   type ImageContent,
   type ImageModelInstance,
   type ProviderAdapter,

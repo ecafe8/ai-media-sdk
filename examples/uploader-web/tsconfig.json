@@ -14,5 +14,11 @@
       "@ai-media/uploader/*": ["../../packages/uploader/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "server/**/*.ts", "tests/**/*.ts", "vite.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "server/**/*.ts",
+    "tests/**/*.ts",
+    "vite.config.ts"
+  ]
 }

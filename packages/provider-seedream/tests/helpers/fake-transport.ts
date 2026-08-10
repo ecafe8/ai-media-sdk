@@ -15,7 +15,8 @@ import { TransportError } from "@ai-media/sdk";
  * simulate a retried-and-exhausted transport failure. No real network.
  */
 export type FakeTransportStep =
-  TransportResponse<unknown> | { readonly throw: TransportError };
+  | TransportResponse<unknown>
+  | { readonly throw: TransportError };
 
 export interface FakeTransport {
   readonly transport: Transport;

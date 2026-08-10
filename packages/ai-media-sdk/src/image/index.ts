@@ -1,9 +1,11 @@
+export { toImageUrl } from "./content.ts";
+export { editImage, generateImage } from "./generate.ts";
 export type { ImageModelInstance } from "./model-instance.ts";
 export type {
-  ImageGenerationInput,
-  ImageGenerationRequest,
   ImageEditInput,
   ImageEditRequest,
+  ImageGenerationInput,
+  ImageGenerationRequest,
 } from "./request.ts";
 export {
   isImageEditInput,
@@ -11,6 +13,4 @@ export {
   pixelSize,
   tierSize,
 } from "./request.ts";
-export { generateImage, editImage } from "./generate.ts";
 export { submitImageTask } from "./submit.ts";
-export { toImageUrl } from "./content.ts";

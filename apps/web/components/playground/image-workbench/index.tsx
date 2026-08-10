@@ -1,9 +1,8 @@
 "use client";
 
+import { Button } from "@workspace/ui/components/shadcn/button";
 import { LoaderCircle, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
-
-import { Button } from "@workspace/ui/components/shadcn/button";
 
 import { PLAYGROUND_PROVIDERS } from "@/lib/playground/registry";
 import type {
@@ -18,14 +17,14 @@ import {
   normalizeCredentials,
   type StoredCredentialsMap,
 } from "../lib/credentials";
+import { Field } from "../lib/field";
 import { isValidHttpUrl } from "../lib/http";
 import {
+  type ImageAdvancedFieldId,
   imageAdvancedFieldSet,
   imageNOptions,
   imageSizeOptions,
-  type ImageAdvancedFieldId,
 } from "../lib/image-form-schema";
-import { Field } from "../lib/field";
 import { ResultFeed } from "../result-feed";
 
 const PROMPTS = ["竖版的王国保卫战游戏界面", "一张可爱的人像摄影"];
@@ -212,13 +211,13 @@ export function ImageWorkbench({
   return (
     <div className="mx-auto grid max-w-[1440px] gap-5 p-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:p-6">
       <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 border-b border-slate-100 pb-4">
+        <div className="mb-5 flex items-center gap-2 border-slate-100 border-b pb-4">
           <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
             <WandSparkles className="size-4" />
           </div>
           <div>
             <h2 className="font-semibold">图像工作台</h2>
-            <p className="text-xs text-slate-500">文生图 / 图生图</p>
+            <p className="text-slate-500 text-xs">文生图 / 图生图</p>
           </div>
         </div>
 
@@ -289,7 +288,7 @@ export function ImageWorkbench({
                 );
               })}
             </select>
-            <p className="mt-2 text-xs leading-5 text-slate-500">
+            <p className="mt-2 text-slate-500 text-xs leading-5">
               {currentModel?.recommendation ?? "该 Provider 尚未配置"}
             </p>
           </Field>
@@ -304,7 +303,7 @@ export function ImageWorkbench({
                 className={inputClassName}
                 onChange={(event) => setReferenceImageUrl(event.target.value)}
               />
-              <p id="reference-hint" className="mt-2 text-xs text-slate-500">
+              <p id="reference-hint" className="mt-2 text-slate-500 text-xs">
                 支持 1-{currentModel?.maxEditImages ?? 1} 张图片，首期使用公开
                 URL。
               </p>
@@ -317,7 +316,7 @@ export function ImageWorkbench({
               rows={5}
               placeholder="描述你想生成的画面..."
               aria-describedby="prompt-error"
-              className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-slate-800 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               onChange={(event) => setPrompt(event.target.value)}
             />
             <div className="mt-2 flex flex-wrap gap-2">
@@ -325,7 +324,7 @@ export function ImageWorkbench({
                 <button
                   type="button"
                   key={item}
-                  className="rounded-full border border-slate-200 px-2.5 py-1 text-xs text-slate-600 transition hover:border-emerald-300 hover:text-emerald-700"
+                  className="rounded-full border border-slate-200 px-2.5 py-1 text-slate-600 text-xs transition hover:border-emerald-300 hover:text-emerald-700"
                   onClick={() => setPrompt(item)}
                 >
                   {item}
@@ -375,7 +374,7 @@ export function ImageWorkbench({
               }
               className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2"
             >
-              <summary className="cursor-pointer text-sm font-medium text-slate-700">
+              <summary className="cursor-pointer font-medium text-slate-700 text-sm">
                 高级选项
               </summary>
               <div className="mt-3 grid gap-3">
@@ -400,13 +399,13 @@ export function ImageWorkbench({
             <p
               id="prompt-error"
               role="alert"
-              className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+              className="rounded-lg bg-red-50 px-3 py-2 text-red-700 text-sm"
             >
               {validationError}
             </p>
           ) : null}
 
-          <div className="flex gap-2 border-t border-slate-100 pt-4">
+          <div className="flex gap-2 border-slate-100 border-t pt-4">
             <Button
               type="button"
               variant="outline"
@@ -430,7 +429,7 @@ export function ImageWorkbench({
             </Button>
           </div>
           {!currentModel?.configured ? (
-            <p className="text-xs leading-5 text-amber-700">
+            <p className="text-amber-700 text-xs leading-5">
               当前 Provider 未在服务端配置。请在上方「填写你的 API
               Key」中提供完整凭证后开始体验。
             </p>
@@ -442,14 +441,14 @@ export function ImageWorkbench({
         aria-live="polite"
         className="min-h-[640px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-7"
       >
-        <div className="mb-6 flex items-end justify-between border-b border-slate-100 pb-4">
+        <div className="mb-6 flex items-end justify-between border-slate-100 border-b pb-4">
           <div>
-            <p className="text-xs font-semibold tracking-[0.2em] text-slate-400 uppercase">
+            <p className="font-semibold text-slate-400 text-xs uppercase tracking-[0.2em]">
               Result feed
             </p>
-            <h2 className="mt-1 text-lg font-semibold">生成结果</h2>
+            <h2 className="mt-1 font-semibold text-lg">生成结果</h2>
           </div>
-          <span className="text-xs text-slate-400">结果仅作临时预览</span>
+          <span className="text-slate-400 text-xs">结果仅作临时预览</span>
         </div>
         <ResultFeed
           result={result}
@@ -474,7 +473,7 @@ function AdvancedFieldControl({
 }) {
   if (field.kind === "boolean") {
     return (
-      <label className="flex items-center gap-2 text-sm text-slate-700">
+      <label className="flex items-center gap-2 text-slate-700 text-sm">
         <input
           type="checkbox"
           checked={typeof value === "boolean" ? value : false}

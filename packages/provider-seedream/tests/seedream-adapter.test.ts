@@ -1,14 +1,13 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-
+import { createSeedreamProvider } from "@ai-media/provider-seedream";
 import {
-  SdkError,
+  type AdapterRequest,
   editImage,
   generateImage,
-  type AdapterRequest,
+  SdkError,
 } from "@ai-media/sdk";
-import { createSeedreamProvider } from "@ai-media/provider-seedream";
 
 import {
   createFakeTransport,
@@ -131,7 +130,7 @@ describe("seedream provider", () => {
       "https://ark.cn-beijing.volces.com/api/v3/images/generations"
     );
     const headers = request.headers as Record<string, string>;
-    expect(headers["Authorization"]).toBe("Bearer test-key");
+    expect(headers.Authorization).toBe("Bearer test-key");
     expect(headers["Content-Type"]).toBe("application/json");
 
     const body = request.body as Record<string, unknown>;

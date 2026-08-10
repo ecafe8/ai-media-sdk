@@ -3,15 +3,15 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  SdkError,
-  createTaskHandle,
-  submitImageTask,
-  submitVideoTask,
   type AdapterRequest,
+  createTaskHandle,
   type GenerationResult,
   type ImageContent,
   type ImageModelInstance,
   type ProviderAdapter,
+  SdkError,
+  submitImageTask,
+  submitVideoTask,
   type TaskHandle,
   type VideoContent,
   type VideoModelInstance,

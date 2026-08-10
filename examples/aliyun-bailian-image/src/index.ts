@@ -26,17 +26,16 @@ try {
     try {
       const model = provider.image(modelId);
       console.log(`[${modelId}] submitting request`);
-      const result =
-        modelId.startsWith("wan")
-          ? await (
-              await submitImageTask({
-                model,
-                prompt,
-                n: 1,
-                size: "1024*1024",
-              })
-            ).wait()
-          : await generateImage({ model, prompt, n: 1, size: "1024*1024" });
+      const result = modelId.startsWith("wan")
+        ? await (
+            await submitImageTask({
+              model,
+              prompt,
+              n: 1,
+              size: "1024*1024",
+            })
+          ).wait()
+        : await generateImage({ model, prompt, n: 1, size: "1024*1024" });
       const outputDir = await saveResult(result.content, {
         provider: result.provider,
         model: result.model,

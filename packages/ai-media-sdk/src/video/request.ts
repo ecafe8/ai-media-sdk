@@ -1,7 +1,7 @@
 import type { ImageContent, VideoContent } from "../contracts/content.ts";
 import type {
-  ModelInstance,
   DefaultVideoParams,
+  ModelInstance,
 } from "../contracts/model-instance.ts";
 
 /**

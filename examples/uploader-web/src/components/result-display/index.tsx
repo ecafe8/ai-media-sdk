@@ -1,10 +1,10 @@
-import { CopyIcon, CheckIcon } from "lucide-react";
-import { toast } from "sonner";
 import { Alert, AlertDescription } from "@workspace/ui/components/shadcn/alert";
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { Button } from "@workspace/ui/components/shadcn/button";
 import { Separator } from "@workspace/ui/components/shadcn/separator";
 import { cn } from "@workspace/ui/lib/utils";
+import { CheckIcon, CopyIcon } from "lucide-react";
+import { toast } from "sonner";
 import type { UploadedFile } from "@/lib/upload";
 
 function formatExpiry(iso?: string): string | null {
@@ -70,11 +70,11 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="font-medium text-muted-foreground text-xs">
           临时 URL
         </span>
         <div className="flex items-start gap-2">
-          <code className="flex-1 rounded bg-muted px-2 py-1.5 text-xs break-all">
+          <code className="flex-1 break-all rounded bg-muted px-2 py-1.5 text-xs">
             {result.url}
           </code>
           <Button
@@ -89,7 +89,7 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
       </div>
 
       {expiry ? (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           过期时间：{expiry}（48 小时）
         </p>
       ) : null}
@@ -97,7 +97,7 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
       {result.requiresHeaders &&
       Object.keys(result.requiresHeaders).length > 0 ? (
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="font-medium text-muted-foreground text-xs">
             调用模型时必须携带的请求头
           </span>
           <div className="flex flex-col gap-1">
@@ -105,7 +105,7 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
               <code
                 key={key}
                 className={cn(
-                  "rounded bg-amber-500/10 px-2 py-1.5 text-xs break-all text-amber-700 dark:text-amber-400"
+                  "break-all rounded bg-amber-500/10 px-2 py-1.5 text-amber-700 text-xs dark:text-amber-400"
                 )}
               >
                 {key}: {value}
@@ -138,7 +138,7 @@ export function ResultDisplay({ result, provider }: ResultDisplayProps) {
       <Separator />
 
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="font-medium text-muted-foreground text-xs">
           调用示例（{provider === "aliyun" ? "curl" : "伪代码"}）
         </span>
         <div className="flex items-start gap-2">

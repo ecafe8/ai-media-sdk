@@ -1,30 +1,29 @@
 import {
-  editImage,
-  generateImage,
-  submitImageTask,
-  submitVideoTask,
-  SdkError,
-  createTransport,
-  type GenerationResult,
-  type ImageContent,
-  type ImageModelInstance,
-  type VideoModelInstance,
-} from "@ai-media/sdk";
-import {
-  createAliyunBailianProvider,
   type AliyunBailianProvider,
+  createAliyunBailianProvider,
 } from "@ai-media/provider-aliyun-bailian";
 import {
-  createAzureOpenAIProvider,
   type AzureOpenAIProvider,
+  createAzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
 import {
   createSeedreamProvider,
   type SeedreamProvider,
 } from "@ai-media/provider-seedream";
+import {
+  createTransport,
+  editImage,
+  type GenerationResult,
+  generateImage,
+  type ImageContent,
+  type ImageModelInstance,
+  SdkError,
+  submitImageTask,
+  submitVideoTask,
+  type VideoModelInstance,
+} from "@ai-media/sdk";
 
 import { loadConfig } from "@/lib/config";
-import { getPlaygroundModel } from "./registry";
 import {
   isProviderConfiguredByEnv,
   PlaygroundConfigurationError,
@@ -32,6 +31,7 @@ import {
   resolveAzureCredentials,
   resolveSeedreamCredentials,
 } from "./provider-credentials";
+import { getPlaygroundModel } from "./registry";
 import type {
   PlaygroundModel,
   PlaygroundProvider,

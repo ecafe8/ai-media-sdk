@@ -45,7 +45,6 @@ export function readExampleConfig(
     },
     model: env.UPLOADER_ALIYUN_MODEL ?? "qwen-image-2.0-pro",
     imagePath,
-    prompt:
-      env.UPLOADER_ALIYUN_PROMPT ?? "把这张图片转换为水彩画风格",
+    prompt: env.UPLOADER_ALIYUN_PROMPT ?? "把这张图片转换为水彩画风格",
   };
 }

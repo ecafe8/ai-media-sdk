@@ -6,23 +6,23 @@
  */
 
 import {
-  generateImage,
-  submitImageTask,
-  submitVideoTask,
-  type ImageGenerationInput,
-  type VideoGenerationInput,
-  type Wan3VideoMediaEntry,
-} from "@ai-media/sdk";
-import {
-  createAliyunBailianProvider,
   type AliyunHappyHorseR2VParams,
   type AliyunHappyHorseT2VParams,
   type AliyunHappyHorseVideoEditParams,
   type AliyunQwenImageParams,
+  type AliyunWan3VideoParams,
   type AliyunWan26T2VParams,
   type AliyunWan27ProImageParams,
-  type AliyunWan3VideoParams,
+  createAliyunBailianProvider,
 } from "@ai-media/provider-aliyun-bailian";
+import {
+  generateImage,
+  type ImageGenerationInput,
+  submitImageTask,
+  submitVideoTask,
+  type VideoGenerationInput,
+  type Wan3VideoMediaEntry,
+} from "@ai-media/sdk";
 
 declare const config: {
   apiKey: string;

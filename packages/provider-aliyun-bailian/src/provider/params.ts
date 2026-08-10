@@ -94,7 +94,15 @@ export interface AliyunWan26T2VParams extends ImageGenerationInput {
  * (auto-follows the first frame) and video-edit has no `ratio` parameter.
  */
 type HappyHorseRatio =
-  "16:9" | "9:16" | "1:1" | "4:3" | "3:4" | "4:5" | "5:4" | "9:21" | "21:9";
+  | "16:9"
+  | "9:16"
+  | "1:1"
+  | "4:3"
+  | "3:4"
+  | "4:5"
+  | "5:4"
+  | "9:21"
+  | "21:9";
 
 /**
  * Aliyun-native video provider options forwarded under
@@ -175,13 +183,7 @@ export type { AliyunBbox, AliyunColorPaletteEntry };
  * Aspect ratios accepted by Wan 3.0 video generation. `adaptive` lets the API
  * auto-recommend a ratio from the input media and intent.
  */
-type Wan3VideoRatio =
-  | "adaptive"
-  | "16:9"
-  | "4:3"
-  | "1:1"
-  | "3:4"
-  | "9:16";
+type Wan3VideoRatio = "adaptive" | "16:9" | "4:3" | "1:1" | "3:4" | "9:16";
 
 /**
  * Wan 3.0-native video provider options forwarded under

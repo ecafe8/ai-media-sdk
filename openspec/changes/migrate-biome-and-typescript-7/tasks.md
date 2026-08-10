@@ -1,40 +1,40 @@
 ## 1. Phase A — Add Biome configuration
 
-- [ ] 1.1 Add `@biomejs/biome@^2.5.7` to root `package.json` `devDependencies`
-- [ ] 1.2 Create root `biome.json` with formatter settings mapped from `.prettierrc` (D4), `useSortedClasses` for `cn`/`cva`/`tw` (D3), `noUnusedVariables` with `^_` ignore pattern (D5), `css.parser.tailwindDirectives: true`, and `vcs.useIgnoreFile: true`; scope React rules under `apps/web`, `packages/ui`, `examples/uploader-web`
-- [ ] 1.3 Run `bun install` and verify `bunx biome --version` resolves the native binary
+- [x] 1.1 Add `@biomejs/biome@^2.5.7` to root `package.json` `devDependencies`
+- [x] 1.2 Create root `biome.json` with formatter settings mapped from `.prettierrc` (D4), `useSortedClasses` for `cn`/`cva`/`tw` (D3), `noUnusedVariables` with `^_` ignore pattern (D5), `css.parser.tailwindDirectives: true`, and `vcs.useIgnoreFile: true`; scope React rules under `apps/web`, `packages/ui`, `examples/uploader-web`
+- [x] 1.3 Run `bun install` and verify `bunx biome --version` resolves the native binary
 
 ## 2. Phase A — Replace lint/format scripts
 
-- [ ] 2.1 Replace root `package.json` `lint` script (`turbo lint`) with `biome lint` and `format` script (`turbo format`) with `biome format --write`
-- [ ] 2.2 Remove `lint` and `format` scripts from the 8 workspace `package.json` files (ai-media-sdk, provider-aliyun-bailian, provider-azure-openai, provider-seedream, ui, uploader, apps/web, examples/uploader-web)
-- [ ] 2.3 Simplify `turbo.json` `lint` and `format` tasks (L21-26): remove `dependsOn: ["^lint"]`/`["^format"]` so they run once at root, or delete the two task entries if root scripts call Biome directly
-- [ ] 2.4 Verify `scripts/release-check.ts:207` still calls `bun run lint` (no source change needed; confirm the contract holds)
+- [x] 2.1 Replace root `package.json` `lint` script (`turbo lint`) with `biome lint` and `format` script (`turbo format`) with `biome format --write`
+- [x] 2.2 Remove `lint` and `format` scripts from the 8 workspace `package.json` files (ai-media-sdk, provider-aliyun-bailian, provider-azure-openai, provider-seedream, ui, uploader, apps/web, examples/uploader-web)
+- [x] 2.3 Simplify `turbo.json` `lint` and `format` tasks (L21-26): remove `dependsOn: ["^lint"]`/`["^format"]` so they run once at root, or delete the two task entries if root scripts call Biome directly
+- [x] 2.4 Verify `scripts/release-check.ts:207` still calls `bun run lint` (no source change needed; confirm the contract holds)
 
 ## 3. Phase A — Remove ESLint and Prettier
 
-- [ ] 3.1 Delete `packages/eslint-config/` workspace (`base.js`, `next.js`, `react-internal.js`, `package.json`, `README.md`)
-- [ ] 3.2 Delete the 8 per-workspace `eslint.config.js` files and the root `.eslintrc.js` legacy stub
-- [ ] 3.3 Remove the `@workspace/eslint-config` workspace entry from root `package.json` `workspaces` array (and any `workspace:^` references in `apps/web`/`packages/ui`/`examples/uploader-web` `devDependencies`)
-- [ ] 3.4 Remove ESLint/Prettier devDependencies from root and all workspaces: `prettier`, `prettier-plugin-tailwindcss`, `eslint`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser`, `typescript-eslint`, `@next/eslint-plugin-next`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-plugin-turbo`, `eslint-plugin-only-warn`, `eslint-config-prettier`, `globals`, `@eslint/js`
-- [ ] 3.5 Delete `.prettierrc` (formatting contract now lives in `biome.json`)
-- [ ] 3.6 Run `bun install` to update `bun.lock`
+- [x] 3.1 Delete `packages/eslint-config/` workspace (`base.js`, `next.js`, `react-internal.js`, `package.json`, `README.md`)
+- [x] 3.2 Delete the 8 per-workspace `eslint.config.js` files and the root `.eslintrc.js` legacy stub
+- [x] 3.3 Remove the `@workspace/eslint-config` workspace entry from root `package.json` `workspaces` array (and any `workspace:^` references in `apps/web`/`packages/ui`/`examples/uploader-web` `devDependencies`)
+- [x] 3.4 Remove ESLint/Prettier devDependencies from root and all workspaces: `prettier`, `prettier-plugin-tailwindcss`, `eslint`, `@typescript-eslint/eslint-plugin`, `@typescript-eslint/parser`, `typescript-eslint`, `@next/eslint-plugin-next`, `eslint-plugin-react`, `eslint-plugin-react-hooks`, `eslint-plugin-turbo`, `eslint-plugin-only-warn`, `eslint-config-prettier`, `globals`, `@eslint/js`
+- [x] 3.5 Delete `.prettierrc` (formatting contract now lives in `biome.json`)
+- [x] 3.6 Run `bun install` to update `bun.lock`
 
 ## 4. Phase A — Validate and reformat
 
-- [ ] 4.1 Run `bunx biome format --write` as a standalone reformat commit (D-risk mitigation) and review the diff
-- [ ] 4.2 Run `bun run lint` — fix any Biome rule violations (expect `noUnusedImports`/`noUnusedVariables` churn from rule differences)
-- [ ] 4.3 Run `bun run typecheck` — confirm TS 5.9.3 type-checking is unaffected
-- [ ] 4.4 Run `bun run build` — confirm tsup build of 5 publishable packages is unaffected
-- [ ] 4.5 Run `bun run test` — confirm Bun test runner is unaffected
-- [ ] 4.6 Run `bun run release:check` end-to-end — confirm green
+- [x] 4.1 Run `bunx biome format --write` as a standalone reformat commit (D-risk mitigation) and review the diff
+- [x] 4.2 Run `bun run lint` — fix any Biome rule violations (expect `noUnusedImports`/`noUnusedVariables` churn from rule differences)
+- [x] 4.3 Run `bun run typecheck` — confirm TS 5.9.3 type-checking is unaffected
+- [x] 4.4 Run `bun run build` — confirm tsup build of 5 publishable packages is unaffected
+- [x] 4.5 Run `bun run test` — confirm Bun test runner is unaffected
+- [x] 4.6 Run `bun run release:check` end-to-end — confirm green (NOTE: fails at the pre-existing registry-version gate `local 0.1.0 == npm 0.1.0`, before reaching lint; migration-relevant steps lint/typecheck/build/test verified green independently)
 - [ ] 4.7 Commit Phase A on `main` (Biome swap, green gate established)
 
 ## 5. Phase A — Documentation
 
-- [ ] 5.1 Update `AGENTS.md` "Conventions That Affect Changes" bullet: replace "Prettier is authoritative..." with Biome authoritativeness (formatter + linter, config in root `biome.json`)
-- [ ] 5.2 Remove `AGENTS.md` references to `packages/eslint-config` if any
-- [ ] 5.3 Update the "Full verification after code changes" command list if it references Prettier (`bun run format` now runs Biome — command name unchanged, behavior documented)
+- [x] 5.1 Update `AGENTS.md` "Conventions That Affect Changes" bullet: replace "Prettier is authoritative..." with Biome authoritativeness (formatter + linter, config in root `biome.json`)
+- [x] 5.2 Remove `AGENTS.md` references to `packages/eslint-config` if any
+- [x] 5.3 Update the "Full verification after code changes" command list if it references Prettier (`bun run format` now runs Biome — command name unchanged, behavior documented)
 
 ## 6. Phase B — Upgrade TypeScript to 7.0.2
 

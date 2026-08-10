@@ -5,17 +5,17 @@
  */
 
 import {
-  generateImage,
-  submitImageTask,
-  type ImageGenerationInput,
-} from "@ai-media/sdk";
-import {
   createSeedreamProvider,
-  type Seedream40Params,
-  type Seedream45Params,
   type Seedream5LiteParams,
   type Seedream5ProParams,
+  type Seedream40Params,
+  type Seedream45Params,
 } from "@ai-media/provider-seedream";
+import {
+  generateImage,
+  type ImageGenerationInput,
+  submitImageTask,
+} from "@ai-media/sdk";
 
 declare const config: { apiKey: string };
 

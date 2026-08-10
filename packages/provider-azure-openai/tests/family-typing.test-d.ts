@@ -9,14 +9,14 @@
  */
 
 import {
-  generateImage,
-  submitImageTask,
-  type ImageGenerationInput,
-} from "@ai-media/sdk";
-import {
-  createAzureOpenAIProvider,
   type AzureGptImage2Params,
+  createAzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
+import {
+  generateImage,
+  type ImageGenerationInput,
+  submitImageTask,
+} from "@ai-media/sdk";
 
 declare const config: {
   apiKey: string;
@@ -35,7 +35,6 @@ type AssertGptImage2Model = typeof gptImage2Model extends {
 }
   ? true
   : false;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _AssertGptImage2 = AssertGptImage2Model extends true ? true : never;
 
 // `size` is narrowed to the documented Azure values.

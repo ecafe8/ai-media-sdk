@@ -1,9 +1,8 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-
-import { UPLOADER_ERROR_CODES, UploaderError } from "@ai-media/uploader/core";
 import { createAliyunUploader } from "@ai-media/uploader/aliyun";
+import { UPLOADER_ERROR_CODES, UploaderError } from "@ai-media/uploader/core";
 
 import { createFakeFetch } from "../helpers/fake-fetch.js";
 

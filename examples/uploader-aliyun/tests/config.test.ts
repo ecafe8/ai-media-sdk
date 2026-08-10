@@ -9,7 +9,8 @@ describe("uploader-aliyun example config", () => {
     const config = readExampleConfig(
       {
         ALIYUN_BAILIAN_API_KEY: "sk-key",
-        ALIYUN_BAILIAN_BASE_URL: "https://ws.cn-beijing.maas.aliyuncs.com/api/v1",
+        ALIYUN_BAILIAN_BASE_URL:
+          "https://ws.cn-beijing.maas.aliyuncs.com/api/v1",
         UPLOADER_ALIYUN_IMAGE_PATH: "/tmp/cat.png",
       },
       []

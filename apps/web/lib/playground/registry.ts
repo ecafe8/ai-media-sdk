@@ -130,11 +130,7 @@ function labelFor(
  * `wan-image` Aliyun family (used for adapter routing).
  */
 function aliyunFamilySlug(
-  family:
-    | "qwen-multimodal"
-    | "wan-image"
-    | "happyhorse-video"
-    | "wan3-video",
+  family: "qwen-multimodal" | "wan-image" | "happyhorse-video" | "wan3-video",
   id: string
 ): PlaygroundModelFamily {
   if (family === "wan-image") {

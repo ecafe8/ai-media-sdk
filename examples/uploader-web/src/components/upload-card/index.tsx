@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Loader2Icon, UploadIcon } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/shadcn/button";
 import {
   Card,
@@ -11,13 +8,16 @@ import {
 } from "@workspace/ui/components/shadcn/card";
 import { Input } from "@workspace/ui/components/shadcn/input";
 import { Label } from "@workspace/ui/components/shadcn/label";
+import { Loader2Icon, UploadIcon } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { FilePicker } from "@/components/file-picker";
 import { ResultDisplay } from "@/components/result-display";
 import {
   UploadClientError,
+  type UploadedFile,
   uploadToAliyun,
   uploadToGoogle,
-  type UploadedFile,
 } from "@/lib/upload";
 
 export interface UploadCardProps {
@@ -91,7 +91,7 @@ export function UploadCard({ provider }: UploadCardProps) {
               placeholder="qwen-image-2.0-pro"
               disabled={loading}
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               上传时指定的模型必须与后续调用模型的模型一致。
             </p>
           </div>

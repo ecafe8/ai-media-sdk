@@ -1,20 +1,20 @@
 import {
-  SdkError,
+  type AdapterRequest,
   classifyHttpError,
   createTransport,
-  isImageGenerationInput,
-  notImplemented,
-  TransportError,
-  type AdapterRequest,
   type GenerationResult,
   type ImageContent,
   type ImageModelInstance,
+  isImageGenerationInput,
   type ModelCapability,
   type ModelId,
+  notImplemented,
   type ProviderAdapter,
   type ProviderId,
+  SdkError,
   type SupportedModel,
   type Transport,
+  TransportError,
 } from "@ai-media/sdk";
 
 import type { AzureOpenAIConfig } from "../config/index.ts";
@@ -22,9 +22,9 @@ import type { AzureImageProviderOptions } from "./options.ts";
 import type { AzureGptImage2Params } from "./params.ts";
 import {
   AZURE_MODEL_REGISTRY,
-  DEFAULT_AZURE_CUSTOM_CAPABILITY,
-  azureModelRegistry,
   type AzureModelEntry,
+  azureModelRegistry,
+  DEFAULT_AZURE_CUSTOM_CAPABILITY,
 } from "./registry.ts";
 
 /**

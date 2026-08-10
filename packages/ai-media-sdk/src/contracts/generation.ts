@@ -1,5 +1,5 @@
-import type { ProviderId, ModelId } from "./provider-identity.ts";
 import type { SdkError } from "./error.ts";
+import type { ModelId, ProviderId } from "./provider-identity.ts";
 
 /**
  * Generation lifecycle contracts.
@@ -25,7 +25,11 @@ export interface GenerationResult<TContent> {
  * Lifecycle status of an asynchronous generation task.
  */
 export type TaskStatus =
-  "pending" | "running" | "succeeded" | "failed" | "cancelled";
+  | "pending"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
 
 /**
  * A handle to an in-flight or completed asynchronous task.

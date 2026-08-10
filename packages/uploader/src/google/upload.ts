@@ -1,18 +1,18 @@
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
+import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
 import {
   GOOGLE_DEFAULT_TIMEOUT_MS,
   GOOGLE_FILES_BASE_URL,
   GOOGLE_UPLOAD_PATH,
 } from "./constants.ts";
-import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
+import { mapFileResource, toExpiresAt } from "./helpers.ts";
 import type {
   GoogleFileResource,
-  GoogleUploadParams,
   GoogleUploadedFile,
   GoogleUploaderOptions,
+  GoogleUploadParams,
 } from "./types.ts";
-import { mapFileResource, toExpiresAt } from "./helpers.ts";
 
 /**
  * Upload a local file to the Gemini Files API using the resumable protocol.

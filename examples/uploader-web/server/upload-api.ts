@@ -1,12 +1,11 @@
-import type { Plugin, ViteDevServer } from "vite";
-
 import { createAliyunUploader } from "@ai-media/uploader/aliyun";
-import { createGoogleUploader } from "@ai-media/uploader/google";
 import {
   UPLOADER_ERROR_CODES,
-  UploaderError,
   type UploadedFile,
+  UploaderError,
 } from "@ai-media/uploader/core";
+import { createGoogleUploader } from "@ai-media/uploader/google";
+import type { Plugin, ViteDevServer } from "vite";
 
 /**
  * Dev-only Vite plugin that exposes two server-side upload endpoints so the

@@ -1,5 +1,5 @@
-import { ALIYUN_DEFAULT_TIMEOUT_MS } from "./constants.ts";
 import { UPLOADER_ERROR_CODES, UploaderError } from "../core/index.ts";
+import { ALIYUN_DEFAULT_TIMEOUT_MS } from "./constants.ts";
 import type { AliyunPolicyData } from "./types.ts";
 
 /**

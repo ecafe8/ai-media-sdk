@@ -5,8 +5,8 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
-    "format": "turbo format",
+    "lint": "biome check",
+    "format": "biome check --write",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "release:check": "bun scripts/release-check.ts",
@@ -16,11 +16,9 @@
     "docs": "mdts docs"
   },
   "devDependencies": {
-    "@workspace/eslint-config": "workspace:*",
+    "@biomejs/biome": "^2.5.7",
     "@workspace/typescript-config": "workspace:*",
     "mdts": "^0.20.6",
-    "prettier": "^3.8.3",
-    "prettier-plugin-tailwindcss": "^0.8.0",
     "tsup": "^8.5.0",
     "turbo": "^2.9.18",
     "typescript": "^5"

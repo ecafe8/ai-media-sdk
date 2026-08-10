@@ -1,9 +1,9 @@
-import { TriangleAlertIcon } from "lucide-react";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/shadcn/alert";
+import { TriangleAlertIcon } from "lucide-react";
 
 export function Warnings() {
   return (

@@ -1,12 +1,11 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-
-import { SdkError, type AdapterRequest } from "@ai-media/sdk";
 import {
-  createAzureOpenAIProvider,
   createAzureModel,
+  createAzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
+import { type AdapterRequest, SdkError } from "@ai-media/sdk";
 
 import {
   createFakeTransport,
@@ -126,7 +125,7 @@ describe("azure-openai provider", () => {
       "https://example.cognitiveservices.azure.com/openai/deployments/gpt-image-2/images/generations?api-version=2024-02-01"
     );
     const headers = request.headers as Record<string, string>;
-    expect(headers["Authorization"]).toBe("Bearer test-key");
+    expect(headers.Authorization).toBe("Bearer test-key");
     expect(headers["Content-Type"]).toBe("application/json");
 
     const body = request.body as Record<string, unknown>;
