@@ -59,10 +59,10 @@ generateImage({ model: gptImage2Model, prompt: "p", size: "4096x4096" });
 generateImage({ model: gptImage2Model, prompt: "p", n: 2 });
 
 // Out-of-namespace providerOptions is a compile-time error.
-// @ts-expect-error AzureGptImage2Params only allows the `azure` namespace
 generateImage({
   model: gptImage2Model,
   prompt: "p",
+  // @ts-expect-error AzureGptImage2Params only allows the `azure` namespace
   providerOptions: { aliyun: { watermark: false } },
 });
 
