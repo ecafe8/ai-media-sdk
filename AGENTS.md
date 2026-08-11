@@ -38,6 +38,7 @@
 ## UI Component Rules
 
 - Prefer shadcn components whenever possible: import them from `@workspace/ui/components/shadcn/<name>` and replace native form controls with their shadcn equivalents (`<select>` → `select`, `<input type="checkbox">` → `checkbox`, other `<input>` → `input`, `<textarea>` → `textarea`, `<button>` → `button`).
+- shadcn CLI config (`components.json`) lives in `packages/ui` and in each app; running `bunx shadcn@latest add <component>` from any of them installs into `packages/ui/src/components/shadcn/`. Do not create app-local copies of shadcn components.
 - If shadcn has no component that directly covers a need but the need can be met by composing shadcn components, prefer the shadcn composition over a bespoke implementation.
 - Ask before creating custom shared UI: before extracting a new pure-UI composite component into `packages/ui/src/components/custom/` (exported as `@workspace/ui/components/custom/<name>`), ask the user and get agreement on the placement — the component may belong in another shared location or in the consuming app layer instead.
 - Business components live in the consuming app's own `components/` directory, grouped into per-feature kebab-case subdirectories with an `index.ts`/`index.tsx` entry.
