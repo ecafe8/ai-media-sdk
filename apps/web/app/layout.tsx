@@ -2,7 +2,7 @@ import { Geist_Mono, Inter } from "next/font/google";
 
 import "@workspace/ui/globals.css";
 import { cn } from "@workspace/ui/lib/utils";
-import { ThemeProvider } from "@/components/theme-provider";
+import { AppProviders } from "@/components/providers";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -28,7 +28,7 @@ export default function RootLayout({
       )}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
