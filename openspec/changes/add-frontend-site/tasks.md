@@ -1,8 +1,8 @@
 ## 1. 工作区脚手架
 
-- [ ] 1.1 创建 `apps/site/package.json`（私有工作区，deps：`@ai-media/sdk`、三家 `@ai-media/provider-*`、`@workspace/ui`、`react`、`react-dom`、`react-router-dom`、`lucide-react`；devDeps 对齐 `examples/uploader-web`：`vite`、`@vitejs/plugin-react`、`@tailwindcss/postcss`、`@workspace/eslint-config`、`@workspace/typescript-config`；scripts：`dev`/`build`/`preview`/`lint`/`format`/`typecheck`/`test`）。
+- [ ] 1.1 创建 `apps/site/package.json`（私有工作区，deps：`@ai-media/sdk`、三家 `@ai-media/provider-*`、`@workspace/ui`、`react`、`react-dom`、`react-router-dom`、`lucide-react`；devDeps 对齐 `examples/uploader-web`：`vite`、`@vitejs/plugin-react`、`@tailwindcss/postcss`、`@workspace/typescript-config`；scripts：`dev`/`build`/`preview`/`typecheck`/`test`，代码质量检查由根目录 Biome 统一负责）。
 - [ ] 1.2 创建 `apps/site/vite.config.ts`：复用 `examples/uploader-web` 的源码别名方案（`@workspace/ui/*`、`@ai-media/*` 指向包源码）；`base` 从唯一环境变量注入（默认 `/ai-media-sdk/`，本地 dev 用 `/`）；`build.outDir: "dist"`。
-- [ ] 1.3 创建 `tsconfig.json`（继承 `@workspace/typescript-config` 适配浏览器/DOM）、`eslint.config.js`（对齐 `apps/web`）、`postcss.config.mjs`、`index.html`、`src/main.tsx`（挂载 Router + 主题/样式入口）。
+- [ ] 1.3 创建 `tsconfig.json`（继承 `@workspace/typescript-config` 的浏览器/DOM 配置）、`postcss.config.mjs`、`index.html`、`src/main.tsx`（挂载 Router + 主题/样式入口）；Biome 使用仓库根配置，不创建 workspace 级 ESLint 配置。
 - [ ] 1.4 根目录执行 `bun install`，确认 turbo 能发现 `site` 工作区且 `bun run --cwd apps/site dev` 可启动空白页。
 
 ## 2. 数据层：Key Store 与 Provider 客户端
@@ -14,7 +14,7 @@
 ## 3. 数据层：客户端执行器
 
 - [ ] 3.1 实现 `src/lib/executor.ts`：客户端版 `executePlaygroundRequest`——校验 provider 已配置（未配置本地拦截返回凭证缺失引导，不发网络请求）；图像同步生成/编辑、异步任务（`submitImageTask`/`submitVideoTask` + `task.wait`）；视频仅允许 `aliyun-bailian`；错误码映射为用户文案（认证/限流/超时/网络/无效请求/未知）。
-- [ ] 3.2 从三家 provider 包的 registry 生成站点自己的最小 model projection 到 `src/lib/playground/`，不得复制完整 `apps/web/lib/playground/registry.ts`；`configured` 由 key store 推导，保留模型能力元数据和 UI 标签。
+- [ ] 3.2 从三家 provider 包的 registry 生成站点自己的最小 model projection 到 `src/lib/playground/`，不得复制完整 `apps/web/lib/playground/registry.ts`；`configured` 由 key store 推导，保留模型能力元数据和 UI 标签；首期排除 `wan3.0-video`，与 `apps/web` 的 `ALIYUN_PLAYGROUND_EXCLUDED` 保持一致，待异构 `media[]` UI 另行实现。
 - [ ] 3.3 单测：执行器的本地拦截逻辑（未配置 provider 不产生 fetch）、视频 provider 限制、错误映射表。
 
 ## 4. 媒体缓存（OPFS + IndexedDB）
@@ -45,7 +45,7 @@
 ## 8. 测试与质量
 
 - [ ] 8.1 补齐 `apps/site/tests/` 其余用例，`bun test` 全绿。
-- [ ] 8.2 `bun run lint`、`bun run typecheck`（apps/site 范围）通过；`prettier` 格式化全部新文件。
+- [ ] 8.2 根目录 `bun run lint`（Biome）、`bun run typecheck`（apps/site 范围）通过；使用根目录 `bun run format` 格式化全部新文件。
 
 ## 9. 部署
 

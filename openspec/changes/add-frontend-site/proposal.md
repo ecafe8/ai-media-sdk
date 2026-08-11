@@ -29,7 +29,7 @@
 
 ## Impact
 
-- 新增工作区：`apps/site/`（`package.json`、`vite.config.ts`、`tsconfig.json`、`eslint.config.js`、`index.html`、`src/`、`tests/`）；依赖 `@ai-media/sdk`、`@ai-media/provider-*`、`@workspace/ui`、`react-router-dom`、`lucide-react`。
+- 新增工作区：`apps/site/`（`package.json`、`vite.config.ts`、`tsconfig.json`、`index.html`、`src/`、`tests/`）；依赖 `@ai-media/sdk`、`@ai-media/provider-*`、`@workspace/ui`、`react-router-dom`、`lucide-react`；代码质量检查由仓库根目录 Biome 统一负责。
 - 新增 `.github/workflows/deploy-site.yml`；仓库 Settings 需启用 GitHub Pages（GitHub Actions 源）。
 - 复用 `examples/uploader-web` 的 Vite 源码别名方案消费 `@workspace/ui` 与 `@ai-media/*` 源码；turbo 任务（build/lint/typecheck/test/dev）经 `apps/*` workspace 自动接入，根 README 补充站点说明。
 - 不改动 `packages/*`、`apps/web`、`examples/*` 的现有代码；不引入 Node 运行时代码到浏览器产物（`@ai-media/uploader` 不被该应用引用）。
