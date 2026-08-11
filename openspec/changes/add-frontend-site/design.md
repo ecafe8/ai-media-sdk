@@ -165,6 +165,7 @@
 - **R10 结果 URL 不允许浏览器 fetch** → 自动保存前验证读取能力；失败时保留临时 URL 预览并提供明确提示，不静默丢失结果。
 - **R11 目录句柄权限失效或目录被删除** → 写入前调用权限查询；失效时暂停自动保存并提示重新选择目录，当前结果仍保留预览。
 - **R12 生成视频造成用户磁盘占用增长** → 仅在用户主动选择目录后启用自动保存；结果面板显示保存目录；不使用 OPFS 保存生成结果。
+- **R13 阿里云工作空间 MaaS 端点不支持浏览器 CORS**（实施冒烟实测：`*.cn-beijing.maas.aliyuncs.com` 对预检返回 401 且无 CORS 头，而 `dashscope.aliyuncs.com` 反射任意 Origin；同一 Key 在标准端点可用）→ 设置对话框对 Bailian Base URL 给出提示；遇“无法连接 Provider”时引导改用 `https://dashscope.aliyuncs.com/api/v1`。其他 Provider 的 CORS 行为以实测为准，失败时错误文案已覆盖网络/端点排查提示。
 
 ## Migration Plan
 

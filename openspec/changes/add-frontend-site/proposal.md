@@ -1,6 +1,6 @@
 ## Why
 
-现有 Playground（`apps/web`）是服务端代理架构：Provider 凭证与生成请求都经 Next.js 服务端中转，部署到 Vercel 后体验者要么依赖部署者的环境变量、要么自带 Key 经服务端转发，且请求体受 Vercel 4.5MB 限制、图片无法直传。实测确认三家 Provider 的生成接口均支持浏览器 CORS（DashScope/Ark 反射任意 Origin 并允许 `authorization` 头；Azure 返回 `*` 并允许 `api-key`），且 `@ai-media/sdk` 与三家 provider 包仅依赖原生 `fetch`、可直接运行在浏览器。因此可以新增一个零服务端的纯前端站点：体验者自带 Key、浏览器直连模型方、图片以 base64 内联发送，部署到免费的 GitHub Pages，作为 SDK 的公开 Landing + 体验入口。
+现有 Playground（`apps/web`）是服务端代理架构：Provider 凭证与生成请求都经 Next.js 服务端中转，部署到 Vercel 后体验者要么依赖部署者的环境变量、要么自带 Key 经服务端转发，且请求体受 Vercel 4.5MB 限制、图片无法直传。实测确认三家 Provider 的标准生成接口支持浏览器 CORS（DashScope 标准端点/Ark 反射任意 Origin 并允许 `authorization` 头；Azure 返回 `*` 并允许 `api-key`）——注意阿里云工作空间 MaaS 端点（`*.maas.aliyuncs.com`）不发 CORS 头，BYO 场景需使用标准端点（见 design.md R13）。且 `@ai-media/sdk` 与三家 provider 包仅依赖原生 `fetch`、可直接运行在浏览器。因此可以新增一个零服务端的纯前端站点：体验者自带 Key、浏览器直连模型方、图片以 base64 内联发送，部署到免费的 GitHub Pages，作为 SDK 的公开 Landing + 体验入口。
 
 ## What Changes
 

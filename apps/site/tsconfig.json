@@ -1,0 +1,36 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node", "bun"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "@workspace/ui/*": ["../../packages/ui/src/*"],
+      "@ai-media/sdk": ["../../packages/ai-media-sdk/src/index.ts"],
+      "@ai-media/sdk/*": ["../../packages/ai-media-sdk/src/*"],
+      "@ai-media/provider-aliyun-bailian": [
+        "../../packages/provider-aliyun-bailian/src/index.ts"
+      ],
+      "@ai-media/provider-aliyun-bailian/*": [
+        "../../packages/provider-aliyun-bailian/src/*"
+      ],
+      "@ai-media/provider-azure-openai": [
+        "../../packages/provider-azure-openai/src/index.ts"
+      ],
+      "@ai-media/provider-azure-openai/*": [
+        "../../packages/provider-azure-openai/src/*"
+      ],
+      "@ai-media/provider-seedream": [
+        "../../packages/provider-seedream/src/index.ts"
+      ],
+      "@ai-media/provider-seedream/*": [
+        "../../packages/provider-seedream/src/*"
+      ]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "vite.config.ts"]
+}

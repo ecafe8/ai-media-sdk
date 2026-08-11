@@ -108,6 +108,22 @@ r2v 与 video-edit 的输入通过环境变量提供：
 
 UI 支持已配置 Provider 的文生图，以及能力注册表支持编辑的模型的 URL 参考图输入；已配置的阿里云模型还提供视频模式（t2v/i2v/r2v/video-edit）。结果为临时远程预览，prompt、图片、任务与结果均不作为历史存储。
 
+## 公开体验站点（apps/site）
+
+`apps/site` 是纯前端的 Landing + Playground 站点（Vite + React），部署在 GitHub Pages，无任何服务端：
+
+- 体验者在浏览器填写自己的 Provider API Key（仅存 localStorage，直连 Provider，不经任何中间服务器）。
+- 图片输入支持本地文件：按内容哈希缓存于浏览器（OPFS），复用时免重复选择，发送请求时才编码。
+- 生成结果可自动保存到体验者选择的本地目录（基于 File System Access API，建议最新版 Chrome/Edge）。
+
+```bash
+bun run --cwd apps/site dev      # 本地开发（http://localhost:5174）
+bun run --cwd apps/site build    # 构建到 apps/site/dist（含 404.html SPA 兜底）
+bun run --cwd apps/site preview  # 预览构建产物
+```
+
+GitHub Pages 部署由 `.github/workflows/deploy-site.yml` 完成（push 到 main 或手动触发）。首次使用需在仓库 Settings → Pages 将 Source 设为 GitHub Actions。资源 base path 由 `VITE_SITE_BASE` 环境变量注入（workflow 默认取 `/<仓库名>/`），Router basename 与之一致；本地 dev 使用根路径。
+
 ## 开发
 
 环境要求：Bun `1.3.14`、Node.js `>=20`。
@@ -115,11 +131,11 @@ UI 支持已配置 Provider 的文生图，以及能力注册表支持编辑的�
 ```bash
 bun install          # 安装依赖（根 bun.lock 为唯一事实来源）
 bun run dev          # 启动 apps/web Playground（http://localhost:3000）
-bun run lint         # 全仓库 lint
+bun run lint         # 全仓库 lint（Biome）
 bun run typecheck    # 全仓库类型检查
 bun run build        # 全仓库构建
 bun run test         # 全仓库测试
-bun run format       # Prettier 格式化
+bun run format       # Biome 格式化
 bun run docs         # 基于 docs/ 生成文档
 ```
 
@@ -131,6 +147,7 @@ npm 发布流程见 `scripts/RELEASE.md`。
 
 ```
 apps/web                # Next.js 受控 Playground（凭据仅在服务端）
+apps/site               # 纯前端公开体验站点（BYO Key，GitHub Pages）
 packages/ai-media-sdk   # 核心契约与任务抽象（@ai-media/sdk）
 packages/provider-*     # Provider 适配器（原生 fetch，不依赖平台 SDK）
 packages/uploader       # 上传实现（@ai-media/uploader）
