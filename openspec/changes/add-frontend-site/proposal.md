@@ -8,6 +8,7 @@
 - 浏览器直连 Provider：客户端 executor 直接调用 `generateImage`/`editImage`/`submitImageTask`/`submitVideoTask`（含异步任务浏览器侧轮询），凭证由体验者在设置面板一次填写、持久化到 localStorage，仅发送至经过校验的对应 Provider 端点，不经过任何服务器；自定义端点必须显式确认风险。
 - 图片输入支持本地文件：图生图参考图、i2v 首帧为单值"URL + 上传"混合控件；r2v 参考图由逗号分隔 textarea 改为有序卡片列表（上传/粘贴 URL/批量粘贴，顺序即 `[Image N]`）。涉及的图片输入路径以 `{ base64, mimeType }` 经 SDK `ImageContent` 通道发送；Azure 图像编辑当前未实现，video-edit 源视频不属于 base64 图片输入范围。
 - 新增 OPFS 媒体缓存：文件原始字节写入 Origin Private File System（`<sha256>.<ext>`），IndexedDB 仅存元数据与缩略图；按内容哈希去重，复用时按需读取并在请求前才转 base64；LRU 容量淘汰；OPFS 不可用时降级为内存级缓存。
+- 新增生成结果本地保存：生成结果面板顶部提供保存设置；Chrome/Edge 用户可在首次生成前选择本地目录并授权，之后生成的图片/视频自动保存到该目录；目录句柄存 IndexedDB，权限失效时提示重新授权；不支持该能力的浏览器仅显示告警并保留临时结果预览。
 - video-edit 源视频维持公网 URL 粘贴（DashScope 视频输入契约仅接受公网 URL，OSS 直传被 CORS 阻断）；上传管线预留 video MIME 口子。
 - 新增 GitHub Pages 部署：GitHub Actions 工作流（push main / 手动触发），Vite base path 可配置（默认 `/ai-media-sdk/`），SPA 路由以 404.html 兜底。
 - `apps/web` 保持不动，两种形态互补（服务端代理受控环境 / 纯前端 BYO 公开体验）。
@@ -21,6 +22,7 @@
 - `direct-provider-execution`: 浏览器直连 Provider 的请求执行——provider 实例化、图像/视频生成与异步任务轮询、错误分类与用户文案映射、凭证缺失时的引导。
 - `media-file-cache`: OPFS 文件字节仓库 + IndexedDB 元数据的本地媒体缓存——内容哈希去重、缩略图、LRU 淘汰、按需读取转 base64、不可用环境降级。
 - `playground-media-input`: 图片输入控件——单值 URL/上传混合控件与 r2v 有序卡片列表、大小上限校验、来源标记、缓存命中复用交互。
+- `result-file-save`: 生成结果本地保存——生成前选择目录、Chrome/Edge 能力检测、目录句柄持久化、生成后自动保存、权限失效与 Provider 下载失败处理。
 - `site-deployment`: GitHub Pages 发布——Actions 工作流、base path 配置、SPA 路由 404 兜底、构建产物要求。
 
 ### Modified Capabilities
