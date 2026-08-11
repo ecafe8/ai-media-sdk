@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
+import { AppProviders } from "@/components/providers";
 import { LandingPage } from "@/pages/landing";
 import { PlaygroundPage } from "@/pages/playground";
 
@@ -22,5 +23,9 @@ const router = createBrowserRouter(
 );
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AppProviders>
+      <RouterProvider router={router} />
+    </AppProviders>
+  );
 }
