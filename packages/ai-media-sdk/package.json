@@ -1,6 +1,6 @@
 {
   "name": "@ai-media/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "Provider-independent AI image and video media SDK",
   "license": "MIT",
