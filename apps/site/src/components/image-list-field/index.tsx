@@ -1,5 +1,7 @@
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { Button } from "@workspace/ui/components/shadcn/button";
+import { Input } from "@workspace/ui/components/shadcn/input";
+import { Textarea } from "@workspace/ui/components/shadcn/textarea";
 import {
   ImageOff,
   Link as LinkIcon,
@@ -234,12 +236,11 @@ export function ImageListField({
           </div>
 
           <div className="flex gap-2">
-            <input
+            <Input
               type="url"
               value={urlText}
               placeholder="粘贴单张图片 URL"
               disabled={disabled}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-800 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               onChange={(event) => setUrlText(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
@@ -269,14 +270,14 @@ export function ImageListField({
             <summary className="cursor-pointer text-slate-600 text-sm">
               批量粘贴 URL
             </summary>
-            <textarea
+            <Textarea
               value={bulkText}
               rows={3}
               placeholder={
                 "https://.../1.png, https://.../2.png\n逗号或换行分隔"
               }
               disabled={disabled}
-              className="mt-2 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-800 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="mt-2 resize-y"
               onChange={(event) => setBulkText(event.target.value)}
             />
             <Button

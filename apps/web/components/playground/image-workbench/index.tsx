@@ -1,6 +1,16 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/shadcn/button";
+import { Checkbox } from "@workspace/ui/components/shadcn/checkbox";
+import { Input } from "@workspace/ui/components/shadcn/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/shadcn/select";
+import { Textarea } from "@workspace/ui/components/shadcn/textarea";
 import { LoaderCircle, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -243,20 +253,29 @@ export function ImageWorkbench({
           </div>
 
           <Field label="Provider">
-            <select
+            <Select
               value={provider}
-              aria-label="Provider"
-              className={selectClassName}
-              onChange={(event) =>
-                changeProvider(event.target.value as PlaygroundProvider)
-              }
+              items={PLAYGROUND_PROVIDERS.map((item) => ({
+                value: item.id,
+                label: item.label,
+              }))}
+              onValueChange={(value) => {
+                if (typeof value === "string") {
+                  changeProvider(value as PlaygroundProvider);
+                }
+              }}
             >
-              {PLAYGROUND_PROVIDERS.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger aria-label="Provider" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PLAYGROUND_PROVIDERS.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
 
           <CredentialsPanel
@@ -273,21 +292,37 @@ export function ImageWorkbench({
           />
 
           <Field label="模型">
-            <select
+            <Select
               value={modelId}
-              aria-label="模型"
-              className={selectClassName}
-              onChange={(event) => changeModel(event.target.value)}
-            >
-              {providerModels.map((item) => {
+              items={providerModels.map((item) => {
                 const usable = item.supportsGenerate || item.supportsEdit;
-                return (
-                  <option key={item.id} value={item.id} disabled={!usable}>
-                    {usable ? item.label : `${item.label}（暂不支持）`}
-                  </option>
-                );
+                return {
+                  value: item.id,
+                  label: usable ? item.label : `${item.label}（暂不支持）`,
+                };
               })}
-            </select>
+              onValueChange={(value) => {
+                if (typeof value === "string") changeModel(value);
+              }}
+            >
+              <SelectTrigger aria-label="模型" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {providerModels.map((item) => {
+                  const usable = item.supportsGenerate || item.supportsEdit;
+                  return (
+                    <SelectItem
+                      key={item.id}
+                      value={item.id}
+                      disabled={!usable}
+                    >
+                      {usable ? item.label : `${item.label}（暂不支持）`}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
             <p className="mt-2 text-slate-500 text-xs leading-5">
               {currentModel?.recommendation ?? "该 Provider 尚未配置"}
             </p>
@@ -295,12 +330,11 @@ export function ImageWorkbench({
 
           {operation === "edit" && canEdit ? (
             <Field label="参考图 URL" required>
-              <input
+              <Input
                 type="url"
                 value={referenceImageUrl}
                 placeholder="https://..."
                 aria-describedby="reference-hint"
-                className={inputClassName}
                 onChange={(event) => setReferenceImageUrl(event.target.value)}
               />
               <p id="reference-hint" className="mt-2 text-slate-500 text-xs">
@@ -311,12 +345,12 @@ export function ImageWorkbench({
           ) : null}
 
           <Field label="提示词" required>
-            <textarea
+            <Textarea
               value={prompt}
               rows={5}
               placeholder="描述你想生成的画面..."
               aria-describedby="prompt-error"
-              className="min-h-32 w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-slate-800 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="min-h-32 resize-y"
               onChange={(event) => setPrompt(event.target.value)}
             />
             <div className="mt-2 flex flex-wrap gap-2">
@@ -336,32 +370,50 @@ export function ImageWorkbench({
           {operation === "generate" ? (
             <div className="grid grid-cols-2 gap-3">
               <Field label="清晰度">
-                <select
+                <Select
                   value={size}
-                  aria-label="清晰度"
-                  className={selectClassName}
-                  onChange={(event) => setSize(event.target.value)}
+                  items={sizeOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                  onValueChange={(value) => {
+                    if (typeof value === "string") setSize(value);
+                  }}
                 >
-                  {sizeOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="清晰度" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sizeOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field label="生成数量">
-                <select
+                <Select
                   value={String(n)}
-                  aria-label="生成数量"
-                  className={selectClassName}
-                  onChange={(event) => setN(Number(event.target.value))}
+                  items={nOptions.map((opt) => ({
+                    value: String(opt.value),
+                    label: opt.label,
+                  }))}
+                  onValueChange={(value) => {
+                    if (typeof value === "string") setN(Number(value));
+                  }}
                 >
-                  {nOptions.map((opt) => (
-                    <option key={opt.value} value={String(opt.value)}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="生成数量" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {nOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             </div>
           ) : null}
@@ -473,42 +525,50 @@ function AdvancedFieldControl({
 }) {
   if (field.kind === "boolean") {
     return (
+      // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Checkbox renders a native button control inside the label
       <label className="flex items-center gap-2 text-slate-700 text-sm">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={typeof value === "boolean" ? value : false}
-          className="size-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-200"
-          onChange={(event) => onChange(event.target.checked)}
+          onCheckedChange={(checked) => onChange(checked === true)}
         />
         {field.label}
       </label>
     );
   }
   if (field.kind === "select") {
+    const options = field.options ?? [];
     return (
       <Field label={field.label}>
-        <select
-          value={typeof value === "string" ? value : ""}
-          className={selectClassName}
-          onChange={(event) => onChange(event.target.value)}
+        <Select
+          value={typeof value === "string" && value !== "" ? value : null}
+          items={options.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+          }))}
+          onValueChange={(next) => {
+            if (typeof next === "string") onChange(next);
+          }}
         >
-          <option value="">未指定</option>
-          {field.options?.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="未指定" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </Field>
     );
   }
   if (field.kind === "number") {
     return (
       <Field label={field.label}>
-        <input
+        <Input
           type="number"
           value={typeof value === "number" ? String(value) : ""}
-          className={inputClassName}
           onChange={(event) =>
             onChange(
               event.target.value === "" ? "" : Number(event.target.value)
@@ -520,21 +580,14 @@ function AdvancedFieldControl({
   }
   return (
     <Field label={field.label}>
-      <input
+      <Input
         type="text"
         value={typeof value === "string" ? value : ""}
-        className={inputClassName}
         onChange={(event) => onChange(event.target.value)}
       />
     </Field>
   );
 }
-
-const selectClassName =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
-
-const inputClassName =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm transition outline-none placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
 
 /**
  * Map a Playground family slug to its `providerOptions.<namespace>` key.

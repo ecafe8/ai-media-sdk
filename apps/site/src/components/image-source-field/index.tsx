@@ -1,5 +1,6 @@
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { Button } from "@workspace/ui/components/shadcn/button";
+import { Input } from "@workspace/ui/components/shadcn/input";
 import {
   ImageOff,
   Link as LinkIcon,
@@ -141,12 +142,12 @@ export function ImageSourceField({
     >
       <div className="relative">
         <LinkIcon className="pointer-events-none absolute top-3 left-3 size-4 text-slate-400" />
-        <input
+        <Input
           type="url"
           value={urlText}
           placeholder="粘贴公网图片 URL，或拖拽/选择本地图片"
           disabled={disabled}
-          className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pr-3 pl-9 text-slate-800 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          className="pl-9"
           onChange={(event) => handleUrlChange(event.target.value)}
         />
       </div>

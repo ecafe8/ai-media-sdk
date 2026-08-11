@@ -1,6 +1,15 @@
 "use client";
 
 import { Button } from "@workspace/ui/components/shadcn/button";
+import { Input } from "@workspace/ui/components/shadcn/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/shadcn/select";
+import { Textarea } from "@workspace/ui/components/shadcn/textarea";
 import { LoaderCircle, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -17,12 +26,7 @@ import {
   normalizeCredentials,
   type StoredCredentialsMap,
 } from "../lib/credentials";
-import {
-  Field,
-  inputClassName,
-  selectClassName,
-  textareaClassName,
-} from "../lib/field";
+import { Field } from "../lib/field";
 import { isValidHttpUrl } from "../lib/http";
 import {
   videoAudioSettingOptions,
@@ -282,25 +286,43 @@ export function VideoWorkbench({
 
         <div className="space-y-5">
           <Field label="Provider">
-            <select
+            <Select
               value={provider}
-              aria-label="Provider"
-              className={selectClassName}
-              onChange={(event) =>
-                changeProvider(event.target.value as PlaygroundProvider)
-              }
-            >
-              {PLAYGROUND_PROVIDERS.map((item) => {
+              items={PLAYGROUND_PROVIDERS.map((item) => {
                 const hasVideo = videoModels.some(
                   (m) => m.provider === item.id
                 );
-                return (
-                  <option key={item.id} value={item.id} disabled={!hasVideo}>
-                    {hasVideo ? item.label : `${item.label}（无视频模型）`}
-                  </option>
-                );
+                return {
+                  value: item.id,
+                  label: hasVideo ? item.label : `${item.label}（无视频模型）`,
+                };
               })}
-            </select>
+              onValueChange={(value) => {
+                if (typeof value === "string") {
+                  changeProvider(value as PlaygroundProvider);
+                }
+              }}
+            >
+              <SelectTrigger aria-label="Provider" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PLAYGROUND_PROVIDERS.map((item) => {
+                  const hasVideo = videoModels.some(
+                    (m) => m.provider === item.id
+                  );
+                  return (
+                    <SelectItem
+                      key={item.id}
+                      value={item.id}
+                      disabled={!hasVideo}
+                    >
+                      {hasVideo ? item.label : `${item.label}（无视频模型）`}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </Field>
 
           <CredentialsPanel
@@ -317,18 +339,27 @@ export function VideoWorkbench({
           />
 
           <Field label="模型">
-            <select
+            <Select
               value={modelId}
-              aria-label="模型"
-              className={selectClassName}
-              onChange={(event) => changeModel(event.target.value)}
+              items={providerModels.map((item) => ({
+                value: item.id,
+                label: item.label,
+              }))}
+              onValueChange={(value) => {
+                if (typeof value === "string") changeModel(value);
+              }}
             >
-              {providerModels.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger aria-label="模型" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {providerModels.map((item) => (
+                  <SelectItem key={item.id} value={item.id}>
+                    {item.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <p className="mt-2 text-slate-500 text-xs leading-5">
               {currentModel?.recommendation ?? "该 Provider 尚未配置视频模型"}
             </p>
@@ -336,11 +367,10 @@ export function VideoWorkbench({
 
           {needsFirstFrame ? (
             <Field label="首帧图片 URL" required>
-              <input
+              <Input
                 type="url"
                 value={referenceImageUrl}
                 placeholder="https://..."
-                className={inputClassName}
                 onChange={(event) => setReferenceImageUrl(event.target.value)}
               />
               <p className="mt-2 text-slate-500 text-xs">
@@ -351,11 +381,10 @@ export function VideoWorkbench({
 
           {needsInputVideo ? (
             <Field label="源视频 URL" required>
-              <input
+              <Input
                 type="url"
                 value={inputVideoUrl}
                 placeholder="https://.../source.mp4"
-                className={inputClassName}
                 onChange={(event) => setInputVideoUrl(event.target.value)}
               />
               <p className="mt-2 text-slate-500 text-xs">
@@ -373,11 +402,11 @@ export function VideoWorkbench({
               }
               required={!needsInputVideo}
             >
-              <textarea
+              <Textarea
                 value={referenceImageUrlsText}
                 rows={3}
                 placeholder="https://.../ref1.png, https://.../ref2.png"
-                className={textareaClassName}
+                className="resize-y"
                 onChange={(event) =>
                   setReferenceImageUrlsText(event.target.value)
                 }
@@ -391,12 +420,12 @@ export function VideoWorkbench({
           ) : null}
 
           <Field label="提示词" required>
-            <textarea
+            <Textarea
               value={prompt}
               rows={5}
               placeholder="描述你想生成的画面..."
               aria-describedby="prompt-error"
-              className={`${textareaClassName} min-h-32`}
+              className="min-h-32 resize-y"
               onChange={(event) => setPrompt(event.target.value)}
             />
             <div className="mt-2 flex flex-wrap gap-2">
@@ -415,65 +444,101 @@ export function VideoWorkbench({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="分辨率">
-              <select
+              <Select
                 value={resolution}
-                aria-label="分辨率"
-                className={selectClassName}
-                onChange={(event) => setResolution(event.target.value)}
+                items={resolutionOptions.map((opt) => ({
+                  value: opt.value,
+                  label: opt.label,
+                }))}
+                onValueChange={(value) => {
+                  if (typeof value === "string") setResolution(value);
+                }}
               >
-                {resolutionOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger aria-label="分辨率" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {resolutionOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </Field>
             {showsRatio ? (
               <Field label="长宽比">
-                <select
+                <Select
                   value={ratio}
-                  aria-label="长宽比"
-                  className={selectClassName}
-                  onChange={(event) => setRatio(event.target.value)}
+                  items={ratioOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                  onValueChange={(value) => {
+                    if (typeof value === "string") setRatio(value);
+                  }}
                 >
-                  {ratioOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="长宽比" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ratioOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             ) : null}
             {showsDuration ? (
               <Field label="时长（秒）">
-                <select
+                <Select
                   value={duration}
-                  aria-label="时长"
-                  className={selectClassName}
-                  onChange={(event) => setDuration(event.target.value)}
+                  items={durationOptions.map((opt) => ({
+                    value: String(opt.value),
+                    label: opt.label,
+                  }))}
+                  onValueChange={(value) => {
+                    if (typeof value === "string") setDuration(value);
+                  }}
                 >
-                  {durationOptions.map((opt) => (
-                    <option key={opt.value} value={String(opt.value)}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="时长" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durationOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             ) : null}
             {showsAudioSetting ? (
               <Field label="声音设置">
-                <select
+                <Select
                   value={audioSetting}
-                  aria-label="声音设置"
-                  className={selectClassName}
-                  onChange={(event) => setAudioSetting(event.target.value)}
+                  items={audioOptions.map((opt) => ({
+                    value: opt.value,
+                    label: opt.label,
+                  }))}
+                  onValueChange={(value) => {
+                    if (typeof value === "string") setAudioSetting(value);
+                  }}
                 >
-                  {audioOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger aria-label="声音设置" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {audioOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
             ) : null}
           </div>

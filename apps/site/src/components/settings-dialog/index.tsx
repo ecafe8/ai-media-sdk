@@ -1,5 +1,7 @@
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { Button } from "@workspace/ui/components/shadcn/button";
+import { Checkbox } from "@workspace/ui/components/shadcn/checkbox";
+import { Input } from "@workspace/ui/components/shadcn/input";
 import { Check, KeyRound, ShieldCheck, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -305,17 +307,17 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                   )}
 
                   {customHost ? (
+                    // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Checkbox renders a native button control inside the label
                     <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs leading-5">
-                      <input
-                        type="checkbox"
+                      <Checkbox
+                        className="mt-0.5"
                         checked={
                           draft.confirmCustom ||
                           confirmedHosts.includes(customHost)
                         }
-                        className="mt-0.5 size-3.5"
-                        onChange={(event) =>
+                        onCheckedChange={(checked) =>
                           updateDraft(provider, {
-                            confirmCustom: event.target.checked,
+                            confirmCustom: checked === true,
                           })
                         }
                       />
@@ -399,14 +401,15 @@ function LabeledInput({
   onChange: (value: string) => void;
 }) {
   return (
+    // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Input renders a native input element inside the label
     <label className="block font-medium text-slate-700 text-sm">
       {label}
-      <input
+      <Input
         type={type}
         value={value}
         placeholder={placeholder}
         autoComplete="off"
-        className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-800 text-sm shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+        className="mt-1.5"
         onChange={(event) => onChange(event.target.value)}
       />
       {hint ? (

@@ -35,6 +35,13 @@
 - Biome is authoritative for both formatting and linting: the root `biome.json` defines double quotes, semicolons, 2 spaces, ES5 trailing commas, width 80, LF line endings, and Tailwind class sorting via the `useSortedClasses` rule (covering `cn`/`cva`/`clsx`/`tw`). Run `bun run lint` to check and `bun run format` to apply safe fixes.
 - TypeScript is strict with `noUncheckedIndexedAccess`; provider and SDK packages also typecheck their `tsconfig.test.json`.
 
+## UI Component Rules
+
+- Prefer shadcn components whenever possible: import them from `@workspace/ui/components/shadcn/<name>` and replace native form controls with their shadcn equivalents (`<select>` → `select`, `<input type="checkbox">` → `checkbox`, other `<input>` → `input`, `<textarea>` → `textarea`, `<button>` → `button`).
+- If shadcn has no component that directly covers a need but the need can be met by composing shadcn components, prefer the shadcn composition over a bespoke implementation.
+- Ask before creating custom shared UI: before extracting a new pure-UI composite component into `packages/ui/src/components/custom/` (exported as `@workspace/ui/components/custom/<name>`), ask the user and get agreement on the placement — the component may belong in another shared location or in the consuming app layer instead.
+- Business components live in the consuming app's own `components/` directory, grouped into per-feature kebab-case subdirectories with an `index.ts`/`index.tsx` entry.
+
 ## Environment And Provider Gotchas
 
 - Web Playground server configuration is documented in `apps/web/.env.example`; root Turbo forwards provider variables such as `AZURE_OPENAI_*`, `ALIYUN_BAILIAN_*`, `ARK_*`, and `GEMINI_API_KEY`.

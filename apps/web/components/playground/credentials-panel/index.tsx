@@ -1,3 +1,4 @@
+import { Input } from "@workspace/ui/components/shadcn/input";
 import { KeyRound } from "lucide-react";
 import { useId } from "react";
 
@@ -5,7 +6,7 @@ import type {
   PlaygroundCredentials,
   PlaygroundProvider,
 } from "@/lib/playground/types";
-import { Field, inputClassName } from "../lib/field";
+import { Field } from "../lib/field";
 
 interface CredentialFieldSpec {
   readonly key: keyof PlaygroundCredentials;
@@ -136,13 +137,12 @@ export function CredentialsPanel({
       <div className="mt-3 grid gap-3">
         {specs.map((spec) => (
           <Field key={spec.key} label={spec.label} required={spec.required}>
-            <input
+            <Input
               id={`${fieldIdPrefix}-${spec.key}`}
               type={spec.type}
               value={credentials?.[spec.key] ?? ""}
               placeholder={spec.placeholder}
               autoComplete="off"
-              className={inputClassName}
               onChange={(event) => setField(spec.key, event.target.value)}
             />
             {spec.hint ? (
