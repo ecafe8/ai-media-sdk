@@ -1,5 +1,7 @@
 # Proposal: add-site-docs
 
+> **状态：已暂停（2026-08-12）**。阻塞原因：TypeDoc 尚不支持 TypeScript 7（tsgo），API 参考生成（design D5）无法进行。待 TypeDoc 支持 TS7（或本仓库回退 TypeScript 主版本）后重启本 change；届时先执行 tasks 8.1 前置验证，并按验证结果决定主方案/回退方案。手写文档部分（tasks 1-7、9-10）不受阻塞，如需提前交付可拆分实施。
+
 ## Why
 
 公开站点 `apps/site` 目前只有落地页和 Playground，落地页"查看文档"按钮只能跳转到 GitHub 仓库，开发者必须阅读分散在 5 份 README（约 780 行）与源码注释中的内容才能上手 SDK。站点作为产品门面，需要在站内提供结构化、可导航、与代码同步的文档，降低试用与集成门槛。
