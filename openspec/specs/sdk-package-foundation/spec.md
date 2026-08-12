@@ -136,7 +136,22 @@ The `@ai-media/sdk` package SHALL export a `VideoContent` type carrying `url`, o
 
 ### Requirement: submitVideoTask binds the video modality entry
 
-The core `submitVideoTask(request)` function SHALL accept a video request carrying a provider-bound video model instance, a `prompt`, an optional `firstFrame: ImageContent` for i2v, optional ordered `referenceImages: ImageContent[]` for r2v/video-edit, an optional `inputVideo` carrying a public video URL for video-edit, and `providerOptions`. It SHALL validate `model.capabilities.async` and the video modality, build a modality-neutral `AdapterRequest`, and dispatch to `model.adapter.submit()` returning a `TaskHandle<VideoContent[]>`. The core SHALL NOT validate model-specific media combinations or prompt requirements; the bound adapter is the sole authority for those. The core SHALL reject a model that is not async and a model whose modality is not video with `INVALID_REQUEST` before dispatch.
+The core `submitVideoTask(request)` function SHALL accept a video request carrying a provider-bound video model instance, an optional `prompt`, the existing optional `firstFrame: ImageContent`, an optional `lastFrame: ImageContent` for i2v first & last frame, optional ordered `referenceImages: ImageContent[]`, optional ordered `referenceVideos` and `referenceAudios` entries carrying a public URL and optional duration metadata, optional `inputVideo` carrying a public video URL, optional ordered Wan 3.0 media inputs, and `providerOptions`. It SHALL validate `model.capabilities.async` and the video modality, build a modality-neutral `AdapterRequest` preserving all supplied fields, and dispatch to `model.adapter.submit()` returning a `TaskHandle<VideoContent[]>`. The core SHALL NOT validate model-specific media combinations, prompt requirements, or media-only eligibility; the bound adapter is the sole authority for those. The core SHALL reject a model that is not async and a model whose modality is not video with `INVALID_REQUEST` before dispatch.
+
+#### Scenario: submitVideoTask forwards ordered Wan 3.0 media
+
+- **WHEN** `submitVideoTask` is called with an async Wan 3.0 model, media entries, and no prompt
+- **THEN** the adapter request SHALL preserve the ordered media entries and the absent prompt without rejecting the request in the core
+
+#### Scenario: submitVideoTask preserves existing HappyHorse fields
+
+- **WHEN** `submitVideoTask` is called with a HappyHorse first-frame, reference-image, or input-video request
+- **THEN** the adapter request SHALL preserve the existing fields and behavior unchanged
+
+#### Scenario: submitVideoTask preserves last-frame and reference video/audio fields
+
+- **WHEN** `submitVideoTask` is called with a `lastFrame` image, ordered `referenceVideos`, or ordered `referenceAudios`
+- **THEN** the adapter request SHALL preserve those fields unchanged and the core SHALL NOT reject the combination
 
 #### Scenario: submitVideoTask dispatches for a t2v model
 
@@ -160,7 +175,7 @@ The core `submitVideoTask(request)` function SHALL accept a video request carryi
 
 #### Scenario: non-async model is rejected before dispatch
 
-- **WHEN** `submitVideoTask` is called with a model whose `async` capability is false/undefined
+- **WHEN** `submitVideoTask` is called with a model whose `async` capability is false or undefined
 - **THEN** it SHALL throw an `SdkError` with code `INVALID_REQUEST` and SHALL not invoke the adapter
 
 #### Scenario: non-video modality model is rejected before dispatch
