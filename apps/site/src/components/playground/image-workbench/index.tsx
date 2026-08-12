@@ -194,23 +194,23 @@ export function ImageWorkbench({
 
   return (
     <PageContainer className="grid gap-5 py-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:py-6">
-      <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 border-slate-100 border-b pb-4">
-          <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+      <aside className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="mb-5 flex items-center gap-2 border-border/60 border-b pb-4">
+          <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
             <WandSparkles className="size-4" />
           </div>
           <div>
             <h2 className="font-semibold">图像工作台</h2>
-            <p className="text-slate-500 text-xs">文生图 / 图生图</p>
+            <p className="text-muted-foreground text-xs">文生图 / 图生图</p>
           </div>
         </div>
 
         <div className="space-y-5">
-          <div className="grid grid-cols-2 rounded-lg bg-slate-100 p-1 text-sm">
+          <div className="grid grid-cols-2 rounded-lg bg-muted p-1 text-sm">
             <button
               type="button"
               aria-pressed={operation === "generate"}
-              className={`rounded-md px-3 py-2 transition ${operation === "generate" ? "bg-white font-medium shadow-sm" : "text-slate-500"}`}
+              className={`rounded-md px-3 py-2 transition ${operation === "generate" ? "bg-card font-medium shadow-sm" : "text-muted-foreground"}`}
               onClick={() => setOperation("generate")}
             >
               文生图
@@ -219,7 +219,7 @@ export function ImageWorkbench({
               type="button"
               aria-pressed={operation === "edit"}
               disabled={!canEdit}
-              className={`rounded-md px-3 py-2 transition ${operation === "edit" ? "bg-white font-medium shadow-sm" : "text-slate-500"} disabled:cursor-not-allowed disabled:opacity-40`}
+              className={`rounded-md px-3 py-2 transition ${operation === "edit" ? "bg-card font-medium shadow-sm" : "text-muted-foreground"} disabled:cursor-not-allowed disabled:opacity-40`}
               onClick={() => setOperation("edit")}
             >
               图生图
@@ -291,7 +291,7 @@ export function ImageWorkbench({
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <p className="mt-2 text-slate-500 text-xs leading-5">
+            <p className="mt-2 text-muted-foreground text-xs leading-5">
               {currentModel?.recommendation ?? "该 Provider 暂无图像模型"}
             </p>
           </Field>
@@ -319,7 +319,7 @@ export function ImageWorkbench({
                 <button
                   type="button"
                   key={item}
-                  className="rounded-full border border-slate-200 px-2.5 py-1 text-slate-600 text-xs transition hover:border-emerald-300 hover:text-emerald-700"
+                  className="rounded-full border border-border px-2.5 py-1 text-muted-foreground text-xs transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
                   onClick={() => setPrompt(item)}
                 >
                   {item}
@@ -384,8 +384,8 @@ export function ImageWorkbench({
           ) : null}
 
           {advancedFields.length > 0 ? (
-            <details className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2">
-              <summary className="cursor-pointer font-medium text-slate-700 text-sm">
+            <details className="rounded-lg border border-border bg-muted/50 px-3 py-2">
+              <summary className="cursor-pointer font-medium text-foreground text-sm">
                 高级选项
               </summary>
               <div className="mt-3 grid gap-3">
@@ -410,13 +410,13 @@ export function ImageWorkbench({
             <p
               id="prompt-error"
               role="alert"
-              className="rounded-lg bg-red-50 px-3 py-2 text-red-700 text-sm"
+              className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive text-sm"
             >
               {validationError}
             </p>
           ) : null}
 
-          <div className="flex gap-2 border-slate-100 border-t pt-4">
+          <div className="flex gap-2 border-border/60 border-t pt-4">
             <Button
               type="button"
               variant="outline"
@@ -440,11 +440,11 @@ export function ImageWorkbench({
             </Button>
           </div>
           {!providerConfigured ? (
-            <p className="text-amber-700 text-xs leading-5">
+            <p className="text-amber-600 text-xs leading-5 dark:text-amber-400">
               当前 Provider 未配置凭证。
               <button
                 type="button"
-                className="ml-1 text-emerald-700 underline underline-offset-2"
+                className="ml-1 text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
                 onClick={onOpenSettings}
               >
                 去设置 API Key
@@ -478,7 +478,7 @@ function AdvancedFieldControl({
   if (field.kind === "boolean") {
     return (
       // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Checkbox renders a native button control inside the label
-      <label className="flex items-center gap-2 text-slate-700 text-sm">
+      <label className="flex items-center gap-2 text-foreground text-sm">
         <Checkbox
           checked={typeof value === "boolean" ? value : false}
           onCheckedChange={(checked) => onChange(checked === true)}

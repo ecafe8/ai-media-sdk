@@ -187,28 +187,30 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="my-8 w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl">
+      <div className="my-8 w-full max-w-2xl rounded-2xl bg-card p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
               <KeyRound className="size-4" />
             </div>
             <div>
               <h2 className="font-semibold">API 设置</h2>
-              <p className="text-slate-500 text-xs">自带 Key，直连 Provider</p>
+              <p className="text-muted-foreground text-xs">
+                自带 Key，直连 Provider
+              </p>
             </div>
           </div>
           <button
             type="button"
             aria-label="关闭设置"
-            className="rounded p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
             onClick={onClose}
           >
             <X className="size-5" />
           </button>
         </div>
 
-        <div className="mb-5 flex items-start gap-2 rounded-lg border border-emerald-100 bg-emerald-50/60 px-3 py-2.5 text-emerald-800 text-xs leading-5">
+        <div className="mb-5 flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-emerald-700 text-xs leading-5 dark:text-emerald-400">
           <ShieldCheck className="mt-0.5 size-4 shrink-0" />
           <p>
             API Key 仅保存在你的浏览器 localStorage，并只发送给对应的 Provider
@@ -233,10 +235,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             return (
               <div
                 key={provider}
-                className="rounded-xl border border-slate-200 p-4"
+                className="rounded-xl border border-border p-4"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-medium text-slate-800 text-sm">
+                  <h3 className="font-medium text-foreground text-sm">
                     {PROVIDER_LABELS[provider]}
                   </h3>
                   {configured ? (
@@ -308,7 +310,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
                   {customHost ? (
                     // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Checkbox renders a native button control inside the label
-                    <label className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-xs leading-5">
+                    <label className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-700 text-xs leading-5 dark:text-amber-400">
                       <Checkbox
                         className="mt-0.5"
                         checked={
@@ -333,8 +335,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     <p
                       className={`rounded-lg px-3 py-2 text-sm ${
                         message.kind === "error"
-                          ? "bg-red-50 text-red-700"
-                          : "bg-emerald-50 text-emerald-700"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                       }`}
                     >
                       {message.text}
@@ -402,7 +404,7 @@ function LabeledInput({
 }) {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Input renders a native input element inside the label
-    <label className="block font-medium text-slate-700 text-sm">
+    <label className="block font-medium text-foreground text-sm">
       {label}
       <Input
         type={type}
@@ -413,7 +415,7 @@ function LabeledInput({
         onChange={(event) => onChange(event.target.value)}
       />
       {hint ? (
-        <span className="mt-1 block font-normal text-slate-400 text-xs leading-4">
+        <span className="mt-1 block font-normal text-muted-foreground/70 text-xs leading-4">
           {hint}
         </span>
       ) : null}

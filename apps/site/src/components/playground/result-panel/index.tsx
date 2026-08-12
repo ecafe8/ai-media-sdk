@@ -30,16 +30,18 @@ export function ResultPanel({
   return (
     <section
       aria-live="polite"
-      className="min-h-[640px] rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:p-7"
+      className="min-h-[640px] rounded-2xl border border-border bg-card p-5 shadow-sm lg:p-7"
     >
-      <div className="mb-6 flex items-end justify-between border-slate-100 border-b pb-4">
+      <div className="mb-6 flex items-end justify-between border-border/60 border-b pb-4">
         <div>
-          <p className="font-semibold text-slate-400 text-xs uppercase tracking-[0.2em]">
+          <p className="font-semibold text-muted-foreground/70 text-xs uppercase tracking-[0.2em]">
             Result feed
           </p>
           <h2 className="mt-1 font-semibold text-lg">生成结果</h2>
         </div>
-        <span className="text-slate-400 text-xs">结果仅作临时预览</span>
+        <span className="text-muted-foreground/70 text-xs">
+          结果仅作临时预览
+        </span>
       </div>
 
       <div className="mb-5">

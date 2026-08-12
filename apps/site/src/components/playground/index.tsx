@@ -1,3 +1,4 @@
+import { ThemeSwitcher } from "@workspace/ui/components/custom/theme-switcher";
 import { useMemo, useState } from "react";
 
 import { PageContainer } from "@/components/layout/page-container";
@@ -34,8 +35,8 @@ export function Playground({ models }: PlaygroundProps) {
   const anyConfigured = configuredProviders.size > 0;
 
   return (
-    <main className="min-h-svh bg-[#f7f8fa] text-slate-900">
-      <header className="border-slate-200 border-b bg-white py-4">
+    <main className="min-h-svh bg-muted/40 text-foreground">
+      <header className="border-border border-b bg-card py-4">
         <PageContainer className="flex items-center justify-between">
           <div>
             <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
@@ -46,7 +47,7 @@ export function Playground({ models }: PlaygroundProps) {
             </h1>
           </div>
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-2 text-slate-500 text-xs sm:flex">
+            <div className="hidden items-center gap-2 text-muted-foreground text-xs sm:flex">
               <span
                 className={`h-2 w-2 rounded-full ${
                   anyConfigured ? "bg-emerald-500" : "bg-amber-500"
@@ -54,9 +55,10 @@ export function Playground({ models }: PlaygroundProps) {
               />
               {anyConfigured ? "自带 Key 已配置" : "自带 Key 体验环境"}
             </div>
+            <ThemeSwitcher />
             <button
               type="button"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+              className="rounded-lg border border-border bg-card px-3 py-1.5 text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
               onClick={() => setSettingsOpen(true)}
             >
               API 设置
@@ -64,7 +66,7 @@ export function Playground({ models }: PlaygroundProps) {
           </div>
         </PageContainer>
         <PageContainer className="mt-4">
-          <div className="inline-flex gap-1 rounded-lg bg-slate-100 p-1 text-sm">
+          <div className="inline-flex gap-1 rounded-lg bg-muted p-1 text-sm">
             <ModalityTab
               active={modality === "image"}
               onClick={() => setModality("image")}
@@ -105,7 +107,7 @@ export function Playground({ models }: PlaygroundProps) {
       ) : null}
 
       <footer className="pb-6">
-        <PageContainer className="text-slate-400 text-xs">
+        <PageContainer className="text-muted-foreground/70 text-xs">
           API Key 仅保存在你的浏览器本地（localStorage），并直接发送给对应
           Provider，不经过任何中间服务器。生成结果为 Provider 临时
           URL，可能过期； 可在生成结果面板选择本地目录自动保存。
@@ -141,8 +143,8 @@ function ModalityTab({
       title={title}
       className={`rounded-md px-4 py-2 transition ${
         active
-          ? "bg-white font-medium shadow-sm"
-          : "text-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
+          ? "bg-card font-medium shadow-sm"
+          : "text-muted-foreground disabled:cursor-not-allowed disabled:opacity-40"
       }`}
       onClick={onClick}
     >

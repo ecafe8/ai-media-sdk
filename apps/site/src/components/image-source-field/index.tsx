@@ -84,24 +84,24 @@ export function ImageSourceField({
   if (value?.kind === "file") {
     const { entry, fromCache } = value;
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="rounded-lg border border-border bg-muted/50 p-3">
         <div className="flex items-start gap-3">
           {entry.thumb ? (
             <img
               src={entry.thumb}
               alt={entry.name}
-              className="size-16 rounded-md border border-slate-200 object-cover"
+              className="size-16 rounded-md border border-border object-cover"
             />
           ) : (
-            <div className="flex size-16 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400">
+            <div className="flex size-16 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
               <ImageOff className="size-5" />
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium text-slate-800 text-sm">
+            <p className="truncate font-medium text-foreground text-sm">
               {entry.name}
             </p>
-            <p className="mt-0.5 text-slate-500 text-xs">
+            <p className="mt-0.5 text-muted-foreground text-xs">
               {formatBytes(entry.size)}
             </p>
             <div className="mt-1.5 flex gap-1.5">
@@ -115,7 +115,7 @@ export function ImageSourceField({
           <button
             type="button"
             aria-label="移除图片"
-            className="rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+            className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
             onClick={remove}
           >
             <X className="size-4" />
@@ -141,7 +141,7 @@ export function ImageSourceField({
       }}
     >
       <div className="relative">
-        <LinkIcon className="pointer-events-none absolute top-3 left-3 size-4 text-slate-400" />
+        <LinkIcon className="pointer-events-none absolute top-3 left-3 size-4 text-muted-foreground" />
         <Input
           type="url"
           value={urlText}
@@ -166,7 +166,9 @@ export function ImageSourceField({
           )}
           上传本地图片
         </Button>
-        <span className="text-slate-400 text-xs">≤5MB，支持 PNG/JPEG/WebP</span>
+        <span className="text-muted-foreground/70 text-xs">
+          ≤5MB，支持 PNG/JPEG/WebP
+        </span>
         <input
           ref={inputRef}
           type="file"
@@ -179,7 +181,7 @@ export function ImageSourceField({
         />
       </div>
       {error ? (
-        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-red-700 text-sm">
+        <p className="mt-2 rounded-lg bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {error}
         </p>
       ) : null}

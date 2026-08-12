@@ -133,7 +133,7 @@ export function ImageListField({
   return (
     <div className="space-y-3">
       {values.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 border-dashed bg-slate-50 px-3 py-4 text-center text-slate-400 text-sm">
+        <p className="rounded-lg border border-border border-dashed bg-muted/50 px-3 py-4 text-center text-muted-foreground/70 text-sm">
           暂无参考图，顺序即 prompt 中的 [Image N]
         </p>
       ) : (
@@ -145,9 +145,9 @@ export function ImageListField({
                   ? selection.hash
                   : `${selection.url}-${index}`
               }
-              className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-2.5"
+              className="flex items-center gap-3 rounded-lg border border-border bg-muted/50 p-2.5"
             >
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 font-medium text-emerald-700 text-xs">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 font-medium text-emerald-700 text-xs dark:text-emerald-400">
                 {index + 1}
               </span>
               {selection.kind === "file" ? (
@@ -156,19 +156,19 @@ export function ImageListField({
                     <img
                       src={selection.entry.thumb}
                       alt={selection.entry.name}
-                      className="size-12 rounded-md border border-slate-200 object-cover"
+                      className="size-12 rounded-md border border-border object-cover"
                     />
                   ) : (
-                    <div className="flex size-12 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400">
+                    <div className="flex size-12 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
                       <ImageOff className="size-4" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-slate-800 text-sm">
+                    <p className="truncate text-foreground text-sm">
                       {selection.entry.name}
                     </p>
                     <div className="mt-0.5 flex items-center gap-1.5">
-                      <span className="text-slate-500 text-xs">
+                      <span className="text-muted-foreground text-xs">
                         {formatBytes(selection.entry.size)}
                       </span>
                       {selection.fromCache ? (
@@ -181,8 +181,8 @@ export function ImageListField({
                 </>
               ) : (
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <LinkIcon className="size-4 shrink-0 text-slate-400" />
-                  <span className="truncate text-slate-700 text-sm">
+                  <LinkIcon className="size-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate text-foreground text-sm">
                     {selection.url}
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export function ImageListField({
               <button
                 type="button"
                 aria-label={`移除第 ${index + 1} 张`}
-                className="shrink-0 rounded p-1 text-slate-400 transition hover:bg-slate-200 hover:text-slate-700"
+                className="shrink-0 rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 onClick={() => removeAt(index)}
               >
                 <X className="size-4" />
@@ -201,7 +201,9 @@ export function ImageListField({
       )}
 
       {atCap ? (
-        <p className="text-amber-700 text-xs">已达上限（最多 {maxCount} 张）</p>
+        <p className="text-amber-600 text-xs dark:text-amber-400">
+          已达上限（最多 {maxCount} 张）
+        </p>
       ) : (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -230,7 +232,7 @@ export function ImageListField({
                 event.target.value = "";
               }}
             />
-            <span className="text-slate-400 text-xs">
+            <span className="text-muted-foreground/70 text-xs">
               {values.length}/{maxCount}
             </span>
           </div>
@@ -265,9 +267,9 @@ export function ImageListField({
             onToggle={(event) =>
               setBulkOpen((event.currentTarget as HTMLDetailsElement).open)
             }
-            className="rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2"
+            className="rounded-lg border border-border bg-muted/50 px-3 py-2"
           >
-            <summary className="cursor-pointer text-slate-600 text-sm">
+            <summary className="cursor-pointer text-muted-foreground text-sm">
               批量粘贴 URL
             </summary>
             <Textarea
@@ -295,7 +297,7 @@ export function ImageListField({
       )}
 
       {error ? (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-red-700 text-sm">
+        <p className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive text-sm">
           {error}
         </p>
       ) : null}

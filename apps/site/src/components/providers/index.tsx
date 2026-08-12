@@ -4,7 +4,7 @@ import { ThemeProvider } from "./theme-provider";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider forcedTheme="light">
+    <ThemeProvider>
       <TooltipProvider>
         {children}
         <Toaster />

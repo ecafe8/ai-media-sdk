@@ -1,3 +1,4 @@
+import { ThemeSwitcher } from "@workspace/ui/components/custom/theme-switcher";
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -14,18 +15,19 @@ const REPO_URL = "https://github.com/ecafe8/ai-media-sdk";
  */
 export function LandingPage() {
   return (
-    <main className="min-h-svh bg-[#f7f8fa] text-slate-900">
-      <header className="border-slate-200 border-b bg-white py-4">
+    <main className="min-h-svh bg-muted/40 text-foreground">
+      <header className="border-border border-b bg-card py-4">
         <PageContainer className="flex items-center justify-between">
           <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
             AI Media SDK
           </p>
           <div className="flex items-center gap-3">
+            <ThemeSwitcher />
             <a
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 text-slate-500 text-sm transition hover:text-slate-800"
+              className="flex items-center gap-1.5 text-muted-foreground text-sm transition hover:text-foreground"
             >
               <ExternalLink className="size-4" />
               GitHub
@@ -48,7 +50,7 @@ export function LandingPage() {
           <h1 className="mx-auto max-w-2xl font-bold text-3xl tracking-tight sm:text-4xl">
             一个契约，驱动多家多模态生成
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-slate-500 text-sm leading-7 sm:text-base">
+          <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-sm leading-7 sm:text-base">
             AI Media SDK 统一图像与视频生成的调用契约，支持 Azure OpenAI、
             Alibaba Bailian（DashScope）与 Volcengine Ark（Seedream）。
             在本站点填写你自己的 API Key，即可直接在浏览器体验生成与编辑。
@@ -65,7 +67,7 @@ export function LandingPage() {
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+              className="rounded-lg border border-border bg-card px-5 py-2.5 font-medium text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
             >
               查看文档
             </a>
@@ -95,7 +97,7 @@ export function LandingPage() {
       <section className="pb-14">
         <PageContainer>
           <h2 className="mb-4 font-semibold text-lg">支持的模型</h2>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             <ModelMatrix />
           </div>
         </PageContainer>
@@ -103,9 +105,9 @@ export function LandingPage() {
 
       <section className="pb-16">
         <PageContainer>
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-6 py-5">
-            <h2 className="font-semibold text-slate-800">隐私与 Key 说明</h2>
-            <ul className="mt-3 space-y-2 text-slate-600 text-sm leading-6">
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-6 py-5">
+            <h2 className="font-semibold text-foreground">隐私与 Key 说明</h2>
+            <ul className="mt-3 space-y-2 text-muted-foreground text-sm leading-6">
               <li>
                 · API Key 仅保存在你的浏览器 localStorage，并直接发送给对应
                 Provider，不经过任何中间服务器。
@@ -127,8 +129,8 @@ export function LandingPage() {
         </PageContainer>
       </section>
 
-      <footer className="border-slate-200 border-t bg-white py-6">
-        <PageContainer className="text-center text-slate-400 text-xs">
+      <footer className="border-border border-t bg-card py-6">
+        <PageContainer className="text-center text-muted-foreground/70 text-xs">
           AI Media SDK · 纯前端演示站点 · {new Date().getFullYear()}
         </PageContainer>
       </footer>
@@ -144,9 +146,11 @@ function FeatureCard({
   description: string;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h3 className="font-semibold text-slate-800">{title}</h3>
-      <p className="mt-2 text-slate-500 text-sm leading-6">{description}</p>
+    <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      <p className="mt-2 text-muted-foreground text-sm leading-6">
+        {description}
+      </p>
     </div>
   );
 }
@@ -163,14 +167,14 @@ function capabilityBadges(model: SiteModel): readonly string[] {
 function ModelMatrix() {
   const providers = [...new Set(SITE_MODELS.map((m) => m.provider))];
   return (
-    <div className="divide-y divide-slate-100">
+    <div className="divide-y divide-border/60">
       {providers.map((provider) => {
         const models = SITE_MODELS.filter((m) => m.provider === provider);
         return (
           <div key={provider} className="px-5 py-4">
-            <h3 className="mb-2.5 font-medium text-slate-800 text-sm">
+            <h3 className="mb-2.5 font-medium text-foreground text-sm">
               {PROVIDER_LABELS[provider]}
-              <span className="ml-2 text-slate-400 text-xs">
+              <span className="ml-2 text-muted-foreground/70 text-xs">
                 {models.length} 个模型
               </span>
             </h3>
@@ -178,13 +182,13 @@ function ModelMatrix() {
               {models.map((model) => (
                 <div
                   key={model.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/50 px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-slate-700 text-sm">
+                    <p className="truncate text-foreground text-sm">
                       {model.label}
                     </p>
-                    <p className="truncate font-mono text-slate-400 text-xs">
+                    <p className="truncate font-mono text-muted-foreground/70 text-xs">
                       {model.id}
                     </p>
                   </div>

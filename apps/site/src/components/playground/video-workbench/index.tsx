@@ -243,14 +243,14 @@ export function VideoWorkbench({
 
   return (
     <PageContainer className="grid gap-5 py-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:py-6">
-      <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-center gap-2 border-slate-100 border-b pb-4">
-          <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
+      <aside className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="mb-5 flex items-center gap-2 border-border/60 border-b pb-4">
+          <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
             <WandSparkles className="size-4" />
           </div>
           <div>
             <h2 className="font-semibold">视频工作台</h2>
-            <p className="text-slate-500 text-xs">{operationLabel}</p>
+            <p className="text-muted-foreground text-xs">{operationLabel}</p>
           </div>
         </div>
 
@@ -323,7 +323,7 @@ export function VideoWorkbench({
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <p className="mt-2 text-slate-500 text-xs leading-5">
+            <p className="mt-2 text-muted-foreground text-xs leading-5">
               {currentModel?.recommendation ?? "该 Provider 暂无视频模型"}
             </p>
           </Field>
@@ -331,7 +331,7 @@ export function VideoWorkbench({
           {needsFirstFrame ? (
             <Field label="首帧图片" required>
               <ImageSourceField value={firstFrame} onChange={setFirstFrame} />
-              <p className="mt-2 text-slate-500 text-xs">
+              <p className="mt-2 text-muted-foreground text-xs">
                 宽高比自动跟随首帧，i2v 不支持 ratio。
               </p>
             </Field>
@@ -345,7 +345,7 @@ export function VideoWorkbench({
                 placeholder="https://.../source.mp4"
                 onChange={(event) => setInputVideoUrl(event.target.value)}
               />
-              <p className="mt-2 text-slate-500 text-xs">
+              <p className="mt-2 text-muted-foreground text-xs">
                 仅支持公网 http/https URL；不支持本地文件、base64。
               </p>
             </Field>
@@ -365,7 +365,7 @@ export function VideoWorkbench({
                 onChange={setReferenceImages}
                 maxCount={maxRefs}
               />
-              <p className="mt-2 text-slate-500 text-xs">
+              <p className="mt-2 text-muted-foreground text-xs">
                 {needsInputVideo
                   ? "可选参考图，按顺序对应 prompt 中的 [Image N]。"
                   : "按顺序对应 prompt 中的 [Image N]；宽高比跟随参数。"}
@@ -387,7 +387,7 @@ export function VideoWorkbench({
                 <button
                   type="button"
                   key={item}
-                  className="rounded-full border border-slate-200 px-2.5 py-1 text-slate-600 text-xs transition hover:border-emerald-300 hover:text-emerald-700"
+                  className="rounded-full border border-border px-2.5 py-1 text-muted-foreground text-xs transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
                   onClick={() => setPrompt(item)}
                 >
                   {item}
@@ -509,13 +509,13 @@ export function VideoWorkbench({
             <p
               id="prompt-error"
               role="alert"
-              className="rounded-lg bg-red-50 px-3 py-2 text-red-700 text-sm"
+              className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive text-sm"
             >
               {validationError}
             </p>
           ) : null}
 
-          <div className="flex gap-2 border-slate-100 border-t pt-4">
+          <div className="flex gap-2 border-border/60 border-t pt-4">
             <Button
               type="button"
               variant="outline"
@@ -539,11 +539,11 @@ export function VideoWorkbench({
             </Button>
           </div>
           {!providerConfigured ? (
-            <p className="text-amber-700 text-xs leading-5">
+            <p className="text-amber-600 text-xs leading-5 dark:text-amber-400">
               当前 Provider 未配置凭证。
               <button
                 type="button"
-                className="ml-1 text-emerald-700 underline underline-offset-2"
+                className="ml-1 text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
                 onClick={onOpenSettings}
               >
                 去设置 API Key

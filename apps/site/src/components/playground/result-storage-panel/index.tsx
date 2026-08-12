@@ -134,7 +134,7 @@ export function ResultStoragePanel({
 
   if (!supported) {
     return (
-      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800 text-xs leading-5">
+      <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-700 text-xs leading-5 dark:text-amber-400">
         <TriangleAlert className="mt-0.5 size-4 shrink-0" />
         <p>
           当前浏览器不支持自动保存到本地目录，建议使用最新版 Chrome 或 Edge。
@@ -147,11 +147,11 @@ export function ResultStoragePanel({
   if (!handle) {
     if (dismissed) {
       return (
-        <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-slate-500 text-xs">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2 text-muted-foreground text-xs">
           <span>结果仅保留 Provider 临时 URL，可能过期。</span>
           <button
             type="button"
-            className="text-emerald-700 underline underline-offset-2"
+            className="text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
             onClick={() => void choose()}
           >
             选择目录自动保存
@@ -160,8 +160,8 @@ export function ResultStoragePanel({
       );
     }
     return (
-      <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-        <p className="text-slate-600 text-xs leading-5">
+      <div className="rounded-lg border border-border bg-muted/50 px-3 py-3">
+        <p className="text-muted-foreground text-xs leading-5">
           ⚠ 当前结果仅保存在 Provider 临时 URL 中，可能过期。建议选择本地目录，
           生成完成后自动保存。
         </p>
@@ -190,8 +190,8 @@ export function ResultStoragePanel({
 
   if (permission !== "granted") {
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
-        <p className="text-amber-800 text-xs leading-5">
+      <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3">
+        <p className="text-amber-700 text-xs leading-5 dark:text-amber-400">
           ⚠ 保存目录「{handle.name}」的授权已失效，自动保存已暂停。
         </p>
         <div className="mt-2.5 flex gap-2">
@@ -218,12 +218,16 @@ export function ResultStoragePanel({
   }
 
   return (
-    <div className="rounded-lg border border-emerald-100 bg-emerald-50/50 px-3 py-3">
+    <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2 text-xs">
-          <FolderCheck className="size-4 shrink-0 text-emerald-600" />
-          <span className="font-medium text-emerald-800">自动保存已启用</span>
-          <span className="truncate text-emerald-700/80">📁 {handle.name}</span>
+          <FolderCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+          <span className="font-medium text-emerald-700 dark:text-emerald-400">
+            自动保存已启用
+          </span>
+          <span className="truncate text-emerald-700/80 dark:text-emerald-400/80">
+            📁 {handle.name}
+          </span>
         </div>
         <div className="flex shrink-0 gap-1.5">
           <Button
@@ -248,7 +252,9 @@ export function ResultStoragePanel({
       </div>
 
       {busy ? (
-        <p className="mt-2 text-emerald-700/80 text-xs">正在保存结果…</p>
+        <p className="mt-2 text-emerald-700/80 text-xs dark:text-emerald-400/80">
+          正在保存结果…
+        </p>
       ) : null}
       {statuses.length > 0 && !busy ? (
         <ul className="mt-2 space-y-1">
@@ -259,11 +265,11 @@ export function ResultStoragePanel({
               className="text-xs"
             >
               {status.saved ? (
-                <span className="text-emerald-700">
+                <span className="text-emerald-700 dark:text-emerald-400">
                   ✓ 已自动保存 {status.fileName}
                 </span>
               ) : (
-                <span className="text-amber-700">
+                <span className="text-amber-700 dark:text-amber-400">
                   ⚠ 自动保存失败：
                   {FAILURE_TEXT[status.failure ?? "write-failed"]}
                 </span>
