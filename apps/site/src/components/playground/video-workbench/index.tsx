@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 
 import { ImageListField } from "@/components/image-list-field";
 import { ImageSourceField } from "@/components/image-source-field";
+import { PageContainer } from "@/components/layout/page-container";
 import { executeSiteRequest } from "@/lib/executor";
 import {
   type ImageSelection,
@@ -240,7 +241,7 @@ export function VideoWorkbench({
           : "文生视频";
 
   return (
-    <div className="mx-auto grid max-w-[1440px] gap-5 p-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:p-6">
+    <PageContainer className="grid gap-5 py-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:py-6">
       <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-5 flex items-center gap-2 border-slate-100 border-b pb-4">
           <div className="rounded-lg bg-emerald-50 p-2 text-emerald-600">
@@ -545,6 +546,6 @@ export function VideoWorkbench({
         configured={providerConfigured}
         modality="video"
       />
-    </div>
+    </PageContainer>
   );
 }

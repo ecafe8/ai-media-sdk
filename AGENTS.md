@@ -14,6 +14,7 @@
 - `packages/uploader`: upload implementations and subpath exports for core, Aliyun, and Google uploaders.
 - `packages/ui`: shared Base/shadcn UI, Tailwind v4 theme, PostCSS config, and `cn`/`cva` utilities.
 - `apps/web`: Next.js 16 controlled Playground; provider credentials stay on the server and must not be exposed to browser code.
+- `apps/site`: Vite + React Router public site (landing + BYO-key playground); pure frontend, no server, credentials stay in the browser.
 - `examples/*`: runnable provider/uploader examples. Copy the local `.env.example` to `.env`; never commit credentials.
 
 ## Commands
@@ -42,6 +43,12 @@
 - If shadcn has no component that directly covers a need but the need can be met by composing shadcn components, prefer the shadcn composition over a bespoke implementation.
 - Ask before creating custom shared UI: before extracting a new pure-UI composite component into `packages/ui/src/components/custom/` (exported as `@workspace/ui/components/custom/<name>`), ask the user and get agreement on the placement — the component may belong in another shared location or in the consuming app layer instead.
 - Business components live in the consuming app's own `components/` directory, grouped into per-feature kebab-case subdirectories with an `index.ts`/`index.tsx` entry.
+
+## Site Layout Width Rules (`apps/site`)
+
+- `apps/site` has one content container: `PageContainer` (`apps/site/src/components/layout/page-container/`). It is the single source of truth for the page max-width (`max-w-7xl` / 1280px) and horizontal gutter (`px-4 sm:px-6 lg:px-8`).
+- Every page-level block (header inner row, sections, workbench grids, footer inner row) must be wrapped in `PageContainer` so header, content, and footer edges align; do not hand-roll `mx-auto max-w-*` or per-block horizontal padding for page layout.
+- Full-bleed bars (header/footer with background or border) render a `PageContainer` inside and must not add their own horizontal padding; vertical spacing stays on the outer bar/section.
 
 ## Environment And Provider Gotchas
 

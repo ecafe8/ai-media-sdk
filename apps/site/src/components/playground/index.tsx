@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 
+import { PageContainer } from "@/components/layout/page-container";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { getConfiguredProviders, useKeyStore } from "@/lib/key-store";
 import type { SiteModality, SiteModel } from "@/lib/playground/types";
@@ -34,8 +35,8 @@ export function Playground({ models }: PlaygroundProps) {
 
   return (
     <main className="min-h-svh bg-[#f7f8fa] text-slate-900">
-      <header className="border-slate-200 border-b bg-white px-5 py-4">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between">
+      <header className="border-slate-200 border-b bg-white py-4">
+        <PageContainer className="flex items-center justify-between">
           <div>
             <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
               AI Media SDK
@@ -61,8 +62,8 @@ export function Playground({ models }: PlaygroundProps) {
               API 设置
             </button>
           </div>
-        </div>
-        <div className="mx-auto mt-4 max-w-[1440px]">
+        </PageContainer>
+        <PageContainer className="mt-4">
           <div className="inline-flex gap-1 rounded-lg bg-slate-100 p-1 text-sm">
             <ModalityTab
               active={modality === "image"}
@@ -85,7 +86,7 @@ export function Playground({ models }: PlaygroundProps) {
               音频
             </ModalityTab>
           </div>
-        </div>
+        </PageContainer>
       </header>
 
       {modality === "image" ? (
@@ -103,10 +104,12 @@ export function Playground({ models }: PlaygroundProps) {
         />
       ) : null}
 
-      <footer className="mx-auto max-w-[1440px] px-5 pb-6 text-slate-400 text-xs">
-        API Key 仅保存在你的浏览器本地（localStorage），并直接发送给对应
-        Provider，不经过任何中间服务器。生成结果为 Provider 临时 URL，可能过期；
-        可在生成结果面板选择本地目录自动保存。
+      <footer className="pb-6">
+        <PageContainer className="text-slate-400 text-xs">
+          API Key 仅保存在你的浏览器本地（localStorage），并直接发送给对应
+          Provider，不经过任何中间服务器。生成结果为 Provider 临时
+          URL，可能过期； 可在生成结果面板选择本地目录自动保存。
+        </PageContainer>
       </footer>
 
       <SettingsDialog

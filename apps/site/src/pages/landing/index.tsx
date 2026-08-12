@@ -1,6 +1,7 @@
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { ArrowRight, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
+import { PageContainer } from "@/components/layout/page-container";
 import { PROVIDER_LABELS } from "@/lib/key-store";
 import { SITE_MODELS } from "@/lib/playground/registry";
 import type { SiteModel } from "@/lib/playground/types";
@@ -14,8 +15,8 @@ const REPO_URL = "https://github.com/ecafe8/ai-media-sdk";
 export function LandingPage() {
   return (
     <main className="min-h-svh bg-[#f7f8fa] text-slate-900">
-      <header className="border-slate-200 border-b bg-white px-5 py-4">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+      <header className="border-slate-200 border-b bg-white py-4">
+        <PageContainer className="flex items-center justify-between">
           <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
             AI Media SDK
           </p>
@@ -36,90 +37,100 @@ export function LandingPage() {
               进入 Playground
             </Link>
           </div>
-        </div>
+        </PageContainer>
       </header>
 
-      <section className="mx-auto max-w-5xl px-5 py-16 text-center">
-        <Badge variant="secondary" className="mb-4">
-          纯前端体验 · 自带 Key · 无服务端中转
-        </Badge>
-        <h1 className="mx-auto max-w-2xl font-bold text-3xl tracking-tight sm:text-4xl">
-          一个契约，驱动多家多模态生成
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-slate-500 text-sm leading-7 sm:text-base">
-          AI Media SDK 统一图像与视频生成的调用契约，支持 Azure OpenAI、 Alibaba
-          Bailian（DashScope）与 Volcengine Ark（Seedream）。
-          在本站点填写你自己的 API Key，即可直接在浏览器体验生成与编辑。
-        </p>
-        <div className="mt-8 flex justify-center gap-3">
-          <Link
-            to="/playground"
-            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 font-medium text-sm text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            立即体验
-            <ArrowRight className="size-4" />
-          </Link>
-          <a
-            href={REPO_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
-          >
-            查看文档
-          </a>
-        </div>
+      <section className="py-16">
+        <PageContainer className="text-center">
+          <Badge variant="secondary" className="mb-4">
+            纯前端体验 · 自带 Key · 无服务端中转
+          </Badge>
+          <h1 className="mx-auto max-w-2xl font-bold text-3xl tracking-tight sm:text-4xl">
+            一个契约，驱动多家多模态生成
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-slate-500 text-sm leading-7 sm:text-base">
+            AI Media SDK 统一图像与视频生成的调用契约，支持 Azure OpenAI、
+            Alibaba Bailian（DashScope）与 Volcengine Ark（Seedream）。
+            在本站点填写你自己的 API Key，即可直接在浏览器体验生成与编辑。
+          </p>
+          <div className="mt-8 flex justify-center gap-3">
+            <Link
+              to="/playground"
+              className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 font-medium text-sm text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              立即体验
+              <ArrowRight className="size-4" />
+            </Link>
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 font-medium text-slate-700 text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+            >
+              查看文档
+            </a>
+          </div>
+        </PageContainer>
       </section>
 
-      <section className="mx-auto max-w-5xl px-5 pb-14">
-        <div className="grid gap-4 sm:grid-cols-3">
-          <FeatureCard
-            title="图像生成与编辑"
-            description="文生图、图生图统一入口；支持参考图编辑与多家模型参数。"
-          />
-          <FeatureCard
-            title="视频生成"
-            description="文生视频、首帧图生视频、参考生视频与视频编辑，浏览器内轮询异步任务。"
-          />
-          <FeatureCard
-            title="本地优先体验"
-            description="本地图片哈希缓存复用；生成结果可自动保存到你选择的目录。"
-          />
-        </div>
+      <section className="pb-14">
+        <PageContainer>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <FeatureCard
+              title="图像生成与编辑"
+              description="文生图、图生图统一入口；支持参考图编辑与多家模型参数。"
+            />
+            <FeatureCard
+              title="视频生成"
+              description="文生视频、首帧图生视频、参考生视频与视频编辑，浏览器内轮询异步任务。"
+            />
+            <FeatureCard
+              title="本地优先体验"
+              description="本地图片哈希缓存复用；生成结果可自动保存到你选择的目录。"
+            />
+          </div>
+        </PageContainer>
       </section>
 
-      <section className="mx-auto max-w-5xl px-5 pb-14">
-        <h2 className="mb-4 font-semibold text-lg">支持的模型</h2>
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <ModelMatrix />
-        </div>
+      <section className="pb-14">
+        <PageContainer>
+          <h2 className="mb-4 font-semibold text-lg">支持的模型</h2>
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <ModelMatrix />
+          </div>
+        </PageContainer>
       </section>
 
-      <section className="mx-auto max-w-5xl px-5 pb-16">
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-6 py-5">
-          <h2 className="font-semibold text-slate-800">隐私与 Key 说明</h2>
-          <ul className="mt-3 space-y-2 text-slate-600 text-sm leading-6">
-            <li>
-              · API Key 仅保存在你的浏览器 localStorage，并直接发送给对应
-              Provider，不经过任何中间服务器。
-            </li>
-            <li>
-              ·
-              本地上传的图片仅缓存在你的浏览器中，按内容哈希去重，发送时才编码。
-            </li>
-            <li>
-              · 生成结果来自 Provider 的临时
-              URL，可能过期；可选择本地目录自动保存。
-            </li>
-            <li>
-              · 自动保存目录功能基于 File System Access API，建议使用最新版
-              Chrome 或 Edge。
-            </li>
-          </ul>
-        </div>
+      <section className="pb-16">
+        <PageContainer>
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50/50 px-6 py-5">
+            <h2 className="font-semibold text-slate-800">隐私与 Key 说明</h2>
+            <ul className="mt-3 space-y-2 text-slate-600 text-sm leading-6">
+              <li>
+                · API Key 仅保存在你的浏览器 localStorage，并直接发送给对应
+                Provider，不经过任何中间服务器。
+              </li>
+              <li>
+                ·
+                本地上传的图片仅缓存在你的浏览器中，按内容哈希去重，发送时才编码。
+              </li>
+              <li>
+                · 生成结果来自 Provider 的临时
+                URL，可能过期；可选择本地目录自动保存。
+              </li>
+              <li>
+                · 自动保存目录功能基于 File System Access API，建议使用最新版
+                Chrome 或 Edge。
+              </li>
+            </ul>
+          </div>
+        </PageContainer>
       </section>
 
-      <footer className="border-slate-200 border-t bg-white px-5 py-6 text-center text-slate-400 text-xs">
-        AI Media SDK · 纯前端演示站点 · {new Date().getFullYear()}
+      <footer className="border-slate-200 border-t bg-white py-6">
+        <PageContainer className="text-center text-slate-400 text-xs">
+          AI Media SDK · 纯前端演示站点 · {new Date().getFullYear()}
+        </PageContainer>
       </footer>
     </main>
   );
