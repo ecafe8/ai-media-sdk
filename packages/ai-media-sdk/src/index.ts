@@ -24,6 +24,8 @@ export {
 } from "./image/index.ts";
 export * from "./transport/index.ts";
 export type {
+  ReferenceAudioMedia,
+  ReferenceVideoMedia,
   VideoGenerationInput,
   VideoGenerationRequest,
   VideoModelInstance,

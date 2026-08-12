@@ -13,8 +13,10 @@ import type {
  * and constrains the request shape to the bound model's `TParams` (defaults
  * to `VideoGenerationInput`). The public input carries an optional `prompt`
  * and mode-specific media inputs (an optional `firstFrame` for first-frame
- * i2v, ordered `referenceImages` for r2v/video-edit, an `inputVideo` public
- * URL for video-edit, and an ordered `media` array for Wan 3.0 heterogeneous
+ * i2v, an optional `lastFrame` for first & last frame i2v, ordered
+ * `referenceImages` for r2v/video-edit, ordered `referenceVideos`/
+ * `referenceAudios` for reference-to-video, an `inputVideo` public URL for
+ * video-edit, and an ordered `media` array for Wan 3.0 heterogeneous
  * generation); native video parameters travel under `providerOptions.<provider>`.
  */
 
@@ -92,6 +94,26 @@ export type Wan3VideoMediaEntry =
   | Wan3VideoLinkMedia;
 
 /**
+ * Reference video media entry for reference-to-video. Accepts a public
+ * http/https URL. Optional `duration` metadata (seconds) enables client-side
+ * per-clip/total-duration validation without probing the remote file.
+ */
+export interface ReferenceVideoMedia {
+  readonly url: string;
+  readonly duration?: number;
+}
+
+/**
+ * Reference audio media entry for reference-to-video. Accepts a public
+ * http/https URL. Optional `duration` metadata (seconds) enables client-side
+ * per-clip/total-duration validation without probing the remote file.
+ */
+export interface ReferenceAudioMedia {
+  readonly url: string;
+  readonly duration?: number;
+}
+
+/**
  * Provider-agnostic video generation payload carried in `AdapterRequest.input`.
  *
  * `prompt` is optional because Wan 3.0 accepts media-only requests; the bound
@@ -106,8 +128,14 @@ export interface VideoGenerationInput {
   readonly prompt?: string;
   /** i2v: the first-frame image (exactly one, required for i2v models). */
   readonly firstFrame?: ImageContent;
+  /** i2v first & last frame: the last-frame image (pairs with `firstFrame`). */
+  readonly lastFrame?: ImageContent;
   /** r2v / video-edit: ordered reference images (r2v 1-9, video-edit 0-5). */
   readonly referenceImages?: readonly ImageContent[];
+  /** r2v: ordered reference videos (public URL + optional duration metadata). */
+  readonly referenceVideos?: readonly ReferenceVideoMedia[];
+  /** r2v: ordered reference audios (public URL + optional duration metadata). */
+  readonly referenceAudios?: readonly ReferenceAudioMedia[];
   /** video-edit: the source video, always a public http/https URL. */
   readonly inputVideo?: { readonly url: string };
   /** Wan 3.0: ordered heterogeneous media entries. */

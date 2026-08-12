@@ -7,6 +7,7 @@ Provider 无关的核心契约与任务抽象，面向 AI 图像与视频生成�
 - `@ai-media/provider-azure-openai`
 - `@ai-media/provider-aliyun-bailian`
 - `@ai-media/provider-seedream`
+- `@ai-media/provider-minimax`
 
 > **注意**：本项目处于快速迭代期间，API 可能随时变更，生产使用请锁定版本。
 

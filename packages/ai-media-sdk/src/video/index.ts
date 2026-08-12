@@ -1,4 +1,6 @@
 export type {
+  ReferenceAudioMedia,
+  ReferenceVideoMedia,
   VideoGenerationInput,
   VideoGenerationRequest,
   VideoModelInstance,

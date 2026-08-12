@@ -16,6 +16,7 @@
 | `@ai-media/provider-azure-openai`   | Azure OpenAI 图像生成 Provider（同步 API）         |
 | `@ai-media/provider-aliyun-bailian` | 阿里云百炼（DashScope）图像 + 视频 Provider        |
 | `@ai-media/provider-seedream`       | 火山引擎方舟 Doubao-Seedream 图像生成 Provider     |
+| `@ai-media/provider-minimax`        | MiniMax（海螺）视频生成 Provider（异步 V2 API）    |
 | `@ai-media/uploader`                | Provider 输入文件的临时上传辅助（Aliyun / Google） |
 
 各包的使用说明见对应包目录下的 `README.md`。
