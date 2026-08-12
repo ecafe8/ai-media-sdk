@@ -57,6 +57,11 @@ describe("isCredentialsComplete", () => {
     );
     expect(isCredentialsComplete("doubao-seedream", undefined)).toBe(false);
   });
+
+  test("accepts apiKey alone for minimax", () => {
+    expect(isCredentialsComplete("minimax", { apiKey: "key" })).toBe(true);
+    expect(isCredentialsComplete("minimax", undefined)).toBe(false);
+  });
 });
 
 describe("stored credentials without a window", () => {

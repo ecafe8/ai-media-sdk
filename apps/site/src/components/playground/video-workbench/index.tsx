@@ -27,7 +27,11 @@ import {
   SITE_PROVIDERS,
   type SiteProvider,
 } from "@/lib/key-store";
-import type { SiteModel, SitePlaygroundResponse } from "@/lib/playground/types";
+import type {
+  SiteModel,
+  SitePlaygroundResponse,
+  VideoScenario,
+} from "@/lib/playground/types";
 import { Field } from "../lib/field";
 import {
   videoAudioSettingOptions,
@@ -42,6 +46,18 @@ import { ResultPanel } from "../result-panel";
 
 const PROMPTS = ["霓虹城市的雨夜街景，电影感", "纸飞机穿越森林的稳定跟踪镜头"];
 
+/**
+ * Scenario selector labels for multi-scenario models.
+ */
+const SCENARIO_LABELS: readonly {
+  readonly value: VideoScenario;
+  readonly label: string;
+}[] = [
+  { value: "t2v", label: "文生视频" },
+  { value: "i2v", label: "图生视频" },
+  { value: "r2v", label: "参考生视频" },
+];
+
 interface VideoWorkbenchProps {
   readonly models: readonly SiteModel[];
   readonly configuredProviders: ReadonlySet<SiteProvider>;
@@ -49,9 +65,14 @@ interface VideoWorkbenchProps {
 }
 
 /**
- * Video-modality workbench (Aliyun HappyHorse t2v/i2v/r2v/video-edit).
- * First frame and reference images support local upload; the video-edit
- * source video remains a public URL input.
+ * Video-modality workbench.
+ *
+ * Flag-driven models (Aliyun HappyHorse t2v/i2v/r2v/video-edit) infer the
+ * operation from registry flags; first frame and reference images support
+ * local upload, and the video-edit source video remains a public URL input.
+ * Multi-scenario models (MiniMax-H3, `videoScenarios.length > 1`) serve
+ * t2v/i2v/r2v from one model id, so the workbench renders a scenario
+ * selector that drives which inputs and parameter rules are shown.
  */
 export function VideoWorkbench({
   models,
@@ -73,13 +94,19 @@ export function VideoWorkbench({
   const [modelId, setModelId] = useState(
     firstModel?.id ?? "happyhorse-1.1-t2v"
   );
+  const [scenario, setScenario] = useState<VideoScenario>("t2v");
   const [prompt, setPrompt] = useState("");
   const [firstFrame, setFirstFrame] = useState<ImageSelection | undefined>(
+    undefined
+  );
+  const [lastFrame, setLastFrame] = useState<ImageSelection | undefined>(
     undefined
   );
   const [referenceImages, setReferenceImages] = useState<
     readonly ImageSelection[]
   >([]);
+  const [referenceVideoUrlsText, setReferenceVideoUrlsText] = useState("");
+  const [referenceAudioUrlsText, setReferenceAudioUrlsText] = useState("");
   const [inputVideoUrl, setInputVideoUrl] = useState("");
   const [result, setResult] = useState<SitePlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,14 +122,19 @@ export function VideoWorkbench({
   );
 
   const providerConfigured = configuredProviders.has(provider);
+  const isMultiScenario = (currentModel?.videoScenarios?.length ?? 0) > 1;
 
   const resolutionOptions = currentModel
     ? videoResolutionOptions(currentModel)
     : [];
-  const ratioOptions = currentModel ? videoRatioOptions(currentModel) : [];
-  const durationOptions = videoDurationOptions();
+  const ratioOptions = currentModel
+    ? videoRatioOptions(currentModel, isMultiScenario ? scenario : undefined)
+    : [];
+  const durationOptions = videoDurationOptions(currentModel);
   const audioOptions = videoAudioSettingOptions();
-  const showsRatio = currentModel ? videoShowsRatio(currentModel) : false;
+  const showsRatio = currentModel
+    ? videoShowsRatio(currentModel, isMultiScenario ? scenario : undefined)
+    : false;
   const showsDuration = currentModel ? videoShowsDuration(currentModel) : true;
   const showsAudioSetting = currentModel
     ? videoShowsAudioSetting(currentModel)
@@ -119,8 +151,10 @@ export function VideoWorkbench({
     audioOptions[0]?.value ?? "auto"
   );
 
-  const [prevModelKey, setPrevModelKey] = useState(`${provider}:${modelId}`);
-  const modelKey = `${provider}:${modelId}`;
+  const [prevModelKey, setPrevModelKey] = useState(
+    `${provider}:${modelId}:${scenario}`
+  );
+  const modelKey = `${provider}:${modelId}:${scenario}`;
   if (modelKey !== prevModelKey) {
     setPrevModelKey(modelKey);
     if (!resolutionOptions.some((o) => o.value === resolution)) {
@@ -134,34 +168,66 @@ export function VideoWorkbench({
     }
   }
 
-  const needsFirstFrame = currentModel?.requiresFirstFrame ?? false;
-  const needsInputVideo = currentModel?.requiresInputVideo ?? false;
-  const maxRefs = currentModel?.maxReferenceImages;
+  // Media-shape inputs. For multi-scenario models the active scenario drives
+  // which inputs appear; flag-driven models use the registry flags.
+  const needsFirstFrame = isMultiScenario
+    ? scenario === "i2v"
+    : (currentModel?.requiresFirstFrame ?? false);
+  const needsInputVideo = isMultiScenario
+    ? false
+    : (currentModel?.requiresInputVideo ?? false);
+  const maxRefs =
+    isMultiScenario && scenario !== "r2v"
+      ? undefined
+      : currentModel?.maxReferenceImages;
+  const showsLastFrame = isMultiScenario && scenario === "i2v";
+  const showsRefMedia = isMultiScenario && scenario === "r2v";
+  const maxRefVideos = currentModel?.maxReferenceVideos;
+  const maxRefAudios = currentModel?.maxReferenceAudios;
 
   function changeProvider(nextProvider: SiteProvider) {
     const nextModels = videoModels.filter((m) => m.provider === nextProvider);
     setProvider(nextProvider);
     const next = nextModels[0];
     setModelId(next?.id ?? "");
-    setFirstFrame(undefined);
-    setReferenceImages([]);
-    setInputVideoUrl("");
+    setScenario("t2v");
+    clearMediaInputs();
   }
 
   function changeModel(nextModelId: string) {
     setModelId(nextModelId);
+    setScenario("t2v");
+    clearMediaInputs();
+  }
+
+  function changeScenario(nextScenario: VideoScenario) {
+    if (nextScenario === scenario) return;
+    setScenario(nextScenario);
+    clearMediaInputs();
+  }
+
+  function clearMediaInputs() {
     setFirstFrame(undefined);
+    setLastFrame(undefined);
     setReferenceImages([]);
+    setReferenceVideoUrlsText("");
+    setReferenceAudioUrlsText("");
     setInputVideoUrl("");
   }
 
   function reset() {
     setPrompt("");
-    setFirstFrame(undefined);
-    setReferenceImages([]);
-    setInputVideoUrl("");
+    setScenario("t2v");
+    clearMediaInputs();
     setResult(undefined);
     setValidationError("");
+  }
+
+  function splitUrls(text: string): string[] {
+    return text
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
 
   async function submit() {
@@ -193,12 +259,23 @@ export function VideoWorkbench({
       );
       return;
     }
+    const referenceVideoUrls = splitUrls(referenceVideoUrlsText);
+    if (!referenceVideoUrls.every((url) => isValidHttpUrl(url))) {
+      setValidationError("参考视频 URL 中存在无效地址，请检查后重试。");
+      return;
+    }
+    const referenceAudioUrls = splitUrls(referenceAudioUrlsText);
+    if (!referenceAudioUrls.every((url) => isValidHttpUrl(url))) {
+      setValidationError("参考音频 URL 中存在无效地址，请检查后重试。");
+      return;
+    }
 
     setValidationError("");
     setIsSubmitting(true);
     setResult({ status: "processing" });
     try {
       const resolvedFirstFrame = await resolveImageInput(firstFrame);
+      const resolvedLastFrame = await resolveImageInput(lastFrame);
       const { inputs: resolvedRefs, missing } =
         await resolveImageInputs(referenceImages);
       if ((needsFirstFrame && !resolvedFirstFrame) || missing > 0) {
@@ -213,7 +290,16 @@ export function VideoWorkbench({
         modality: "video",
         prompt: trimmedPrompt,
         ...(resolvedFirstFrame ? { referenceImage: resolvedFirstFrame } : {}),
+        ...(showsLastFrame && resolvedLastFrame
+          ? { lastFrameImage: resolvedLastFrame }
+          : {}),
         ...(resolvedRefs.length > 0 ? { referenceImages: resolvedRefs } : {}),
+        ...(showsRefMedia && referenceVideoUrls.length > 0
+          ? { referenceVideoUrls }
+          : {}),
+        ...(showsRefMedia && referenceAudioUrls.length > 0
+          ? { referenceAudioUrls }
+          : {}),
         ...(needsInputVideo ? { inputVideoUrl: inputVideoUrl.trim() } : {}),
         resolution,
         ...(showsRatio ? { ratio } : {}),
@@ -233,13 +319,19 @@ export function VideoWorkbench({
 
   const operationLabel = !currentModel
     ? "未选择"
-    : currentModel.requiresInputVideo
-      ? "视频编辑"
-      : currentModel.requiresFirstFrame
-        ? "首帧图生视频"
-        : currentModel.maxReferenceImages
+    : isMultiScenario
+      ? scenario === "i2v"
+        ? "图生视频（首尾帧）"
+        : scenario === "r2v"
           ? "参考生视频"
-          : "文生视频";
+          : "文生视频"
+      : currentModel.requiresInputVideo
+        ? "视频编辑"
+        : currentModel.requiresFirstFrame
+          ? "首帧图生视频"
+          : currentModel.maxReferenceImages
+            ? "参考生视频"
+            : "文生视频";
 
   return (
     <PageContainer className="grid gap-5 py-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:py-6">
@@ -328,11 +420,53 @@ export function VideoWorkbench({
             </p>
           </Field>
 
+          {isMultiScenario ? (
+            <Field label="生成场景">
+              <div className="flex flex-wrap gap-2">
+                {SCENARIO_LABELS.map((item) => {
+                  const active = scenario === item.value;
+                  return (
+                    <label
+                      key={item.value}
+                      className={
+                        active
+                          ? "cursor-pointer rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-white text-xs"
+                          : "cursor-pointer rounded-full border border-border px-3 py-1 text-muted-foreground text-xs transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="video-scenario"
+                        className="sr-only"
+                        checked={active}
+                        onChange={() => changeScenario(item.value)}
+                      />
+                      {item.label}
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-muted-foreground text-xs leading-5">
+                单个 MiniMax-H3
+                模型覆盖三种场景，切换场景会清空已填写的媒体输入。
+              </p>
+            </Field>
+          ) : null}
+
           {needsFirstFrame ? (
             <Field label="首帧图片" required>
               <ImageSourceField value={firstFrame} onChange={setFirstFrame} />
               <p className="mt-2 text-muted-foreground text-xs">
-                宽高比自动跟随首帧，i2v 不支持 ratio。
+                宽高比自动跟随首帧（adaptive），图生视频不支持手动选择 ratio。
+              </p>
+            </Field>
+          ) : null}
+
+          {showsLastFrame ? (
+            <Field label="尾帧图片（可选）">
+              <ImageSourceField value={lastFrame} onChange={setLastFrame} />
+              <p className="mt-2 text-muted-foreground text-xs">
+                与首帧组合为首尾帧图生视频；留空则仅用首帧。
               </p>
             </Field>
           ) : null}
@@ -369,6 +503,44 @@ export function VideoWorkbench({
                 {needsInputVideo
                   ? "可选参考图，按顺序对应 prompt 中的 [Image N]。"
                   : "按顺序对应 prompt 中的 [Image N]；宽高比跟随参数。"}
+              </p>
+            </Field>
+          ) : null}
+
+          {showsRefMedia ? (
+            <Field
+              label={`参考视频 URL（可选，最多 ${maxRefVideos ?? 3} 条，逗号分隔）`}
+            >
+              <Textarea
+                value={referenceVideoUrlsText}
+                rows={2}
+                placeholder="https://.../ref1.mp4"
+                className="resize-y"
+                onChange={(event) =>
+                  setReferenceVideoUrlsText(event.target.value)
+                }
+              />
+              <p className="mt-2 text-muted-foreground text-xs">
+                仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。
+              </p>
+            </Field>
+          ) : null}
+
+          {showsRefMedia ? (
+            <Field
+              label={`参考音频 URL（可选，最多 ${maxRefAudios ?? 3} 条，逗号分隔）`}
+            >
+              <Textarea
+                value={referenceAudioUrlsText}
+                rows={2}
+                placeholder="https://.../ref1.mp3"
+                className="resize-y"
+                onChange={(event) =>
+                  setReferenceAudioUrlsText(event.target.value)
+                }
+              />
+              <p className="mt-2 text-muted-foreground text-xs">
+                仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。
               </p>
             </Field>
           ) : null}

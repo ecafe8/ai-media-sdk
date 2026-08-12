@@ -7,6 +7,10 @@ import {
   createAzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
 import {
+  createMiniMaxProvider,
+  type MiniMaxProvider,
+} from "@ai-media/provider-minimax";
+import {
   createSeedreamProvider,
   type SeedreamProvider,
 } from "@ai-media/provider-seedream";
@@ -29,6 +33,7 @@ import {
   PlaygroundConfigurationError,
   resolveAliyunCredentials,
   resolveAzureCredentials,
+  resolveMiniMaxCredentials,
   resolveSeedreamCredentials,
 } from "./provider-credentials";
 import { getPlaygroundModel } from "./registry";
@@ -51,6 +56,7 @@ export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
     "azure-openai",
     "aliyun-bailian",
     "doubao-seedream",
+    "minimax",
   ] as const) {
     if (isProviderConfiguredByEnv(provider, config)) {
       configured.add(provider);
@@ -92,22 +98,28 @@ export function createProviderSelection(
         message: "This video model requires a first-frame image URL",
       });
     }
-    if (request.provider !== "aliyun-bailian") {
-      throw new SdkError({
-        code: "INVALID_REQUEST",
-        message:
-          "Video generation is only supported for the Aliyun Bailian provider",
-      });
+    const transport = createTransport({
+      defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+    });
+    if (request.provider === "aliyun-bailian") {
+      const provider: AliyunBailianProvider = createAliyunBailianProvider(
+        resolveAliyunCredentials(request.credentials, config),
+        { transport }
+      );
+      return { model, instance: provider.video(request.model) };
     }
-    const provider: AliyunBailianProvider = createAliyunBailianProvider(
-      resolveAliyunCredentials(request.credentials, config),
-      {
-        transport: createTransport({
-          defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
-        }),
-      }
-    );
-    return { model, instance: provider.video(request.model) };
+    if (request.provider === "minimax") {
+      const provider: MiniMaxProvider = createMiniMaxProvider(
+        resolveMiniMaxCredentials(request.credentials, config),
+        { transport }
+      );
+      return { model, instance: provider.video(request.model) };
+    }
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message:
+        "Video generation is only supported for the Aliyun Bailian and MiniMax providers",
+    });
   }
 
   if (request.provider === "azure-openai") {
@@ -165,6 +177,9 @@ export async function executePlaygroundRequest(
         ...(request.referenceImageUrl
           ? { firstFrame: { url: request.referenceImageUrl } }
           : {}),
+        ...(request.lastFrameImageUrl
+          ? { lastFrame: { url: request.lastFrameImageUrl } }
+          : {}),
         ...(request.referenceImageUrls?.length
           ? {
               referenceImages: request.referenceImageUrls.map((url) => ({
@@ -172,19 +187,24 @@ export async function executePlaygroundRequest(
               })),
             }
           : {}),
+        ...(request.referenceVideoUrls?.length
+          ? {
+              referenceVideos: request.referenceVideoUrls.map((url) => ({
+                url,
+              })),
+            }
+          : {}),
+        ...(request.referenceAudioUrls?.length
+          ? {
+              referenceAudios: request.referenceAudioUrls.map((url) => ({
+                url,
+              })),
+            }
+          : {}),
         ...(request.inputVideoUrl
           ? { inputVideo: { url: request.inputVideoUrl } }
           : {}),
-        providerOptions: {
-          aliyun: {
-            ...(request.resolution ? { resolution: request.resolution } : {}),
-            ...(request.duration ? { duration: request.duration } : {}),
-            ...(request.audioSetting
-              ? { audio_setting: request.audioSetting }
-              : {}),
-            watermark: false,
-          },
-        },
+        providerOptions: buildVideoProviderOptions(request),
       };
       // video-edit does not support duration; drop it when the model requires
       // an input video (the provider derives duration from the source).
@@ -282,6 +302,36 @@ export async function executePlaygroundRequest(
   }
 }
 
+/**
+ * Build the provider-native video options namespace for a Playground video
+ * request. Aliyun keeps its `resolution`/`duration`/`audio_setting`/`ratio`
+ * set with watermark disabled; MiniMax uses `resolution`/`duration`/`ratio`
+ * only (the adapter enforces the required fields and per-scenario ratio
+ * rules).
+ */
+function buildVideoProviderOptions(
+  request: PlaygroundRequest
+): Record<string, unknown> {
+  if (request.provider === "minimax") {
+    return {
+      minimax: {
+        ...(request.resolution ? { resolution: request.resolution } : {}),
+        ...(request.duration ? { duration: request.duration } : {}),
+        ...(request.ratio ? { ratio: request.ratio } : {}),
+      },
+    };
+  }
+  return {
+    aliyun: {
+      ...(request.resolution ? { resolution: request.resolution } : {}),
+      ...(request.duration ? { duration: request.duration } : {}),
+      ...(request.audioSetting ? { audio_setting: request.audioSetting } : {}),
+      ...(request.ratio ? { ratio: request.ratio } : {}),
+      watermark: false,
+    },
+  };
+}
+
 function logPlaygroundEvent(
   event: "start" | "success" | "failure",
   request: PlaygroundRequest,
@@ -329,7 +379,11 @@ function readVideoUsage(raw: unknown): {
   const candidate = raw as Record<string, unknown>;
   return {
     duration:
-      typeof candidate.duration === "number" ? candidate.duration : undefined,
+      typeof candidate.duration === "number"
+        ? candidate.duration
+        : typeof candidate.output_seconds === "number"
+          ? candidate.output_seconds
+          : undefined,
     imageCount:
       typeof candidate.video_count === "number"
         ? candidate.video_count

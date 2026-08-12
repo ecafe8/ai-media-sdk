@@ -139,4 +139,28 @@ describe("Playground capability registry", () => {
       PLAYGROUND_MODELS.find((m) => m.id === "wan3.0-video")
     ).toBeUndefined();
   });
+
+  test("registers MiniMax-H3 as a multi-scenario async video model", () => {
+    const model = getPlaygroundModel("minimax", "MiniMax-H3");
+    expect(model?.modality).toBe("video");
+    expect(model?.supportsVideo).toBe(true);
+    expect(model?.supportsAsync).toBe(true);
+    expect(model?.supportsEdit).toBe(false);
+    expect(model?.family).toBe("minimax-h3-video");
+    expect(model?.videoScenarios).toEqual(["t2v", "i2v", "r2v"]);
+    expect(model?.maxReferenceImages).toBe(9);
+    expect(model?.maxReferenceVideos).toBe(3);
+    expect(model?.maxReferenceAudios).toBe(3);
+    expect(model?.supportedResolutions).toEqual(["768P", "2K"]);
+    expect(model?.supportedAspectRatios).toContain("adaptive");
+    expect(model?.supportedAspectRatios).toContain("16:9");
+  });
+
+  test("marks MiniMax configured only when the minimax provider is configured", () => {
+    const models = getClientPlaygroundModels(new Set(["minimax"]));
+    const h3 = models.find((model) => model.id === "MiniMax-H3");
+    expect(h3?.configured).toBe(true);
+    const t2v = models.find((model) => model.id === "happyhorse-1.1-t2v");
+    expect(t2v?.configured).toBe(false);
+  });
 });

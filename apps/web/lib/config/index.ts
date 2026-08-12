@@ -20,6 +20,8 @@ const configSchema = z.object({
   ALIYUN_BAILIAN_BASE_URL: z.string().url().optional(),
   ARK_API_KEY: z.string().optional(),
   ARK_BASE_URL: z.string().url().optional(),
+  MINIMAX_API_KEY: z.string().optional(),
+  MINIMAX_BASE_URL: z.string().url().optional(),
   PLAYGROUND_PROVIDER_TIMEOUT_MS: z.coerce
     .number()
     .int()

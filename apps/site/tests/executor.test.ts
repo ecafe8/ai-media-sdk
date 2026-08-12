@@ -130,6 +130,42 @@ describe("executor local interception", () => {
     expect(response.error?.message).toContain("编辑");
     expect(fetchSpy.calls()).toBe(0);
   });
+
+  test("minimax video without credentials is blocked locally", async () => {
+    const fetchSpy = countFetchCalls();
+    const response = await executeSiteRequest({
+      provider: "minimax",
+      model: "MiniMax-H3",
+      modality: "video",
+      prompt: "a cat",
+    });
+    expect(response.status).toBe("failed");
+    expect(response.error?.code).toBe("CONFIGURATION_ERROR");
+    expect(response.error?.message).toContain("API Key");
+    expect(fetchSpy.calls()).toBe(0);
+  });
+
+  test("minimax video passes the video gate and reaches endpoint validation", async () => {
+    installMockWindow();
+    setCredentials("minimax", {
+      apiKey: "k",
+      baseUrl: "https://my-proxy.example.com/v1",
+    });
+    const fetchSpy = countFetchCalls();
+    const response = await executeSiteRequest({
+      provider: "minimax",
+      model: "MiniMax-H3",
+      modality: "video",
+      prompt: "a cat",
+    });
+    // A CONFIGURATION_ERROR naming the custom host means the request passed
+    // the video-provider gate and model lookup and only stopped at the
+    // unconfirmed endpoint check.
+    expect(response.status).toBe("failed");
+    expect(response.error?.code).toBe("CONFIGURATION_ERROR");
+    expect(response.error?.message).toContain("my-proxy.example.com");
+    expect(fetchSpy.calls()).toBe(0);
+  });
 });
 
 describe("executor error message mapping", () => {

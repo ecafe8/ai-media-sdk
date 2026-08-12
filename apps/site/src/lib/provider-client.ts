@@ -7,6 +7,10 @@ import {
   createAzureOpenAIProvider,
 } from "@ai-media/provider-azure-openai";
 import {
+  createMiniMaxProvider,
+  type MiniMaxProvider,
+} from "@ai-media/provider-minimax";
+import {
   createSeedreamProvider,
   type SeedreamProvider,
 } from "@ai-media/provider-seedream";
@@ -30,7 +34,8 @@ export const SITE_PROVIDER_TIMEOUT_MS = 120_000;
 export type AnySiteProvider =
   | AzureOpenAIProvider
   | AliyunBailianProvider
-  | SeedreamProvider;
+  | SeedreamProvider
+  | MiniMaxProvider;
 
 export class EndpointNotUsableError extends Error {
   readonly provider: SiteProvider;
@@ -113,6 +118,23 @@ export function buildSiteProvider(
       false
     );
     return createSeedreamProvider(
+      {
+        apiKey: credentials.apiKey.trim(),
+        ...(baseUrl ? { baseUrl } : {}),
+      },
+      { transport }
+    );
+  }
+
+  if (provider === "minimax") {
+    const baseUrl = assertEndpointUsable(
+      provider,
+      "Base URL",
+      credentials.baseUrl,
+      confirmedHosts,
+      false
+    );
+    return createMiniMaxProvider(
       {
         apiKey: credentials.apiKey.trim(),
         ...(baseUrl ? { baseUrl } : {}),

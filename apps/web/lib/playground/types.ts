@@ -3,7 +3,8 @@ import type { ImageContent, SdkErrorCode, VideoContent } from "@ai-media/sdk";
 export type PlaygroundProvider =
   | "azure-openai"
   | "aliyun-bailian"
-  | "doubao-seedream";
+  | "doubao-seedream"
+  | "minimax";
 
 /**
  * Top-level generation modality. Audio is reserved and rendered as a
@@ -29,10 +30,18 @@ export type PlaygroundModelFamily =
   | "wan-image-2.6"
   | "happyhorse-video"
   | "wan3-video"
+  | "minimax-h3-video"
   | "doubao-seedream-5-pro"
   | "doubao-seedream-5-lite"
   | "doubao-seedream-4-5"
   | "doubao-seedream-4-0";
+
+/**
+ * A video generation scenario served by a single model id. Models declaring
+ * more than one scenario (MiniMax-H3) render a scenario selector in the video
+ * workbench; flag-driven models (HappyHorse) declare none.
+ */
+export type VideoScenario = "t2v" | "i2v" | "r2v";
 
 /**
  * Common projection of a model offered by a Provider, augmented with the
@@ -57,6 +66,14 @@ export interface PlaygroundModel {
   readonly requiresFirstFrame?: boolean;
   readonly requiresInputVideo?: boolean;
   readonly maxReferenceImages?: number;
+  readonly maxReferenceVideos?: number;
+  readonly maxReferenceAudios?: number;
+  /**
+   * Multi-scenario video models (MiniMax-H3) declare the scenarios a single
+   * model id serves; the video workbench renders a scenario selector when
+   * more than one is present. Flag-driven models leave this undefined.
+   */
+  readonly videoScenarios?: readonly VideoScenario[];
   readonly maxEditImages?: number;
   /** Closed set of allowed `size` values (from `ModelCapability.supportedSizes`). */
   readonly supportedSizes?: readonly string[];
@@ -82,6 +99,7 @@ export interface PlaygroundModel {
  * - `azure-openai`: `apiKey` + `endpoint` + `apiVersion`
  * - `aliyun-bailian`: `apiKey` + `baseUrl`
  * - `doubao-seedream`: `apiKey` (`baseUrl` optional)
+ * - `minimax`: `apiKey` (`baseUrl` optional)
  */
 export interface PlaygroundCredentials {
   readonly apiKey: string;
@@ -89,7 +107,7 @@ export interface PlaygroundCredentials {
   readonly endpoint?: string;
   /** Azure OpenAI API version. */
   readonly apiVersion?: string;
-  /** Bailian DashScope / Seedream Ark base URL. */
+  /** Bailian DashScope / Seedream Ark / MiniMax base URL. */
   readonly baseUrl?: string;
 }
 
@@ -111,8 +129,15 @@ export interface PlaygroundRequest {
   /** Video modality (video-edit only): source video public URL. */
   readonly inputVideoUrl?: string;
   readonly resolution?: string;
+  readonly ratio?: string;
   readonly duration?: number;
   readonly audioSetting?: string;
+  /** Video modality (MiniMax i2v): optional last-frame image public URL. */
+  readonly lastFrameImageUrl?: string;
+  /** Video modality (MiniMax r2v): ordered reference video public URLs. */
+  readonly referenceVideoUrls?: readonly string[];
+  /** Video modality (MiniMax r2v): ordered reference audio public URLs. */
+  readonly referenceAudioUrls?: readonly string[];
 }
 
 export interface PlaygroundMetadata {

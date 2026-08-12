@@ -19,6 +19,10 @@ const seedreamSrc = path.resolve(
   __dirname,
   "../../packages/provider-seedream/src"
 );
+const minimaxSrc = path.resolve(
+  __dirname,
+  "../../packages/provider-minimax/src"
+);
 
 /**
  * GitHub Pages project sites are served under `/<repo>/`. The single
@@ -73,6 +77,14 @@ export default defineConfig(({ command }) => {
         {
           find: /^@ai-media\/provider-seedream\/(.+)$/,
           replacement: `${seedreamSrc}/$1`,
+        },
+        {
+          find: "@ai-media/provider-minimax",
+          replacement: path.resolve(minimaxSrc, "index.ts"),
+        },
+        {
+          find: /^@ai-media\/provider-minimax\/(.+)$/,
+          replacement: `${minimaxSrc}/$1`,
         },
       ],
     },

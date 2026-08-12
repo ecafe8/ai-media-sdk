@@ -13,6 +13,7 @@
   "dependencies": {
     "@ai-media/provider-aliyun-bailian": "workspace:*",
     "@ai-media/provider-azure-openai": "workspace:*",
+    "@ai-media/provider-minimax": "workspace:*",
     "@ai-media/provider-seedream": "workspace:*",
     "@ai-media/sdk": "workspace:*",
     "@workspace/ui": "workspace:*",

@@ -8,12 +8,13 @@ describe("site model projection", () => {
     expect(getSiteModel("aliyun-bailian", "wan3.0-video")).toBeUndefined();
   });
 
-  test("projects models from all three providers", () => {
+  test("projects models from all providers", () => {
     expect(getSiteModel("azure-openai", "gpt-image-2")).toBeDefined();
     expect(getSiteModel("aliyun-bailian", "qwen-image-2.0-pro")).toBeDefined();
     expect(
       getSiteModel("doubao-seedream", "doubao-seedream-4-5-251128")
     ).toBeDefined();
+    expect(getSiteModel("minimax", "MiniMax-H3")).toBeDefined();
   });
 
   test("every projected model carries a non-empty label", () => {
@@ -22,11 +23,11 @@ describe("site model projection", () => {
     }
   });
 
-  test("video models are aliyun-only and expose media metadata", () => {
+  test("video models are aliyun and minimax only and expose media metadata", () => {
     const videos = SITE_MODELS.filter((m) => m.modality === "video");
     expect(videos.length).toBeGreaterThan(0);
     for (const video of videos) {
-      expect(video.provider).toBe("aliyun-bailian");
+      expect(["aliyun-bailian", "minimax"]).toContain(video.provider);
     }
     const r2v = getSiteModel("aliyun-bailian", "happyhorse-1.1-r2v");
     expect(r2v?.maxReferenceImages).toBeGreaterThan(0);
@@ -37,6 +38,21 @@ describe("site model projection", () => {
       "happyhorse-1.0-video-edit"
     );
     expect(videoEdit?.requiresInputVideo).toBe(true);
+  });
+
+  test("projects MiniMax-H3 as a multi-scenario async video model", () => {
+    const h3 = getSiteModel("minimax", "MiniMax-H3");
+    expect(h3?.modality).toBe("video");
+    expect(h3?.supportsVideo).toBe(true);
+    expect(h3?.supportsAsync).toBe(true);
+    expect(h3?.supportsEdit).toBe(false);
+    expect(h3?.family).toBe("minimax-h3-video");
+    expect(h3?.videoScenarios).toEqual(["t2v", "i2v", "r2v"]);
+    expect(h3?.maxReferenceImages).toBe(9);
+    expect(h3?.maxReferenceVideos).toBe(3);
+    expect(h3?.maxReferenceAudios).toBe(3);
+    expect(h3?.supportedResolutions).toEqual(["768P", "2K"]);
+    expect(h3?.supportedAspectRatios).toContain("adaptive");
   });
 
   test("unknown models return undefined", () => {

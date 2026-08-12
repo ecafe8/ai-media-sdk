@@ -52,8 +52,9 @@ export function LandingPage() {
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground text-sm leading-7 sm:text-base">
             AI Media SDK 统一图像与视频生成的调用契约，支持 Azure OpenAI、
-            Alibaba Bailian（DashScope）与 Volcengine Ark（Seedream）。
-            在本站点填写你自己的 API Key，即可直接在浏览器体验生成与编辑。
+            Alibaba Bailian（DashScope）、Volcengine Ark（Seedream）与
+            MiniMax（海螺视频）。 在本站点填写你自己的 API
+            Key，即可直接在浏览器体验生成与编辑。
           </p>
           <div className="mt-8 flex justify-center gap-3">
             <Link

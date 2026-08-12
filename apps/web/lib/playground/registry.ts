@@ -1,5 +1,6 @@
 import { ALIYUN_MODEL_REGISTRY } from "@ai-media/provider-aliyun-bailian";
 import { AZURE_MODEL_REGISTRY } from "@ai-media/provider-azure-openai";
+import { MINIMAX_MODEL_REGISTRY } from "@ai-media/provider-minimax";
 import { SEEDREAM_MODEL_REGISTRY } from "@ai-media/provider-seedream";
 
 import type {
@@ -15,6 +16,7 @@ export const PLAYGROUND_PROVIDERS: readonly {
   { id: "azure-openai", label: "Azure OpenAI" },
   { id: "aliyun-bailian", label: "Alibaba Bailian" },
   { id: "doubao-seedream", label: "Doubao Seedream" },
+  { id: "minimax", label: "MiniMax" },
 ];
 
 /**
@@ -103,6 +105,11 @@ const PLAYGROUND_LABELS: Readonly<
   "doubao-seedream:doubao-seedream-4-0-250828": {
     label: "Doubao Seedream 4.0",
     recommendation: "生成与编辑；仅 jpeg 输出",
+  },
+  "minimax:MiniMax-H3": {
+    label: "MiniMax H3（海螺视频）",
+    recommendation:
+      "文生/首尾帧图生/参考生视频三场景；2K 输出，4-15 秒；参考生支持图/视频/音频参考",
   },
 };
 
@@ -243,6 +250,39 @@ function fromAzure(
 }
 
 /**
+ * Derive a `PlaygroundModel` from the MiniMax registry entry. MiniMax-H3 is a
+ * single model id serving t2v/i2v/r2v, so the projection carries the
+ * `videoScenarios` marker that makes the video workbench render a scenario
+ * selector, plus the resolution/ratio allowlists and reference media caps.
+ */
+function fromMinimax(
+  id: string,
+  entry: (typeof MINIMAX_MODEL_REGISTRY)[string]
+): PlaygroundModel {
+  const caps = entry.capabilities;
+  const { label, recommendation } = labelFor("minimax", id);
+  return {
+    id,
+    label,
+    provider: "minimax",
+    modality: caps.modality === "video" ? "video" : "image",
+    family: "minimax-h3-video",
+    supportsGenerate: caps.generate,
+    supportsEdit: caps.edit,
+    supportsVideo: caps.modality === "video",
+    supportsAsync: caps.async === true,
+    maxReferenceImages: entry.maxReferenceImages,
+    maxReferenceVideos: entry.maxReferenceVideos,
+    maxReferenceAudios: entry.maxReferenceAudios,
+    videoScenarios: ["t2v", "i2v", "r2v"],
+    supportedResolutions: entry.supportedResolutions,
+    supportedAspectRatios: entry.supportedAspectRatios,
+    recommendation,
+    configured: false,
+  };
+}
+
+/**
  * Aliyun model ids excluded from the Playground projection until their media
  * input UI is implemented in a follow-up change. Wan 3.0 supports
  * heterogeneous `media[]` entries that the current form cannot represent.
@@ -265,6 +305,9 @@ export const PLAYGROUND_MODELS: readonly PlaygroundModel[] = [
     .map(([id, entry]) => fromAliyun(id, entry)),
   ...Object.entries(SEEDREAM_MODEL_REGISTRY).map(([id, entry]) =>
     fromSeedream(id, entry)
+  ),
+  ...Object.entries(MINIMAX_MODEL_REGISTRY).map(([id, entry]) =>
+    fromMinimax(id, entry)
   ),
 ];
 

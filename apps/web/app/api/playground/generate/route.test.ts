@@ -142,4 +142,83 @@ describe("Playground generate route", () => {
     expect(response.status).toBe(422);
     expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
   });
+
+  test("accepts the minimax provider past route validation", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "minimax",
+          model: "MiniMax-H3",
+          modality: "video",
+          prompt: "a boy playing basketball",
+          resolution: "2K",
+          duration: 5,
+          ratio: "16:9",
+        }),
+      })
+    );
+    // The provider passes route validation; without server credentials the
+    // executor fails with a configuration error rather than VALIDATION_ERROR.
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.code).toBe("CONFIGURATION_ERROR");
+  });
+
+  test("rejects a non-string ratio before Provider dispatch", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "minimax",
+          model: "MiniMax-H3",
+          modality: "video",
+          prompt: "p",
+          ratio: 16,
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("rejects a malformed last-frame URL before Provider dispatch", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "minimax",
+          model: "MiniMax-H3",
+          modality: "video",
+          prompt: "p",
+          referenceImageUrl: "https://x/first.png",
+          lastFrameImageUrl: "not-a-url",
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+  });
+
+  test("rejects malformed reference video/audio URLs before Provider dispatch", async () => {
+    for (const field of ["referenceVideoUrls", "referenceAudioUrls"]) {
+      const response = await POST(
+        new Request("http://localhost/api/playground/generate", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            provider: "minimax",
+            model: "MiniMax-H3",
+            modality: "video",
+            prompt: "p",
+            [field]: ["https://x/a.mp4", "not-a-url"],
+          }),
+        })
+      );
+      expect(response.status).toBe(422);
+      expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+    }
+  });
 });

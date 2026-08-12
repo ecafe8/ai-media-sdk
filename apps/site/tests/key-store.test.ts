@@ -94,6 +94,11 @@ describe("key-store completeness", () => {
     );
   });
 
+  test("minimax requires only apiKey", () => {
+    expect(isCredentialsComplete("minimax", { apiKey: "k" })).toBe(true);
+    expect(isCredentialsComplete("minimax", undefined)).toBe(false);
+  });
+
   test("missingCredentialFields lists absent fields", () => {
     expect(missingCredentialFields("azure-openai", undefined)).toEqual([
       "API Key",
@@ -165,6 +170,13 @@ describe("endpoint validation", () => {
     );
     expect(seedream.ok).toBe(true);
     expect(seedream.isCustomHost).toBe(false);
+
+    const minimax = validateProviderEndpoint(
+      "minimax",
+      "https://api.minimax.io"
+    );
+    expect(minimax.ok).toBe(true);
+    expect(minimax.isCustomHost).toBe(false);
   });
 
   test("flags non-allowlisted hosts as custom", () => {

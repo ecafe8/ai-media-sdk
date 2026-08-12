@@ -1,5 +1,6 @@
 import type { AliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import type { AzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import type { MiniMaxProvider } from "@ai-media/provider-minimax";
 import type { SeedreamProvider } from "@ai-media/provider-seedream";
 import {
   editImage,
@@ -61,6 +62,13 @@ function invalidRequest(message: string): SitePlaygroundResponse {
 function buildVideoProviderOptions(
   request: SiteGenerationRequest
 ): Record<string, unknown> {
+  if (request.provider === "minimax") {
+    const minimax: Record<string, unknown> = {};
+    if (request.resolution) minimax.resolution = request.resolution;
+    if (request.duration !== undefined) minimax.duration = request.duration;
+    if (request.ratio) minimax.ratio = request.ratio;
+    return { minimax };
+  }
   const aliyun: Record<string, unknown> = { watermark: false };
   if (request.resolution) aliyun.resolution = request.resolution;
   if (request.duration !== undefined) aliyun.duration = request.duration;
@@ -91,8 +99,11 @@ export async function executeSiteRequest(
     if (!model.supportsVideo) {
       return invalidRequest("所选模型不支持视频生成");
     }
-    if (request.provider !== "aliyun-bailian") {
-      return invalidRequest("视频生成仅支持 Alibaba Bailian");
+    if (
+      request.provider !== "aliyun-bailian" &&
+      request.provider !== "minimax"
+    ) {
+      return invalidRequest("视频生成仅支持 Alibaba Bailian 与 MiniMax");
     }
     if (model.requiresFirstFrame && !request.referenceImage) {
       return invalidRequest("该视频模型需要首帧图片");
@@ -112,9 +123,10 @@ export async function executeSiteRequest(
     // `buildSiteProvider` returns the provider matching `request.provider`;
     // the assertions narrow the union per branch.
     if (request.modality === "video") {
-      instance = (providerInstance as AliyunBailianProvider).video(
-        request.model
-      );
+      instance =
+        request.provider === "minimax"
+          ? (providerInstance as MiniMaxProvider).video(request.model)
+          : (providerInstance as AliyunBailianProvider).video(request.model);
     } else if (request.provider === "azure-openai") {
       instance = (providerInstance as AzureOpenAIProvider).image(request.model);
     } else if (request.provider === "doubao-seedream") {
@@ -146,9 +158,26 @@ export async function executeSiteRequest(
         ...(request.referenceImage
           ? { firstFrame: toImageContent(request.referenceImage) }
           : {}),
+        ...(request.lastFrameImage
+          ? { lastFrame: toImageContent(request.lastFrameImage) }
+          : {}),
         ...(request.referenceImages?.length
           ? {
               referenceImages: request.referenceImages.map(toImageContent),
+            }
+          : {}),
+        ...(request.referenceVideoUrls?.length
+          ? {
+              referenceVideos: request.referenceVideoUrls.map((url) => ({
+                url,
+              })),
+            }
+          : {}),
+        ...(request.referenceAudioUrls?.length
+          ? {
+              referenceAudios: request.referenceAudioUrls.map((url) => ({
+                url,
+              })),
             }
           : {}),
         ...(request.inputVideoUrl
@@ -250,7 +279,11 @@ function readVideoUsage(raw: unknown): {
   const candidate = raw as Record<string, unknown>;
   return {
     duration:
-      typeof candidate.duration === "number" ? candidate.duration : undefined,
+      typeof candidate.duration === "number"
+        ? candidate.duration
+        : typeof candidate.output_seconds === "number"
+          ? candidate.output_seconds
+          : undefined,
     imageCount:
       typeof candidate.video_count === "number"
         ? candidate.video_count

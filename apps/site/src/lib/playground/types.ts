@@ -31,10 +31,18 @@ export type SiteModelFamily =
   | "wan-image-2.7"
   | "wan-image-2.6"
   | "happyhorse-video"
+  | "minimax-h3-video"
   | "doubao-seedream-5-pro"
   | "doubao-seedream-5-lite"
   | "doubao-seedream-4-5"
   | "doubao-seedream-4-0";
+
+/**
+ * A video generation scenario served by a single model id. Models declaring
+ * more than one scenario (MiniMax-H3) render a scenario selector in the video
+ * workbench; flag-driven models (HappyHorse) declare none.
+ */
+export type VideoScenario = "t2v" | "i2v" | "r2v";
 
 export interface SiteModel {
   readonly id: string;
@@ -49,6 +57,14 @@ export interface SiteModel {
   readonly requiresFirstFrame?: boolean;
   readonly requiresInputVideo?: boolean;
   readonly maxReferenceImages?: number;
+  readonly maxReferenceVideos?: number;
+  readonly maxReferenceAudios?: number;
+  /**
+   * Multi-scenario video models (MiniMax-H3) declare the scenarios a single
+   * model id serves; the video workbench renders a scenario selector when
+   * more than one is present. Flag-driven models leave this undefined.
+   */
+  readonly videoScenarios?: readonly VideoScenario[];
   readonly maxEditImages?: number;
   readonly supportedSizes?: readonly string[];
   readonly maxResolution?: { readonly width: number; readonly height: number };
@@ -66,8 +82,14 @@ export interface SiteGenerationRequest {
   readonly imageOperation?: ImageOperation;
   /** Image edit reference / i2v first frame. */
   readonly referenceImage?: ImageInput;
+  /** i2v last frame (MiniMax first & last frame). */
+  readonly lastFrameImage?: ImageInput;
   /** Ordered r2v reference images; order maps to `[Image N]`. */
   readonly referenceImages?: readonly ImageInput[];
+  /** Ordered r2v reference video public URLs (MiniMax). */
+  readonly referenceVideoUrls?: readonly string[];
+  /** Ordered r2v reference audio public URLs (MiniMax). */
+  readonly referenceAudioUrls?: readonly string[];
   /** Video-edit source video; public URL only. */
   readonly inputVideoUrl?: string;
   readonly size?: string;

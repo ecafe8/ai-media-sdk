@@ -20,6 +20,7 @@ import type {
   PlaygroundModel,
   PlaygroundProvider,
   PlaygroundResponse,
+  VideoScenario,
 } from "@/lib/playground/types";
 import { CredentialsPanel } from "../credentials-panel";
 import {
@@ -56,15 +57,21 @@ interface VideoWorkbenchProps {
 /**
  * Video-modality workbench.
  *
- * Owns its own form state (provider, model, prompt, first-frame/input-video
- * /reference-image URLs, resolution/ratio/duration/audio_setting). The
- * video operation (t2v/i2v/r2v/video-edit) is inferred from the selected
- * model's `requiresFirstFrame`/`requiresInputVideo`/`maxReferenceImages`
- * flags; the form does not expose a separate operation toggle.
+ * Owns its own form state (provider, model, prompt, first-frame/last-frame/
+ * input-video/reference-image/reference-video/reference-audio URLs,
+ * resolution/ratio/duration/audio_setting, and scenario).
  *
- * On model change, the resolution/ratio/duration dropdowns are re-derived
- * from the new model's metadata and reset to the first option. video-edit
- * hides 480P/ratio/duration and shows `audio_setting` instead.
+ * Flag-driven models (HappyHorse) infer the video operation
+ * (t2v/i2v/r2v/video-edit) from the selected model's
+ * `requiresFirstFrame`/`requiresInputVideo`/`maxReferenceImages` flags; the
+ * form does not expose a separate operation toggle. Multi-scenario models
+ * (MiniMax-H3, `videoScenarios.length > 1`) serve t2v/i2v/r2v from one model
+ * id, so the form renders a scenario selector that drives which inputs and
+ * parameter rules are shown.
+ *
+ * On model/scenario change, the resolution/ratio/duration dropdowns are
+ * re-derived from the new model's metadata and reset to the first option.
+ * video-edit hides 480P/ratio/duration and shows `audio_setting` instead.
  */
 export function VideoWorkbench({
   models,
@@ -86,9 +93,13 @@ export function VideoWorkbench({
   const [modelId, setModelId] = useState(
     firstModel?.id ?? "happyhorse-1.1-t2v"
   );
+  const [scenario, setScenario] = useState<VideoScenario>("t2v");
   const [prompt, setPrompt] = useState("");
   const [referenceImageUrl, setReferenceImageUrl] = useState("");
+  const [lastFrameImageUrl, setLastFrameImageUrl] = useState("");
   const [referenceImageUrlsText, setReferenceImageUrlsText] = useState("");
+  const [referenceVideoUrlsText, setReferenceVideoUrlsText] = useState("");
+  const [referenceAudioUrlsText, setReferenceAudioUrlsText] = useState("");
   const [inputVideoUrl, setInputVideoUrl] = useState("");
   const [result, setResult] = useState<PlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,13 +114,19 @@ export function VideoWorkbench({
     [videoModels, provider, modelId]
   );
 
+  const isMultiScenario = (currentModel?.videoScenarios?.length ?? 0) > 1;
+
   const resolutionOptions = currentModel
     ? videoResolutionOptions(currentModel)
     : [];
-  const ratioOptions = currentModel ? videoRatioOptions(currentModel) : [];
-  const durationOptions = videoDurationOptions();
+  const ratioOptions = currentModel
+    ? videoRatioOptions(currentModel, isMultiScenario ? scenario : undefined)
+    : [];
+  const durationOptions = videoDurationOptions(currentModel);
   const audioOptions = videoAudioSettingOptions();
-  const showsRatio = currentModel ? videoShowsRatio(currentModel) : false;
+  const showsRatio = currentModel
+    ? videoShowsRatio(currentModel, isMultiScenario ? scenario : undefined)
+    : false;
   const showsDuration = currentModel ? videoShowsDuration(currentModel) : true;
   const showsAudioSetting = currentModel
     ? videoShowsAudioSetting(currentModel)
@@ -126,11 +143,13 @@ export function VideoWorkbench({
     audioOptions[0]?.value ?? "auto"
   );
 
-  // Re-seed resolution/ratio/duration defaults when the model changes.
-  // Uses the React-endorsed "adjust state during render" pattern instead
-  // of useEffect to avoid a cascading render.
-  const [prevModelKey, setPrevModelKey] = useState(`${provider}:${modelId}`);
-  const modelKey = `${provider}:${modelId}`;
+  // Re-seed resolution/ratio/duration defaults when the model or scenario
+  // changes. Uses the React-endorsed "adjust state during render" pattern
+  // instead of useEffect to avoid a cascading render.
+  const [prevModelKey, setPrevModelKey] = useState(
+    `${provider}:${modelId}:${scenario}`
+  );
+  const modelKey = `${provider}:${modelId}:${scenario}`;
   if (modelKey !== prevModelKey) {
     setPrevModelKey(modelKey);
     if (!resolutionOptions.some((o) => o.value === resolution)) {
@@ -144,34 +163,70 @@ export function VideoWorkbench({
     }
   }
 
-  const needsFirstFrame = currentModel?.requiresFirstFrame ?? false;
-  const needsInputVideo = currentModel?.requiresInputVideo ?? false;
-  const maxRefs = currentModel?.maxReferenceImages;
+  // Media-shape inputs. For multi-scenario models the active scenario drives
+  // which inputs appear; flag-driven models use the registry flags.
+  const needsFirstFrame = isMultiScenario
+    ? scenario === "i2v"
+    : (currentModel?.requiresFirstFrame ?? false);
+  const needsInputVideo = isMultiScenario
+    ? false
+    : (currentModel?.requiresInputVideo ?? false);
+  const maxRefs =
+    isMultiScenario && scenario !== "r2v"
+      ? undefined
+      : currentModel?.maxReferenceImages;
+  const showsLastFrame = isMultiScenario && scenario === "i2v";
+  const showsRefMedia = isMultiScenario && scenario === "r2v";
+  const maxRefVideos = currentModel?.maxReferenceVideos;
+  const maxRefAudios = currentModel?.maxReferenceAudios;
 
   function changeProvider(nextProvider: PlaygroundProvider) {
     const nextModels = videoModels.filter((m) => m.provider === nextProvider);
     setProvider(nextProvider);
     const next = nextModels[0];
     setModelId(next?.id ?? "");
-    setReferenceImageUrl("");
-    setReferenceImageUrlsText("");
-    setInputVideoUrl("");
+    setScenario("t2v");
+    clearMediaInputs();
   }
 
   function changeModel(nextModelId: string) {
     setModelId(nextModelId);
+    setScenario("t2v");
+    clearMediaInputs();
+  }
+
+  function changeScenario(nextScenario: VideoScenario) {
+    if (nextScenario === scenario) return;
+    setScenario(nextScenario);
+    clearMediaInputs();
+  }
+
+  function clearMediaInputs() {
     setReferenceImageUrl("");
+    setLastFrameImageUrl("");
     setReferenceImageUrlsText("");
+    setReferenceVideoUrlsText("");
+    setReferenceAudioUrlsText("");
     setInputVideoUrl("");
   }
 
   function reset() {
     setPrompt("");
-    setReferenceImageUrl("");
-    setReferenceImageUrlsText("");
-    setInputVideoUrl("");
+    setScenario("t2v");
+    clearMediaInputs();
     setResult(undefined);
     setValidationError("");
+  }
+
+  function splitUrls(text: string): string[] {
+    return text
+      .split(/[,\n]/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  function allUrlsValid(urls: string[]): boolean {
+    return urls.every((url) => isValidHttpUrl(url));
   }
 
   async function submit() {
@@ -182,6 +237,14 @@ export function VideoWorkbench({
     }
     if (needsFirstFrame && !isValidHttpUrl(referenceImageUrl)) {
       setValidationError("该视频模型需要一个有效的首帧图片 URL。");
+      return;
+    }
+    if (
+      showsLastFrame &&
+      lastFrameImageUrl &&
+      !isValidHttpUrl(lastFrameImageUrl)
+    ) {
+      setValidationError("尾帧图片 URL 无效，请检查后重试。");
       return;
     }
     if (needsInputVideo && !isValidHttpUrl(inputVideoUrl)) {
@@ -197,6 +260,21 @@ export function VideoWorkbench({
       setValidationError(
         `该视频模型需要至少 1 张参考图 URL（最多 ${maxRefs} 张，逗号分隔）。`
       );
+      return;
+    }
+    const referenceImageUrls = splitUrls(referenceImageUrlsText);
+    if (referenceImageUrls.length > 0 && !allUrlsValid(referenceImageUrls)) {
+      setValidationError("参考图 URL 中存在无效地址，请检查后重试。");
+      return;
+    }
+    const referenceVideoUrls = splitUrls(referenceVideoUrlsText);
+    if (referenceVideoUrls.length > 0 && !allUrlsValid(referenceVideoUrls)) {
+      setValidationError("参考视频 URL 中存在无效地址，请检查后重试。");
+      return;
+    }
+    const referenceAudioUrls = splitUrls(referenceAudioUrlsText);
+    if (referenceAudioUrls.length > 0 && !allUrlsValid(referenceAudioUrls)) {
+      setValidationError("参考音频 URL 中存在无效地址，请检查后重试。");
       return;
     }
 
@@ -225,20 +303,23 @@ export function VideoWorkbench({
       if (needsFirstFrame && referenceImageUrl) {
         body.referenceImageUrl = referenceImageUrl;
       }
+      if (showsLastFrame && lastFrameImageUrl) {
+        body.lastFrameImageUrl = lastFrameImageUrl;
+      }
       if (needsInputVideo) {
         body.inputVideoUrl = inputVideoUrl;
-        if (referenceImageUrlsText.trim()) {
-          body.referenceImageUrls = referenceImageUrlsText
-            .split(/[,\n]/)
-            .map((s) => s.trim())
-            .filter(Boolean);
+        if (referenceImageUrls.length > 0) {
+          body.referenceImageUrls = referenceImageUrls;
         }
       }
       if (maxRefs && !needsFirstFrame && !needsInputVideo) {
-        body.referenceImageUrls = referenceImageUrlsText
-          .split(/[,\n]/)
-          .map((s) => s.trim())
-          .filter(Boolean);
+        body.referenceImageUrls = referenceImageUrls;
+        if (referenceVideoUrls.length > 0) {
+          body.referenceVideoUrls = referenceVideoUrls;
+        }
+        if (referenceAudioUrls.length > 0) {
+          body.referenceAudioUrls = referenceAudioUrls;
+        }
       }
       body.resolution = resolution;
       if (showsRatio) {
@@ -280,7 +361,7 @@ export function VideoWorkbench({
           <div>
             <h2 className="font-semibold">视频工作台</h2>
             <p className="text-slate-500 text-xs">
-              {operationLabel(currentModel)}
+              {operationLabel(currentModel, scenario)}
             </p>
           </div>
         </div>
@@ -370,6 +451,39 @@ export function VideoWorkbench({
             </p>
           </Field>
 
+          {isMultiScenario ? (
+            <Field label="生成场景">
+              <div className="flex flex-wrap gap-2">
+                {SCENARIO_LABELS.map((item) => {
+                  const active = scenario === item.value;
+                  return (
+                    <label
+                      key={item.value}
+                      className={
+                        active
+                          ? "cursor-pointer rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-white text-xs"
+                          : "cursor-pointer rounded-full border border-slate-200 px-3 py-1 text-slate-600 text-xs transition hover:border-emerald-300 hover:text-emerald-700"
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="video-scenario"
+                        className="sr-only"
+                        checked={active}
+                        onChange={() => changeScenario(item.value)}
+                      />
+                      {item.label}
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-slate-500 text-xs leading-5">
+                单个 MiniMax-H3
+                模型覆盖三种场景，切换场景会清空已填写的媒体输入。
+              </p>
+            </Field>
+          ) : null}
+
           {needsFirstFrame ? (
             <Field label="首帧图片 URL" required>
               <Input
@@ -379,7 +493,21 @@ export function VideoWorkbench({
                 onChange={(event) => setReferenceImageUrl(event.target.value)}
               />
               <p className="mt-2 text-slate-500 text-xs">
-                宽高比自动跟随首帧，i2v 不支持 ratio。
+                宽高比自动跟随首帧（adaptive），图生视频不支持手动选择 ratio。
+              </p>
+            </Field>
+          ) : null}
+
+          {showsLastFrame ? (
+            <Field label="尾帧图片 URL（可选）">
+              <Input
+                type="url"
+                value={lastFrameImageUrl}
+                placeholder="https://..."
+                onChange={(event) => setLastFrameImageUrl(event.target.value)}
+              />
+              <p className="mt-2 text-slate-500 text-xs">
+                与首帧组合为首尾帧图生视频；留空则仅用首帧。
               </p>
             </Field>
           ) : null}
@@ -420,6 +548,44 @@ export function VideoWorkbench({
                 {needsInputVideo
                   ? "可选参考图，按顺序对应 prompt 中的 [Image N]。"
                   : "按顺序对应 prompt 中的 [Image N]；宽高比跟随参数。"}
+              </p>
+            </Field>
+          ) : null}
+
+          {showsRefMedia ? (
+            <Field
+              label={`参考视频 URL（可选，最多 ${maxRefVideos ?? 3} 条，逗号分隔）`}
+            >
+              <Textarea
+                value={referenceVideoUrlsText}
+                rows={2}
+                placeholder="https://.../ref1.mp4"
+                className="resize-y"
+                onChange={(event) =>
+                  setReferenceVideoUrlsText(event.target.value)
+                }
+              />
+              <p className="mt-2 text-slate-500 text-xs">
+                仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。
+              </p>
+            </Field>
+          ) : null}
+
+          {showsRefMedia ? (
+            <Field
+              label={`参考音频 URL（可选，最多 ${maxRefAudios ?? 3} 条，逗号分隔）`}
+            >
+              <Textarea
+                value={referenceAudioUrlsText}
+                rows={2}
+                placeholder="https://.../ref1.mp3"
+                className="resize-y"
+                onChange={(event) =>
+                  setReferenceAudioUrlsText(event.target.value)
+                }
+              />
+              <p className="mt-2 text-slate-500 text-xs">
+                仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。
               </p>
             </Field>
           ) : null}
@@ -625,13 +791,34 @@ export function VideoWorkbench({
 
 /**
  * Derive a human-readable operation label for the workbench header from the
- * selected model's media-shape flags. Mirrors the adapter-side mode
- * inference so the UI matches server behaviour.
+ * selected model's media-shape flags (flag-driven models) or the active
+ * scenario (multi-scenario models). Mirrors the adapter-side mode inference
+ * so the UI matches server behaviour.
  */
-function operationLabel(model: PlaygroundModel | undefined): string {
+function operationLabel(
+  model: PlaygroundModel | undefined,
+  scenario: VideoScenario
+): string {
   if (!model) return "未选择";
+  if ((model.videoScenarios?.length ?? 0) > 1) {
+    if (scenario === "i2v") return "图生视频（首尾帧）";
+    if (scenario === "r2v") return "参考生视频";
+    return "文生视频";
+  }
   if (model.requiresInputVideo) return "视频编辑";
   if (model.requiresFirstFrame) return "首帧图生视频";
   if (model.maxReferenceImages) return "参考生视频";
   return "文生视频";
 }
+
+/**
+ * Scenario selector labels for multi-scenario models.
+ */
+const SCENARIO_LABELS: readonly {
+  readonly value: VideoScenario;
+  readonly label: string;
+}[] = [
+  { value: "t2v", label: "文生视频" },
+  { value: "i2v", label: "图生视频" },
+  { value: "r2v", label: "参考生视频" },
+];

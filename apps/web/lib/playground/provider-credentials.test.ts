@@ -6,6 +6,7 @@ import {
   PlaygroundConfigurationError,
   resolveAliyunCredentials,
   resolveAzureCredentials,
+  resolveMiniMaxCredentials,
   resolveSeedreamCredentials,
 } from "./provider-credentials";
 
@@ -22,6 +23,8 @@ const FULL_CONFIG: AppConfig = {
   ALIYUN_BAILIAN_BASE_URL: "https://env.maas.aliyuncs.com/api/v1",
   ARK_API_KEY: "env-ark-key",
   ARK_BASE_URL: "https://env.volces.com/api/v3",
+  MINIMAX_API_KEY: "env-minimax-key",
+  MINIMAX_BASE_URL: "https://api.minimax.io",
   PLAYGROUND_PROVIDER_TIMEOUT_MS: 120_000,
 };
 
@@ -111,6 +114,33 @@ describe("resolveSeedreamCredentials", () => {
   });
 });
 
+describe("resolveMiniMaxCredentials", () => {
+  test("prefers visitor credentials and keeps baseUrl optional", () => {
+    expect(
+      resolveMiniMaxCredentials({ apiKey: "user-key" }, FULL_CONFIG)
+    ).toEqual({ apiKey: "user-key" });
+    expect(
+      resolveMiniMaxCredentials(
+        { apiKey: "user-key", baseUrl: "https://proxy.example.com" },
+        FULL_CONFIG
+      )
+    ).toEqual({ apiKey: "user-key", baseUrl: "https://proxy.example.com" });
+  });
+
+  test("falls back to the environment including the base URL", () => {
+    expect(resolveMiniMaxCredentials(undefined, FULL_CONFIG)).toEqual({
+      apiKey: "env-minimax-key",
+      baseUrl: "https://api.minimax.io",
+    });
+  });
+
+  test("raises a configuration error when no source is complete", () => {
+    expect(() => resolveMiniMaxCredentials(undefined, EMPTY_CONFIG)).toThrow(
+      /MiniMax API Key/
+    );
+  });
+});
+
 describe("isProviderConfiguredByEnv", () => {
   test("reports every Provider configured for a full environment", () => {
     expect(isProviderConfiguredByEnv("azure-openai", FULL_CONFIG)).toBe(true);
@@ -118,6 +148,7 @@ describe("isProviderConfiguredByEnv", () => {
     expect(isProviderConfiguredByEnv("doubao-seedream", FULL_CONFIG)).toBe(
       true
     );
+    expect(isProviderConfiguredByEnv("minimax", FULL_CONFIG)).toBe(true);
   });
 
   test("reports no Provider configured for an empty environment", () => {
@@ -128,5 +159,6 @@ describe("isProviderConfiguredByEnv", () => {
     expect(isProviderConfiguredByEnv("doubao-seedream", EMPTY_CONFIG)).toBe(
       false
     );
+    expect(isProviderConfiguredByEnv("minimax", EMPTY_CONFIG)).toBe(false);
   });
 });

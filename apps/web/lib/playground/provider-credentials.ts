@@ -33,6 +33,11 @@ export interface ResolvedSeedreamCredentials {
   readonly baseUrl?: string;
 }
 
+export interface ResolvedMiniMaxCredentials {
+  readonly apiKey: string;
+  readonly baseUrl?: string;
+}
+
 /**
  * Resolve the effective Azure OpenAI credentials.
  *
@@ -130,6 +135,32 @@ export function resolveSeedreamCredentials(
 }
 
 /**
+ * Resolve the effective MiniMax credentials. Same precedence rules as
+ * `resolveSeedreamCredentials`; `baseUrl` stays optional and falls back to
+ * the provider's `https://api.minimax.io` default.
+ */
+export function resolveMiniMaxCredentials(
+  user: PlaygroundCredentials | undefined,
+  config: AppConfig
+): ResolvedMiniMaxCredentials {
+  if (user?.apiKey.trim()) {
+    return {
+      apiKey: user.apiKey.trim(),
+      ...(user.baseUrl?.trim() ? { baseUrl: user.baseUrl.trim() } : {}),
+    };
+  }
+  if (config.MINIMAX_API_KEY) {
+    return {
+      apiKey: config.MINIMAX_API_KEY,
+      ...(config.MINIMAX_BASE_URL ? { baseUrl: config.MINIMAX_BASE_URL } : {}),
+    };
+  }
+  throw new PlaygroundConfigurationError(
+    "服务端未配置 MiniMax。请填写你的 MiniMax API Key 后再体验。"
+  );
+}
+
+/**
  * Whether a Provider has complete server-side environment configuration.
  * Mirrors the configured-provider projection used by the Playground UI.
  */
@@ -150,5 +181,7 @@ export function isProviderConfiguredByEnv(
       );
     case "doubao-seedream":
       return Boolean(config.ARK_API_KEY);
+    case "minimax":
+      return Boolean(config.MINIMAX_API_KEY);
   }
 }

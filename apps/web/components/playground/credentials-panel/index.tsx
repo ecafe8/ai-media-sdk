@@ -81,6 +81,23 @@ const CREDENTIAL_FIELD_SPECS: Readonly<
       hint: "留空时默认使用 cn-beijing 区域。",
     },
   ],
+  minimax: [
+    {
+      key: "apiKey",
+      label: "MiniMax API Key",
+      placeholder: "MiniMax API Key",
+      type: "password",
+      required: true,
+    },
+    {
+      key: "baseUrl",
+      label: "Base URL（可选）",
+      placeholder: "https://api.minimax.io",
+      type: "url",
+      required: false,
+      hint: "留空时默认使用 https://api.minimax.io。",
+    },
+  ],
 };
 
 interface CredentialsPanelProps {

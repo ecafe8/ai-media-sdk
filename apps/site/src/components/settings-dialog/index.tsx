@@ -49,6 +49,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     "azure-openai": { ...EMPTY_DRAFT },
     "aliyun-bailian": { ...EMPTY_DRAFT },
     "doubao-seedream": { ...EMPTY_DRAFT },
+    minimax: { ...EMPTY_DRAFT },
   });
   const [messages, setMessages] = useState<
     Partial<Record<SiteProvider, { kind: "error" | "success"; text: string }>>
@@ -62,6 +63,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       "azure-openai": initDraft("azure-openai", credentials),
       "aliyun-bailian": initDraft("aliyun-bailian", credentials),
       "doubao-seedream": initDraft("doubao-seedream", credentials),
+      minimax: initDraft("minimax", credentials),
     });
     setMessages({});
   }, [open]);
@@ -226,6 +228,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             const configured = Boolean(
               credentials[provider]?.apiKey &&
                 (provider === "doubao-seedream" ||
+                  provider === "minimax" ||
                   (provider === "azure-openai"
                     ? credentials[provider]?.endpoint &&
                       credentials[provider]?.apiVersion
@@ -295,12 +298,16 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                       placeholder={
                         provider === "aliyun-bailian"
                           ? "https://dashscope.aliyuncs.com/api/v1"
-                          : "https://ark.cn-beijing.volces.com/api/v3"
+                          : provider === "minimax"
+                            ? "https://api.minimax.io"
+                            : "https://ark.cn-beijing.volces.com/api/v3"
                       }
                       hint={
                         provider === "aliyun-bailian"
                           ? "浏览器直连需 CORS 支持：工作空间端点（*.maas.aliyuncs.com）不可用时，请改用标准端点 https://dashscope.aliyuncs.com/api/v1"
-                          : undefined
+                          : provider === "minimax"
+                            ? "留空时默认使用 https://api.minimax.io；浏览器直连需端点支持 CORS。"
+                            : undefined
                       }
                       onChange={(value) =>
                         updateDraft(provider, { baseUrl: value })

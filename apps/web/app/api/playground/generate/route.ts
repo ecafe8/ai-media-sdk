@@ -10,6 +10,7 @@ const PROVIDERS = new Set([
   "azure-openai",
   "aliyun-bailian",
   "doubao-seedream",
+  "minimax",
 ]);
 const MODALITIES = new Set(["image", "video"]);
 const IMAGE_OPERATIONS = new Set(["generate", "edit"]);
@@ -106,6 +107,9 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   ) {
     return undefined;
   }
+  if (candidate.ratio !== undefined && typeof candidate.ratio !== "string") {
+    return undefined;
+  }
   if (
     candidate.duration !== undefined &&
     (typeof candidate.duration !== "number" ||
@@ -126,6 +130,13 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
   ) {
     return undefined;
   }
+  if (
+    candidate.lastFrameImageUrl !== undefined &&
+    (typeof candidate.lastFrameImageUrl !== "string" ||
+      !isPublicHttpUrl(candidate.lastFrameImageUrl))
+  ) {
+    return undefined;
+  }
   const credentials = parseCredentials(candidate.credentials);
   if (candidate.credentials !== undefined && !credentials) {
     return undefined;
@@ -141,6 +152,30 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
       return undefined;
     }
     referenceImageUrls = candidate.referenceImageUrls as string[];
+  }
+  let referenceVideoUrls: string[] | undefined;
+  if (candidate.referenceVideoUrls !== undefined) {
+    if (
+      !Array.isArray(candidate.referenceVideoUrls) ||
+      !candidate.referenceVideoUrls.every(
+        (item) => typeof item === "string" && isPublicHttpUrl(item)
+      )
+    ) {
+      return undefined;
+    }
+    referenceVideoUrls = candidate.referenceVideoUrls as string[];
+  }
+  let referenceAudioUrls: string[] | undefined;
+  if (candidate.referenceAudioUrls !== undefined) {
+    if (
+      !Array.isArray(candidate.referenceAudioUrls) ||
+      !candidate.referenceAudioUrls.every(
+        (item) => typeof item === "string" && isPublicHttpUrl(item)
+      )
+    ) {
+      return undefined;
+    }
+    referenceAudioUrls = candidate.referenceAudioUrls as string[];
   }
 
   return {
@@ -161,12 +196,19 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
       typeof candidate.inputVideoUrl === "string"
         ? candidate.inputVideoUrl
         : undefined,
+    lastFrameImageUrl:
+      typeof candidate.lastFrameImageUrl === "string"
+        ? candidate.lastFrameImageUrl
+        : undefined,
+    referenceVideoUrls,
+    referenceAudioUrls,
     size: typeof candidate.size === "string" ? candidate.size : undefined,
     n: typeof candidate.n === "number" ? candidate.n : undefined,
     resolution:
       typeof candidate.resolution === "string"
         ? candidate.resolution
         : undefined,
+    ratio: typeof candidate.ratio === "string" ? candidate.ratio : undefined,
     duration:
       typeof candidate.duration === "number" ? candidate.duration : undefined,
     audioSetting:

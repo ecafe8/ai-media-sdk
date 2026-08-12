@@ -27,6 +27,7 @@ const PROVIDER_IDS: readonly PlaygroundProvider[] = [
   "azure-openai",
   "aliyun-bailian",
   "doubao-seedream",
+  "minimax",
 ];
 
 const CREDENTIAL_FIELDS = [
@@ -167,6 +168,8 @@ export function isCredentialsComplete(
     case "aliyun-bailian":
       return Boolean(normalized.baseUrl);
     case "doubao-seedream":
+      return true;
+    case "minimax":
       return true;
   }
 }
