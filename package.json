@@ -13,7 +13,8 @@
     "release:pack": "bun scripts/release-check.ts --pack",
     "release:version": "bun scripts/release-version.ts",
     "release": "bun scripts/release.ts",
-    "docs": "mdts docs"
+    "docs": "mdts docs",
+    "site:preview": "bun run --cwd apps/site preview:pages"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.7",
