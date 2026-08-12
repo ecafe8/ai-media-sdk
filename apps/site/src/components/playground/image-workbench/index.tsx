@@ -4,6 +4,7 @@ import { Input } from "@workspace/ui/components/shadcn/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -244,12 +245,14 @@ export function ImageWorkbench({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {SITE_PROVIDERS.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {PROVIDER_LABELS[item]}
-                    {configuredProviders.has(item) ? "" : "（未配置）"}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {SITE_PROVIDERS.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {PROVIDER_LABELS[item]}
+                      {configuredProviders.has(item) ? "" : "（未配置）"}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </Field>
@@ -272,18 +275,20 @@ export function ImageWorkbench({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {providerModels.map((item) => {
-                  const usable = item.supportsGenerate || item.supportsEdit;
-                  return (
-                    <SelectItem
-                      key={item.id}
-                      value={item.id}
-                      disabled={!usable}
-                    >
-                      {usable ? item.label : `${item.label}（暂不支持）`}
-                    </SelectItem>
-                  );
-                })}
+                <SelectGroup>
+                  {providerModels.map((item) => {
+                    const usable = item.supportsGenerate || item.supportsEdit;
+                    return (
+                      <SelectItem
+                        key={item.id}
+                        value={item.id}
+                        disabled={!usable}
+                      >
+                        {usable ? item.label : `${item.label}（暂不支持）`}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectGroup>
               </SelectContent>
             </Select>
             <p className="mt-2 text-slate-500 text-xs leading-5">
@@ -340,11 +345,13 @@ export function ImageWorkbench({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {sizeOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {sizeOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>
@@ -363,11 +370,13 @@ export function ImageWorkbench({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {nOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {nOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>
@@ -496,11 +505,13 @@ function AdvancedFieldControl({
             <SelectValue placeholder="未指定" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              {options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           </SelectContent>
         </Select>
       </Field>

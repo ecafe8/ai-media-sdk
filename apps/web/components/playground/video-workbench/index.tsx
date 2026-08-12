@@ -5,6 +5,7 @@ import { Input } from "@workspace/ui/components/shadcn/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -307,20 +308,22 @@ export function VideoWorkbench({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {PLAYGROUND_PROVIDERS.map((item) => {
-                  const hasVideo = videoModels.some(
-                    (m) => m.provider === item.id
-                  );
-                  return (
-                    <SelectItem
-                      key={item.id}
-                      value={item.id}
-                      disabled={!hasVideo}
-                    >
-                      {hasVideo ? item.label : `${item.label}（无视频模型）`}
-                    </SelectItem>
-                  );
-                })}
+                <SelectGroup>
+                  {PLAYGROUND_PROVIDERS.map((item) => {
+                    const hasVideo = videoModels.some(
+                      (m) => m.provider === item.id
+                    );
+                    return (
+                      <SelectItem
+                        key={item.id}
+                        value={item.id}
+                        disabled={!hasVideo}
+                      >
+                        {hasVideo ? item.label : `${item.label}（无视频模型）`}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectGroup>
               </SelectContent>
             </Select>
           </Field>
@@ -353,11 +356,13 @@ export function VideoWorkbench({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {providerModels.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.label}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {providerModels.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
             <p className="mt-2 text-slate-500 text-xs leading-5">
@@ -458,11 +463,13 @@ export function VideoWorkbench({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {resolutionOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {resolutionOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </Field>
@@ -482,11 +489,13 @@ export function VideoWorkbench({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {ratioOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {ratioOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>
@@ -507,11 +516,13 @@ export function VideoWorkbench({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {durationOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {durationOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={String(opt.value)}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>
@@ -532,11 +543,13 @@ export function VideoWorkbench({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {audioOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {audioOptions.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               </Field>
