@@ -4,6 +4,7 @@ import { Checkbox } from "@workspace/ui/components/shadcn/checkbox";
 import { Input } from "@workspace/ui/components/shadcn/input";
 import { Check, KeyRound, ShieldCheck, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   clearCredentials,
@@ -35,6 +36,26 @@ interface ProviderDraft {
   confirmCustom: boolean;
 }
 
+/**
+ * Message keys resolved at render time, so a language switch re-renders
+ * pending dialog messages in the new language.
+ */
+type SettingsMessageKey =
+  | "saved"
+  | "cleared"
+  | "apiKeyRequired"
+  | "endpointRequired"
+  | "baseUrlRequired"
+  | "apiVersionRequired"
+  | "endpointInvalid"
+  | "customHostNeedsConfirm";
+
+interface SettingsMessage {
+  readonly kind: "error" | "success";
+  readonly key: SettingsMessageKey;
+  readonly host?: string;
+}
+
 const EMPTY_DRAFT: ProviderDraft = {
   apiKey: "",
   endpoint: "",
@@ -44,6 +65,7 @@ const EMPTY_DRAFT: ProviderDraft = {
 };
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
+  const { t } = useTranslation();
   const { credentials, confirmedHosts } = useKeyStore();
   const [drafts, setDrafts] = useState<Record<SiteProvider, ProviderDraft>>({
     "azure-openai": { ...EMPTY_DRAFT },
@@ -52,7 +74,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     minimax: { ...EMPTY_DRAFT },
   });
   const [messages, setMessages] = useState<
-    Partial<Record<SiteProvider, { kind: "error" | "success"; text: string }>>
+    Partial<Record<SiteProvider, SettingsMessage>>
   >({});
 
   // Sync drafts from the store whenever the dialog opens.
@@ -66,9 +88,27 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       minimax: initDraft("minimax", credentials),
     });
     setMessages({});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;
+
+  function messageText(message: SettingsMessage): string {
+    switch (message.key) {
+      case "saved":
+        return t("common.saved");
+      case "cleared":
+        return t("common.cleared");
+      case "endpointInvalid":
+        return t("settings.endpointInvalid");
+      case "customHostNeedsConfirm":
+        return t("settings.customHostNeedsConfirm", {
+          host: message.host ?? "",
+        });
+      default:
+        return t(`settings.validation.${message.key}`);
+    }
+  }
 
   function updateDraft(provider: SiteProvider, patch: Partial<ProviderDraft>) {
     setDrafts((prev) => ({
@@ -84,7 +124,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     if (!apiKey) {
       setMessages((prev) => ({
         ...prev,
-        [provider]: { kind: "error", text: "请填写 API Key" },
+        [provider]: { kind: "error", key: "apiKeyRequired" },
       }));
       return;
     }
@@ -98,8 +138,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         ...prev,
         [provider]: {
           kind: "error",
-          text:
-            provider === "azure-openai" ? "请填写 Endpoint" : "请填写 Base URL",
+          key:
+            provider === "azure-openai"
+              ? "endpointRequired"
+              : "baseUrlRequired",
         },
       }));
       return;
@@ -107,7 +149,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     if (provider === "azure-openai" && !draft.apiVersion.trim()) {
       setMessages((prev) => ({
         ...prev,
-        [provider]: { kind: "error", text: "请填写 API Version" },
+        [provider]: { kind: "error", key: "apiVersionRequired" },
       }));
       return;
     }
@@ -117,7 +159,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       if (!validation.ok) {
         setMessages((prev) => ({
           ...prev,
-          [provider]: { kind: "error", text: validation.error ?? "端点不可用" },
+          [provider]: { kind: "error", key: "endpointInvalid" },
         }));
         return;
       }
@@ -130,7 +172,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
           ...prev,
           [provider]: {
             kind: "error",
-            text: `自定义端点 ${validation.host} 不在默认列表中，请勾选下方确认后保存`,
+            key: "customHostNeedsConfirm",
+            host: validation.host,
           },
         }));
         return;
@@ -154,7 +197,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     });
     setMessages((prev) => ({
       ...prev,
-      [provider]: { kind: "success", text: "已保存" },
+      [provider]: { kind: "success", key: "saved" },
     }));
   }
 
@@ -163,7 +206,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setDrafts((prev) => ({ ...prev, [provider]: { ...EMPTY_DRAFT } }));
     setMessages((prev) => ({
       ...prev,
-      [provider]: { kind: "success", text: "已清除" },
+      [provider]: { kind: "success", key: "cleared" },
     }));
   }
 
@@ -184,7 +227,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="API 设置"
+      aria-label={t("settings.title")}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -196,15 +239,15 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
               <KeyRound className="size-4" />
             </div>
             <div>
-              <h2 className="font-semibold">API 设置</h2>
+              <h2 className="font-semibold">{t("settings.title")}</h2>
               <p className="text-muted-foreground text-xs">
-                自带 Key，直连 Provider
+                {t("settings.subtitle")}
               </p>
             </div>
           </div>
           <button
             type="button"
-            aria-label="关闭设置"
+            aria-label={t("settings.closeAria")}
             className="rounded p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
             onClick={onClose}
           >
@@ -214,11 +257,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
         <div className="mb-5 flex items-start gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-emerald-700 text-xs leading-5 dark:text-emerald-400">
           <ShieldCheck className="mt-0.5 size-4 shrink-0" />
-          <p>
-            API Key 仅保存在你的浏览器 localStorage，并只发送给对应的 Provider
-            端点，不经过任何中间服务器。同源页面脚本可以读取
-            localStorage，请勿在不受信任的设备上使用。
-          </p>
+          <p>{t("settings.securityNote")}</p>
         </div>
 
         <div className="space-y-5">
@@ -245,9 +284,13 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     {PROVIDER_LABELS[provider]}
                   </h3>
                   {configured ? (
-                    <Badge variant="secondary">已配置</Badge>
+                    <Badge variant="secondary">
+                      {t("settings.configured")}
+                    </Badge>
                   ) : (
-                    <Badge variant="outline">未配置</Badge>
+                    <Badge variant="outline">
+                      {t("settings.notConfigured")}
+                    </Badge>
                   )}
                 </div>
 
@@ -258,8 +301,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     value={draft.apiKey}
                     placeholder={
                       provider === "aliyun-bailian"
-                        ? "sk-..."
-                        : `${PROVIDER_LABELS[provider]} API Key`
+                        ? t("settings.apiKeyPlaceholder")
+                        : t("settings.apiKeyPlaceholderProvider", {
+                            provider: PROVIDER_LABELS[provider],
+                          })
                     }
                     onChange={(value) =>
                       updateDraft(provider, { apiKey: value })
@@ -268,7 +313,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                   {provider === "azure-openai" ? (
                     <>
                       <LabeledInput
-                        label="Endpoint"
+                        label={t("settings.endpoint")}
                         type="url"
                         value={draft.endpoint}
                         placeholder="https://<resource>.openai.azure.com"
@@ -277,7 +322,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                         }
                       />
                       <LabeledInput
-                        label="API Version"
+                        label={t("settings.apiVersion")}
                         type="text"
                         value={draft.apiVersion}
                         placeholder="2024-02-01"
@@ -290,8 +335,8 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                     <LabeledInput
                       label={
                         provider === "aliyun-bailian"
-                          ? "Base URL"
-                          : "Base URL（可选）"
+                          ? t("settings.baseUrl")
+                          : t("settings.baseUrlOptional")
                       }
                       type="url"
                       value={draft.baseUrl}
@@ -304,9 +349,9 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                       }
                       hint={
                         provider === "aliyun-bailian"
-                          ? "浏览器直连需 CORS 支持：工作空间端点（*.maas.aliyuncs.com）不可用时，请改用标准端点 https://dashscope.aliyuncs.com/api/v1"
+                          ? t("settings.aliyunBaseUrlHint")
                           : provider === "minimax"
-                            ? "留空时默认使用 https://api.minimax.io；浏览器直连需端点支持 CORS。"
+                            ? t("settings.minimaxBaseUrlHint")
                             : undefined
                       }
                       onChange={(value) =>
@@ -331,9 +376,9 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                         }
                       />
                       <span>
-                        我了解 API Key 将发送到自定义端点{" "}
-                        <code className="font-mono">{customHost}</code>
-                        ，该地址不在默认 Provider 域名列表中。
+                        {t("settings.customHostConfirm", {
+                          host: customHost,
+                        })}
                       </span>
                     </label>
                   ) : null}
@@ -346,7 +391,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                           : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                       }`}
                     >
-                      {message.text}
+                      {messageText(message)}
                     </p>
                   ) : null}
 
@@ -358,7 +403,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                       onClick={() => clear(provider)}
                     >
                       <Trash2 className="mr-1 size-3.5" />
-                      清除
+                      {t("common.clear")}
                     </Button>
                     <Button
                       type="button"
@@ -367,7 +412,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
                       onClick={() => save(provider)}
                     >
                       <Check className="mr-1 size-3.5" />
-                      保存
+                      {t("common.save")}
                     </Button>
                   </div>
                 </div>

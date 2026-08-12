@@ -11,11 +11,13 @@ import {
 import { Textarea } from "@workspace/ui/components/shadcn/textarea";
 import { LoaderCircle, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ImageListField } from "@/components/image-list-field";
 import { ImageSourceField } from "@/components/image-source-field";
 import { PageContainer } from "@/components/layout/page-container";
 import { executeSiteRequest } from "@/lib/executor";
+import { SITE_RESOURCES, type SiteResources, useSiteLang } from "@/lib/i18n";
 import {
   type ImageSelection,
   isValidHttpUrl,
@@ -27,6 +29,7 @@ import {
   SITE_PROVIDERS,
   type SiteProvider,
 } from "@/lib/key-store";
+import { useModelText } from "@/lib/model-text";
 import type {
   SiteModel,
   SitePlaygroundResponse,
@@ -44,19 +47,14 @@ import {
 } from "../lib/video-form-schema";
 import { ResultPanel } from "../result-panel";
 
-const PROMPTS = ["霓虹城市的雨夜街景，电影感", "纸飞机穿越森林的稳定跟踪镜头"];
+type ValidationKey = keyof SiteResources["playground"]["validation"];
 
-/**
- * Scenario selector labels for multi-scenario models.
- */
-const SCENARIO_LABELS: readonly {
-  readonly value: VideoScenario;
-  readonly label: string;
-}[] = [
-  { value: "t2v", label: "文生视频" },
-  { value: "i2v", label: "图生视频" },
-  { value: "r2v", label: "参考生视频" },
-];
+interface ValidationError {
+  readonly key: ValidationKey;
+  readonly count?: number;
+}
+
+const SCENARIOS: readonly VideoScenario[] = ["t2v", "i2v", "r2v"];
 
 interface VideoWorkbenchProps {
   readonly models: readonly SiteModel[];
@@ -79,6 +77,11 @@ export function VideoWorkbench({
   configuredProviders,
   onOpenSettings,
 }: VideoWorkbenchProps) {
+  const { t } = useTranslation();
+  const lang = useSiteLang();
+  const modelText = useModelText();
+  const samplePrompts = SITE_RESOURCES[lang].playground.samplePrompts.video;
+
   const videoModels = useMemo(
     () => models.filter((m) => m.modality === "video"),
     [models]
@@ -110,7 +113,7 @@ export function VideoWorkbench({
   const [inputVideoUrl, setInputVideoUrl] = useState("");
   const [result, setResult] = useState<SitePlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationError, setValidationError] = useState("");
+  const [validationError, setValidationError] = useState<ValidationError>();
 
   const providerModels = useMemo(
     () => videoModels.filter((m) => m.provider === provider),
@@ -220,7 +223,7 @@ export function VideoWorkbench({
     setScenario("t2v");
     clearMediaInputs();
     setResult(undefined);
-    setValidationError("");
+    setValidationError(undefined);
   }
 
   function splitUrls(text: string): string[] {
@@ -233,19 +236,19 @@ export function VideoWorkbench({
   async function submit() {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
-      setValidationError("请输入提示词后再开始生成。");
+      setValidationError({ key: "promptRequired" });
       return;
     }
     if (!providerConfigured) {
-      setValidationError("该 Provider 尚未配置凭证，请先在 API 设置中填写。");
+      setValidationError({ key: "providerNotConfigured" });
       return;
     }
     if (needsFirstFrame && !firstFrame) {
-      setValidationError("该视频模型需要一张首帧图片（URL 或本地上传）。");
+      setValidationError({ key: "firstFrameRequired" });
       return;
     }
     if (needsInputVideo && !isValidHttpUrl(inputVideoUrl)) {
-      setValidationError("该视频模型需要一个有效的公网视频 URL。");
+      setValidationError({ key: "inputVideoRequired" });
       return;
     }
     if (
@@ -254,23 +257,21 @@ export function VideoWorkbench({
       !needsInputVideo &&
       referenceImages.length === 0
     ) {
-      setValidationError(
-        `该视频模型需要至少 1 张参考图（最多 ${maxRefs} 张）。`
-      );
+      setValidationError({ key: "refsRequired", count: maxRefs });
       return;
     }
     const referenceVideoUrls = splitUrls(referenceVideoUrlsText);
     if (!referenceVideoUrls.every((url) => isValidHttpUrl(url))) {
-      setValidationError("参考视频 URL 中存在无效地址，请检查后重试。");
+      setValidationError({ key: "refVideosInvalid" });
       return;
     }
     const referenceAudioUrls = splitUrls(referenceAudioUrlsText);
     if (!referenceAudioUrls.every((url) => isValidHttpUrl(url))) {
-      setValidationError("参考音频 URL 中存在无效地址，请检查后重试。");
+      setValidationError({ key: "refAudiosInvalid" });
       return;
     }
 
-    setValidationError("");
+    setValidationError(undefined);
     setIsSubmitting(true);
     setResult({ status: "processing" });
     try {
@@ -280,7 +281,7 @@ export function VideoWorkbench({
         await resolveImageInputs(referenceImages);
       if ((needsFirstFrame && !resolvedFirstFrame) || missing > 0) {
         setResult(undefined);
-        setValidationError("部分图片缓存已失效，请重新选择后再提交。");
+        setValidationError({ key: "cacheMiss" });
         return;
       }
 
@@ -310,28 +311,33 @@ export function VideoWorkbench({
     } catch {
       setResult({
         status: "failed",
-        error: { code: "NETWORK_ERROR", message: "生成失败，请稍后重试。" },
+        error: {
+          code: "NETWORK_ERROR",
+          message: "Generation failed; please try again later.",
+        },
       });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  const operationLabel = !currentModel
-    ? "未选择"
+  const operationKey = !currentModel
+    ? "none"
     : isMultiScenario
       ? scenario === "i2v"
-        ? "图生视频（首尾帧）"
+        ? "i2vFrames"
         : scenario === "r2v"
-          ? "参考生视频"
-          : "文生视频"
+          ? "r2v"
+          : "t2v"
       : currentModel.requiresInputVideo
-        ? "视频编辑"
+        ? "edit"
         : currentModel.requiresFirstFrame
-          ? "首帧图生视频"
+          ? "firstFrame"
           : currentModel.maxReferenceImages
-            ? "参考生视频"
-            : "文生视频";
+            ? "r2v"
+            : "t2v";
+
+  const currentModelText = currentModel ? modelText(currentModel) : undefined;
 
   return (
     <PageContainer className="grid gap-5 py-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:py-6">
@@ -341,13 +347,17 @@ export function VideoWorkbench({
             <WandSparkles className="size-4" />
           </div>
           <div>
-            <h2 className="font-semibold">视频工作台</h2>
-            <p className="text-muted-foreground text-xs">{operationLabel}</p>
+            <h2 className="font-semibold">
+              {t("playground.videoWorkbench.title")}
+            </h2>
+            <p className="text-muted-foreground text-xs">
+              {t(`playground.videoWorkbench.operation.${operationKey}`)}
+            </p>
           </div>
         </div>
 
         <div className="space-y-5">
-          <Field label="Provider">
+          <Field label={t("common.provider")}>
             <Select
               value={provider}
               items={SITE_PROVIDERS.map((item) => {
@@ -356,9 +366,11 @@ export function VideoWorkbench({
                   value: item,
                   label: hasVideo
                     ? `${PROVIDER_LABELS[item]}${
-                        configuredProviders.has(item) ? "" : "（未配置）"
+                        configuredProviders.has(item)
+                          ? ""
+                          : t("common.notConfigured")
                       }`
-                    : `${PROVIDER_LABELS[item]}（无视频模型）`,
+                    : `${PROVIDER_LABELS[item]}${t("playground.videoWorkbench.noVideoModels")}`,
                 };
               })}
               onValueChange={(value) => {
@@ -367,7 +379,10 @@ export function VideoWorkbench({
                 }
               }}
             >
-              <SelectTrigger aria-label="Provider" className="w-full">
+              <SelectTrigger
+                aria-label={t("common.provider")}
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -380,9 +395,11 @@ export function VideoWorkbench({
                       <SelectItem key={item} value={item} disabled={!hasVideo}>
                         {hasVideo
                           ? `${PROVIDER_LABELS[item]}${
-                              configuredProviders.has(item) ? "" : "（未配置）"
+                              configuredProviders.has(item)
+                                ? ""
+                                : t("common.notConfigured")
                             }`
-                          : `${PROVIDER_LABELS[item]}（无视频模型）`}
+                          : `${PROVIDER_LABELS[item]}${t("playground.videoWorkbench.noVideoModels")}`}
                       </SelectItem>
                     );
                   })}
@@ -391,43 +408,44 @@ export function VideoWorkbench({
             </Select>
           </Field>
 
-          <Field label="模型">
+          <Field label={t("common.model")}>
             <Select
               value={modelId}
               items={providerModels.map((item) => ({
                 value: item.id,
-                label: item.label,
+                label: modelText(item).label,
               }))}
               onValueChange={(value) => {
                 if (typeof value === "string") changeModel(value);
               }}
             >
-              <SelectTrigger aria-label="模型" className="w-full">
+              <SelectTrigger aria-label={t("common.model")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {providerModels.map((item) => (
                     <SelectItem key={item.id} value={item.id}>
-                      {item.label}
+                      {modelText(item).label}
                     </SelectItem>
                   ))}
                 </SelectGroup>
               </SelectContent>
             </Select>
             <p className="mt-2 text-muted-foreground text-xs leading-5">
-              {currentModel?.recommendation ?? "该 Provider 暂无视频模型"}
+              {currentModelText?.recommendation ??
+                t("playground.videoWorkbench.noModels")}
             </p>
           </Field>
 
           {isMultiScenario ? (
-            <Field label="生成场景">
+            <Field label={t("playground.videoWorkbench.scenario")}>
               <div className="flex flex-wrap gap-2">
-                {SCENARIO_LABELS.map((item) => {
-                  const active = scenario === item.value;
+                {SCENARIOS.map((item) => {
+                  const active = scenario === item;
                   return (
                     <label
-                      key={item.value}
+                      key={item}
                       className={
                         active
                           ? "cursor-pointer rounded-full border border-emerald-600 bg-emerald-600 px-3 py-1 text-white text-xs"
@@ -439,40 +457,45 @@ export function VideoWorkbench({
                         name="video-scenario"
                         className="sr-only"
                         checked={active}
-                        onChange={() => changeScenario(item.value)}
+                        onChange={() => changeScenario(item)}
                       />
-                      {item.label}
+                      {t(`playground.videoWorkbench.scenarioOptions.${item}`)}
                     </label>
                   );
                 })}
               </div>
               <p className="mt-2 text-muted-foreground text-xs leading-5">
-                单个 MiniMax-H3
-                模型覆盖三种场景，切换场景会清空已填写的媒体输入。
+                {t("playground.videoWorkbench.scenarioNote")}
               </p>
             </Field>
           ) : null}
 
           {needsFirstFrame ? (
-            <Field label="首帧图片" required>
+            <Field
+              label={t("playground.videoWorkbench.firstFrame.label")}
+              required
+            >
               <ImageSourceField value={firstFrame} onChange={setFirstFrame} />
               <p className="mt-2 text-muted-foreground text-xs">
-                宽高比自动跟随首帧（adaptive），图生视频不支持手动选择 ratio。
+                {t("playground.videoWorkbench.firstFrame.note")}
               </p>
             </Field>
           ) : null}
 
           {showsLastFrame ? (
-            <Field label="尾帧图片（可选）">
+            <Field label={t("playground.videoWorkbench.lastFrame.label")}>
               <ImageSourceField value={lastFrame} onChange={setLastFrame} />
               <p className="mt-2 text-muted-foreground text-xs">
-                与首帧组合为首尾帧图生视频；留空则仅用首帧。
+                {t("playground.videoWorkbench.lastFrame.note")}
               </p>
             </Field>
           ) : null}
 
           {needsInputVideo ? (
-            <Field label="源视频 URL" required>
+            <Field
+              label={t("playground.videoWorkbench.inputVideo.label")}
+              required
+            >
               <Input
                 type="url"
                 value={inputVideoUrl}
@@ -480,18 +503,19 @@ export function VideoWorkbench({
                 onChange={(event) => setInputVideoUrl(event.target.value)}
               />
               <p className="mt-2 text-muted-foreground text-xs">
-                仅支持公网 http/https URL；不支持本地文件、base64。
+                {t("playground.videoWorkbench.inputVideo.note")}
               </p>
             </Field>
           ) : null}
 
           {maxRefs && !needsFirstFrame ? (
             <Field
-              label={
+              label={t(
                 needsInputVideo
-                  ? `参考图（可选，最多 ${maxRefs} 张）`
-                  : `参考图（最多 ${maxRefs} 张）`
-              }
+                  ? "playground.videoWorkbench.refImages.optionalLabel"
+                  : "playground.videoWorkbench.refImages.requiredLabel",
+                { count: maxRefs }
+              )}
               required={!needsInputVideo}
             >
               <ImageListField
@@ -500,16 +524,20 @@ export function VideoWorkbench({
                 maxCount={maxRefs}
               />
               <p className="mt-2 text-muted-foreground text-xs">
-                {needsInputVideo
-                  ? "可选参考图，按顺序对应 prompt 中的 [Image N]。"
-                  : "按顺序对应 prompt 中的 [Image N]；宽高比跟随参数。"}
+                {t(
+                  needsInputVideo
+                    ? "playground.videoWorkbench.refImages.noteWithVideo"
+                    : "playground.videoWorkbench.refImages.note"
+                )}
               </p>
             </Field>
           ) : null}
 
           {showsRefMedia ? (
             <Field
-              label={`参考视频 URL（可选，最多 ${maxRefVideos ?? 3} 条，逗号分隔）`}
+              label={t("playground.videoWorkbench.refVideos.label", {
+                count: maxRefVideos ?? 3,
+              })}
             >
               <Textarea
                 value={referenceVideoUrlsText}
@@ -521,14 +549,16 @@ export function VideoWorkbench({
                 }
               />
               <p className="mt-2 text-muted-foreground text-xs">
-                仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。
+                {t("playground.videoWorkbench.refVideos.note")}
               </p>
             </Field>
           ) : null}
 
           {showsRefMedia ? (
             <Field
-              label={`参考音频 URL（可选，最多 ${maxRefAudios ?? 3} 条，逗号分隔）`}
+              label={t("playground.videoWorkbench.refAudios.label", {
+                count: maxRefAudios ?? 3,
+              })}
             >
               <Textarea
                 value={referenceAudioUrlsText}
@@ -540,22 +570,22 @@ export function VideoWorkbench({
                 }
               />
               <p className="mt-2 text-muted-foreground text-xs">
-                仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。
+                {t("playground.videoWorkbench.refAudios.note")}
               </p>
             </Field>
           ) : null}
 
-          <Field label="提示词" required>
+          <Field label={t("playground.prompt.label")} required>
             <Textarea
               value={prompt}
               rows={5}
-              placeholder="描述你想生成的画面..."
+              placeholder={t("playground.prompt.placeholder")}
               aria-describedby="prompt-error"
               className="min-h-32 resize-y"
               onChange={(event) => setPrompt(event.target.value)}
             />
             <div className="mt-2 flex flex-wrap gap-2">
-              {PROMPTS.map((item) => (
+              {samplePrompts.map((item) => (
                 <button
                   type="button"
                   key={item}
@@ -569,7 +599,7 @@ export function VideoWorkbench({
           </Field>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="分辨率">
+            <Field label={t("playground.resolution")}>
               <Select
                 value={resolution}
                 items={resolutionOptions.map((opt) => ({
@@ -580,7 +610,10 @@ export function VideoWorkbench({
                   if (typeof value === "string") setResolution(value);
                 }}
               >
-                <SelectTrigger aria-label="分辨率" className="w-full">
+                <SelectTrigger
+                  aria-label={t("playground.resolution")}
+                  className="w-full"
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -595,7 +628,7 @@ export function VideoWorkbench({
               </Select>
             </Field>
             {showsRatio ? (
-              <Field label="长宽比">
+              <Field label={t("playground.aspectRatio")}>
                 <Select
                   value={ratio}
                   items={ratioOptions.map((opt) => ({
@@ -606,7 +639,10 @@ export function VideoWorkbench({
                     if (typeof value === "string") setRatio(value);
                   }}
                 >
-                  <SelectTrigger aria-label="长宽比" className="w-full">
+                  <SelectTrigger
+                    aria-label={t("playground.aspectRatio")}
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -622,25 +658,28 @@ export function VideoWorkbench({
               </Field>
             ) : null}
             {showsDuration ? (
-              <Field label="时长（秒）">
+              <Field label={t("playground.duration")}>
                 <Select
                   value={duration}
                   items={durationOptions.map((opt) => ({
                     value: String(opt.value),
-                    label: opt.label,
+                    label: t("fields.seconds", { count: opt.value }),
                   }))}
                   onValueChange={(value) => {
                     if (typeof value === "string") setDuration(value);
                   }}
                 >
-                  <SelectTrigger aria-label="时长" className="w-full">
+                  <SelectTrigger
+                    aria-label={t("playground.duration")}
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {durationOptions.map((opt) => (
                         <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label}
+                          {t("fields.seconds", { count: opt.value })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -649,25 +688,28 @@ export function VideoWorkbench({
               </Field>
             ) : null}
             {showsAudioSetting ? (
-              <Field label="声音设置">
+              <Field label={t("playground.audioSetting")}>
                 <Select
                   value={audioSetting}
                   items={audioOptions.map((opt) => ({
                     value: opt.value,
-                    label: opt.label,
+                    label: audioOptionLabel(opt.value),
                   }))}
                   onValueChange={(value) => {
                     if (typeof value === "string") setAudioSetting(value);
                   }}
                 >
-                  <SelectTrigger aria-label="声音设置" className="w-full">
+                  <SelectTrigger
+                    aria-label={t("playground.audioSetting")}
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {audioOptions.map((opt) => (
                         <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
+                          {audioOptionLabel(opt.value)}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -683,7 +725,9 @@ export function VideoWorkbench({
               role="alert"
               className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive text-sm"
             >
-              {validationError}
+              {t(`playground.validation.${validationError.key}`, {
+                count: validationError.count ?? 0,
+              })}
             </p>
           ) : null}
 
@@ -694,7 +738,7 @@ export function VideoWorkbench({
               className="flex-1"
               onClick={reset}
             >
-              重置
+              {t("common.reset")}
             </Button>
             <Button
               type="button"
@@ -707,18 +751,18 @@ export function VideoWorkbench({
               ) : (
                 <Sparkles className="mr-2 size-4" />
               )}
-              {isSubmitting ? "生成中" : "开始生成"}
+              {isSubmitting ? t("common.generating") : t("common.generate")}
             </Button>
           </div>
           {!providerConfigured ? (
             <p className="text-amber-600 text-xs leading-5 dark:text-amber-400">
-              当前 Provider 未配置凭证。
+              {t("playground.credentialsHint")}
               <button
                 type="button"
                 className="ml-1 text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
                 onClick={onOpenSettings}
               >
-                去设置 API Key
+                {t("playground.credentialsHintAction")}
               </button>
             </p>
           ) : null}
@@ -735,4 +779,9 @@ export function VideoWorkbench({
       />
     </PageContainer>
   );
+
+  function audioOptionLabel(value: string): string {
+    if (value === "origin") return t("fields.audioOrigin");
+    return t("fields.audioAuto");
+  }
 }

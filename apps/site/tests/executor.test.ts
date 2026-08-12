@@ -69,8 +69,8 @@ describe("executor local interception", () => {
       prompt: "a cat",
     });
     expect(response.status).toBe("failed");
-    expect(response.error?.code).toBe("CONFIGURATION_ERROR");
-    expect(response.error?.message).toContain("my-proxy.example.com");
+    expect(response.error?.code).toBe("ENDPOINT_UNCONFIRMED");
+    expect(response.error?.context?.host).toBe("my-proxy.example.com");
     expect(fetchSpy.calls()).toBe(0);
   });
 
@@ -85,7 +85,7 @@ describe("executor local interception", () => {
       prompt: "a cat",
     });
     expect(response.status).toBe("failed");
-    expect(response.error?.code).toBe("INVALID_REQUEST");
+    expect(response.error?.code).toBe("MODEL_UNAVAILABLE");
     expect(fetchSpy.calls()).toBe(0);
   });
 
@@ -104,8 +104,8 @@ describe("executor local interception", () => {
       prompt: "a cat",
     });
     expect(response.status).toBe("failed");
-    expect(response.error?.code).toBe("INVALID_REQUEST");
-    expect(response.error?.message).toContain("视频");
+    expect(response.error?.code).toBe("VIDEO_NOT_SUPPORTED");
+    expect(response.error?.message).toContain("video");
     expect(fetchSpy.calls()).toBe(0);
   });
 
@@ -126,8 +126,8 @@ describe("executor local interception", () => {
       referenceImage: { url: "https://example.com/a.png" },
     });
     expect(response.status).toBe("failed");
-    expect(response.error?.code).toBe("INVALID_REQUEST");
-    expect(response.error?.message).toContain("编辑");
+    expect(response.error?.code).toBe("EDIT_NOT_SUPPORTED");
+    expect(response.error?.message).toContain("editing");
     expect(fetchSpy.calls()).toBe(0);
   });
 
@@ -158,11 +158,11 @@ describe("executor local interception", () => {
       modality: "video",
       prompt: "a cat",
     });
-    // A CONFIGURATION_ERROR naming the custom host means the request passed
-    // the video-provider gate and model lookup and only stopped at the
+    // An ENDPOINT_UNCONFIRMED error naming the custom host means the request
+    // passed the video-provider gate and model lookup and only stopped at the
     // unconfirmed endpoint check.
     expect(response.status).toBe("failed");
-    expect(response.error?.code).toBe("CONFIGURATION_ERROR");
+    expect(response.error?.code).toBe("ENDPOINT_UNCONFIRMED");
     expect(response.error?.message).toContain("my-proxy.example.com");
     expect(fetchSpy.calls()).toBe(0);
   });
@@ -170,26 +170,28 @@ describe("executor local interception", () => {
 
 describe("executor error message mapping", () => {
   test("auth errors point at the API key", () => {
-    expect(mapSdkErrorMessage("AUTH_ERROR")).toContain("API Key");
+    expect(mapSdkErrorMessage("AUTH_ERROR")).toContain("API key");
   });
 
   test("rate limit and timeout messages are actionable", () => {
-    expect(mapSdkErrorMessage("RATE_LIMITED")).toContain("稍后重试");
-    expect(mapSdkErrorMessage("TIMEOUT")).toContain("重试");
+    expect(mapSdkErrorMessage("RATE_LIMITED")).toContain("try again later");
+    expect(mapSdkErrorMessage("TIMEOUT")).toContain("retry");
   });
 
   test("network errors mention connectivity", () => {
-    expect(mapSdkErrorMessage("NETWORK_ERROR")).toContain("无法连接");
+    expect(mapSdkErrorMessage("NETWORK_ERROR")).toContain("Cannot reach");
   });
 
   test("invalid request includes provider detail when present", () => {
     expect(mapSdkErrorMessage("INVALID_REQUEST", "bad size")).toContain(
       "bad size"
     );
-    expect(mapSdkErrorMessage("INVALID_REQUEST")).toContain("请求不被支持");
+    expect(mapSdkErrorMessage("INVALID_REQUEST")).toContain("not supported");
   });
 
   test("unknown codes fall back to a generic message", () => {
-    expect(mapSdkErrorMessage("UNKNOWN")).toBe("生成失败，请重试。");
+    expect(mapSdkErrorMessage("UNKNOWN")).toBe(
+      "Generation failed; please retry."
+    );
   });
 });

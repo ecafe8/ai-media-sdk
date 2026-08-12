@@ -17,6 +17,8 @@ import {
 import { createTransport } from "@ai-media/sdk";
 
 import {
+  ENDPOINT_ERROR_TEXT,
+  type EndpointErrorCode,
   type ProviderCredentials,
   type SiteProvider,
   validateProviderEndpoint,
@@ -37,15 +39,39 @@ export type AnySiteProvider =
   | SeedreamProvider
   | MiniMaxProvider;
 
+export type EndpointUnusableReason =
+  | "MISSING_FIELD"
+  | "INVALID_ENDPOINT"
+  | "UNCONFIRMED_HOST";
+
+/**
+ * Structured endpoint failure. `message` is a stable English fallback; the
+ * UI localizes from `reason` plus the structured fields.
+ */
 export class EndpointNotUsableError extends Error {
   readonly provider: SiteProvider;
+  readonly reason: EndpointUnusableReason;
+  readonly field?: string;
   readonly host?: string;
+  readonly endpointErrorCode?: EndpointErrorCode;
 
-  constructor(provider: SiteProvider, message: string, host?: string) {
+  constructor(
+    provider: SiteProvider,
+    reason: EndpointUnusableReason,
+    message: string,
+    extras?: {
+      readonly field?: string;
+      readonly host?: string;
+      readonly endpointErrorCode?: EndpointErrorCode;
+    }
+  ) {
     super(message);
     this.name = "EndpointNotUsableError";
     this.provider = provider;
-    this.host = host;
+    this.reason = reason;
+    this.field = extras?.field;
+    this.host = extras?.host;
+    this.endpointErrorCode = extras?.endpointErrorCode;
   }
 }
 
@@ -58,20 +84,29 @@ function assertEndpointUsable(
 ): string | undefined {
   if (!value?.trim()) {
     if (!required) return undefined;
-    throw new EndpointNotUsableError(provider, `${label} 不能为空`);
+    throw new EndpointNotUsableError(
+      provider,
+      "MISSING_FIELD",
+      `${label} is required`,
+      { field: label }
+    );
   }
   const validation = validateProviderEndpoint(provider, value);
   if (!validation.ok) {
+    const detail = ENDPOINT_ERROR_TEXT[validation.errorCode ?? "EMPTY"];
     throw new EndpointNotUsableError(
       provider,
-      `${label} 不可用：${validation.error}`
+      "INVALID_ENDPOINT",
+      `${label} is not usable: ${detail}`,
+      { field: label, endpointErrorCode: validation.errorCode }
     );
   }
   if (validation.isCustomHost && !confirmedHosts.includes(validation.host!)) {
     throw new EndpointNotUsableError(
       provider,
-      `自定义端点 ${validation.host} 尚未确认，请在 API 设置中确认后再发送请求`,
-      validation.host
+      "UNCONFIRMED_HOST",
+      `The custom endpoint ${validation.host} has not been confirmed; confirm it in API settings before sending requests`,
+      { host: validation.host }
     );
   }
   return value.trim();

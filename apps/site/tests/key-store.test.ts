@@ -195,7 +195,7 @@ describe("endpoint validation", () => {
       "http://ark.cn-beijing.volces.com/api/v3"
     );
     expect(http.ok).toBe(false);
-    expect(http.error).toContain("HTTPS");
+    expect(http.errorCode).toBe("NOT_HTTPS");
   });
 
   test("rejects endpoints with embedded credentials", () => {

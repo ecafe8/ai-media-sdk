@@ -1,6 +1,8 @@
 import { ThemeSwitcher } from "@workspace/ui/components/custom/theme-switcher";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { PageContainer } from "@/components/layout/page-container";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { getConfiguredProviders, useKeyStore } from "@/lib/key-store";
@@ -18,6 +20,7 @@ interface PlaygroundProps {
  * dialog. Credentials come from the global key store.
  */
 export function Playground({ models }: PlaygroundProps) {
+  const { t } = useTranslation();
   const { credentials } = useKeyStore();
   const configuredProviders = useMemo(
     () => getConfiguredProviders(credentials),
@@ -40,10 +43,10 @@ export function Playground({ models }: PlaygroundProps) {
         <PageContainer className="flex items-center justify-between">
           <div>
             <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
-              AI Media SDK
+              {t("common.appName")}
             </p>
             <h1 className="mt-1 font-semibold text-xl tracking-tight">
-              Media Playground
+              {t("playground.title")}
             </h1>
           </div>
           <div className="flex items-center gap-3">
@@ -53,15 +56,25 @@ export function Playground({ models }: PlaygroundProps) {
                   anyConfigured ? "bg-emerald-500" : "bg-amber-500"
                 }`}
               />
-              {anyConfigured ? "自带 Key 已配置" : "自带 Key 体验环境"}
+              {anyConfigured
+                ? t("playground.statusConfigured")
+                : t("playground.statusUnconfigured")}
             </div>
-            <ThemeSwitcher />
+            <LanguageSwitcher />
+            <ThemeSwitcher
+              ariaLabel={t("theme.aria")}
+              labels={{
+                light: t("theme.light"),
+                system: t("theme.system"),
+                dark: t("theme.dark"),
+              }}
+            />
             <button
               type="button"
               className="rounded-lg border border-border bg-card px-3 py-1.5 text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
               onClick={() => setSettingsOpen(true)}
             >
-              API 设置
+              {t("playground.apiSettings")}
             </button>
           </div>
         </PageContainer>
@@ -71,21 +84,21 @@ export function Playground({ models }: PlaygroundProps) {
               active={modality === "image"}
               onClick={() => setModality("image")}
             >
-              图像
+              {t("playground.modality.image")}
             </ModalityTab>
             <ModalityTab
               active={modality === "video"}
               onClick={() => setModality("video")}
             >
-              视频
+              {t("playground.modality.video")}
             </ModalityTab>
             <ModalityTab
               active={false}
               disabled
-              title="即将推出"
+              title={t("common.comingSoon")}
               onClick={() => undefined}
             >
-              音频
+              {t("playground.modality.audio")}
             </ModalityTab>
           </div>
         </PageContainer>
@@ -108,9 +121,7 @@ export function Playground({ models }: PlaygroundProps) {
 
       <footer className="pb-6">
         <PageContainer className="text-muted-foreground/70 text-xs">
-          API Key 仅保存在你的浏览器本地（localStorage），并直接发送给对应
-          Provider，不经过任何中间服务器。生成结果为 Provider 临时
-          URL，可能过期； 可在生成结果面板选择本地目录自动保存。
+          {t("playground.footerNote")}
         </PageContainer>
       </footer>
 

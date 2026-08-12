@@ -15,13 +15,14 @@ import type { FormOption } from "./image-form-schema";
 
 /**
  * Default duration options for HappyHorse t2v/i2v/r2v models (3-15 seconds).
- * video-edit hides duration (derived from the source video).
+ * video-edit hides duration (derived from the source video). Labels are raw
+ * counts; the rendering layer localizes them via `fields.seconds`.
  */
 const DURATION_OPTIONS: readonly FormOption<number>[] = [
-  { value: 3, label: "3 秒" },
-  { value: 5, label: "5 秒" },
-  { value: 10, label: "10 秒" },
-  { value: 15, label: "15 秒" },
+  { value: 3, label: "3" },
+  { value: 5, label: "5" },
+  { value: 10, label: "10" },
+  { value: 15, label: "15" },
 ];
 
 /**
@@ -31,13 +32,17 @@ const MINIMAX_DURATION_OPTIONS: readonly FormOption<number>[] = Array.from(
   { length: 12 },
   (_, index) => {
     const value = index + 4;
-    return { value, label: `${value} 秒` };
+    return { value, label: String(value) };
   }
 );
 
+/**
+ * Audio setting values are provider literals; the rendering layer maps the
+ * value to a localized label (`fields.audioAuto` / `fields.audioOrigin`).
+ */
 const AUDIO_SETTING_OPTIONS: readonly FormOption<string>[] = [
-  { value: "auto", label: "auto（模型控制）" },
-  { value: "origin", label: "origin（保留原声）" },
+  { value: "auto", label: "auto" },
+  { value: "origin", label: "origin" },
 ];
 
 function isMultiScenarioModel(model: SiteModel): boolean {

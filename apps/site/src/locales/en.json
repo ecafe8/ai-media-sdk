@@ -1,0 +1,382 @@
+{
+  "meta": {
+    "title": "AI Media SDK · Multimodal Generation Playground"
+  },
+  "common": {
+    "appName": "AI Media SDK",
+    "github": "GitHub",
+    "provider": "Provider",
+    "model": "Model",
+    "reset": "Reset",
+    "generate": "Generate",
+    "generating": "Generating",
+    "save": "Save",
+    "clear": "Clear",
+    "saved": "Saved",
+    "cleared": "Cleared",
+    "fromCache": "From cache",
+    "uploaded": "Uploaded",
+    "notConfigured": " (not configured)",
+    "comingSoon": "Coming soon",
+    "unspecified": "Unspecified"
+  },
+  "theme": {
+    "aria": "Theme",
+    "light": "Light",
+    "system": "System",
+    "dark": "Dark"
+  },
+  "langSwitcher": {
+    "aria": "Switch language"
+  },
+  "landing": {
+    "badge": "Pure frontend · Bring your own key · No server relay",
+    "heroTitle": "One contract, driving multi-provider multimodal generation",
+    "heroDescription": "AI Media SDK unifies the calling contract for image and video generation across Azure OpenAI, Alibaba Bailian (DashScope), Volcengine Ark (Seedream) and MiniMax (Hailuo Video). Enter your own API keys on this site and experience generation and editing directly in your browser.",
+    "enterPlayground": "Open Playground",
+    "tryNow": "Try it now",
+    "viewDocs": "View docs",
+    "features": {
+      "image": {
+        "title": "Image generation & editing",
+        "description": "A unified entry for text-to-image and image-to-image; reference-image editing with multi-model parameters."
+      },
+      "video": {
+        "title": "Video generation",
+        "description": "Text-to-video, first-frame-to-video, reference-to-video and video editing, with in-browser polling of async tasks."
+      },
+      "local": {
+        "title": "Local-first experience",
+        "description": "Hash-based reuse of local image caches; results can be auto-saved to a directory you choose."
+      }
+    },
+    "supportedModels": "Supported models",
+    "modelCount": "{{count}} models",
+    "capability": {
+      "generate": "Generate",
+      "edit": "Edit",
+      "video": "Video",
+      "async": "Async"
+    },
+    "privacy": {
+      "title": "Privacy & key notes",
+      "keys": "Your API keys are stored only in your browser's localStorage and sent directly to the corresponding provider — never through an intermediate server.",
+      "cache": "Locally uploaded images are cached only in your browser, deduplicated by content hash, and encoded only when sent.",
+      "temporary": "Results come from temporary provider URLs and may expire; optionally auto-save them to a local directory.",
+      "autoSave": "Auto-save relies on the File System Access API; the latest Chrome or Edge is recommended."
+    },
+    "footerNote": "AI Media SDK · Pure-frontend demo site · {{year}}"
+  },
+  "playground": {
+    "title": "Media Playground",
+    "statusConfigured": "BYO keys configured",
+    "statusUnconfigured": "BYO-key environment",
+    "apiSettings": "API settings",
+    "modality": {
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio"
+    },
+    "footerNote": "API keys are stored only in your browser's localStorage and sent directly to the corresponding provider — never through an intermediate server. Results are temporary provider URLs and may expire; choose a local directory in the result panel to auto-save them.",
+    "imageWorkbench": {
+      "title": "Image workbench",
+      "subtitle": "Text-to-image / image-to-image",
+      "generate": "Text-to-image",
+      "edit": "Image-to-image",
+      "referenceImage": "Reference image",
+      "noModels": "No image models for this provider",
+      "modelNotSupported": " (not supported yet)"
+    },
+    "videoWorkbench": {
+      "title": "Video workbench",
+      "noModels": "No video models for this provider",
+      "noVideoModels": " (no video models)",
+      "scenario": "Scenario",
+      "scenarioNote": "A single MiniMax-H3 model covers all three scenarios; switching scenarios clears the media inputs you have filled in.",
+      "operation": {
+        "none": "None selected",
+        "t2v": "Text-to-video",
+        "i2vFrames": "Image-to-video (first & last frame)",
+        "r2v": "Reference-to-video",
+        "edit": "Video editing",
+        "firstFrame": "First-frame-to-video"
+      },
+      "scenarioOptions": {
+        "t2v": "Text-to-video",
+        "i2v": "Image-to-video",
+        "r2v": "Reference-to-video"
+      },
+      "firstFrame": {
+        "label": "First frame",
+        "note": "Aspect ratio follows the first frame automatically (adaptive); image-to-video does not allow choosing the ratio manually."
+      },
+      "lastFrame": {
+        "label": "Last frame (optional)",
+        "note": "Combined with the first frame for first-&-last-frame generation; leave empty to use the first frame only."
+      },
+      "inputVideo": {
+        "label": "Source video URL",
+        "note": "Public http/https URLs only; local files and base64 are not supported."
+      },
+      "refImages": {
+        "optionalLabel": "Reference images (optional, up to {{count}})",
+        "requiredLabel": "Reference images (up to {{count}})",
+        "noteWithVideo": "Optional reference images; order maps to [Image N] in the prompt.",
+        "note": "Order maps to [Image N] in the prompt; aspect ratio follows the parameter."
+      },
+      "refVideos": {
+        "label": "Reference video URLs (optional, up to {{count}}, comma separated)",
+        "note": "Public http/https URLs only; 2-15 seconds each, 15 seconds in total."
+      },
+      "refAudios": {
+        "label": "Reference audio URLs (optional, up to {{count}}, comma separated)",
+        "note": "Public http/https URLs only; 2-15 seconds each, 15 seconds in total."
+      }
+    },
+    "prompt": {
+      "label": "Prompt",
+      "placeholder": "Describe what you want to generate..."
+    },
+    "samplePrompts": {
+      "image": [
+        "Portrait kingdom-defense game UI",
+        "A lovely portrait photograph"
+      ],
+      "video": [
+        "Rainy night street of a neon city, cinematic",
+        "A steady tracking shot of a paper plane flying through a forest"
+      ]
+    },
+    "size": "Size",
+    "count": "Number of images",
+    "advancedOptions": "Advanced options",
+    "resolution": "Resolution",
+    "aspectRatio": "Aspect ratio",
+    "duration": "Duration (s)",
+    "audioSetting": "Audio setting",
+    "validation": {
+      "promptRequired": "Enter a prompt before generating.",
+      "providerNotConfigured": "This provider has no credentials yet; fill them in via API settings first.",
+      "editNeedsReference": "Edit mode requires a reference image (URL or local upload).",
+      "referenceCacheMiss": "The reference image cache has been reclaimed; please re-select the image.",
+      "firstFrameRequired": "This video model requires a first-frame image (URL or local upload).",
+      "inputVideoRequired": "This video model requires a valid public video URL.",
+      "refsRequired": "This video model requires at least 1 reference image (up to {{count}}).",
+      "refVideosInvalid": "Some reference video URLs are invalid; please check and retry.",
+      "refAudiosInvalid": "Some reference audio URLs are invalid; please check and retry.",
+      "cacheMiss": "Some image caches have been reclaimed; please re-select them before submitting."
+    },
+    "credentialsHint": "This provider has no credentials configured.",
+    "credentialsHintAction": "Set API key",
+    "result": {
+      "eyebrow": "Result feed",
+      "title": "Results",
+      "temporaryNote": "Results are temporary previews only",
+      "emptyTitle": "No results yet",
+      "emptyConfigured": "Fill in a prompt on the left and start generating.",
+      "emptyUnconfigured": "Configure provider credentials via API settings (top right) to get started.",
+      "processingTitle": "Processing",
+      "processingNote": "Please do not resubmit; provider results may be temporary URLs.",
+      "failedBadge": "Generation failed",
+      "failedNote": "Adjust the inputs on the left and retry; the provider will not be switched automatically.",
+      "failedDefault": "Request failed",
+      "imageSuccess": "Generated",
+      "videoSuccess": "Video generated",
+      "imageAlt": "Generated result {{count}}",
+      "viewImageData": "View image data"
+    },
+    "imageList": {
+      "empty": "No reference images yet; order maps to [Image N] in the prompt",
+      "upload": "Upload images",
+      "singleUrlPlaceholder": "Paste a single image URL",
+      "bulkSummary": "Paste URLs in bulk",
+      "bulkPlaceholder": "https://.../1.png, https://.../2.png\nComma or newline separated",
+      "bulkAdd": "Parse & add",
+      "invalidUrl": "Enter a valid http(s) URL",
+      "capReached": "Up to {{count}} reference images",
+      "capExceededFiles": "Up to {{count}} reference images; {{dropped}} file(s) ignored",
+      "bulkNoneParsed": "No valid http(s) URLs parsed",
+      "bulkDropped": "Over the cap; {{count}} ignored",
+      "bulkInvalid": "{{count}} invalid URL(s) ignored",
+      "processingFailed": "File processing failed; please retry",
+      "someFilesUnavailable": "Some files are unavailable",
+      "removeItem": "Remove image {{count}}",
+      "atCap": "Cap reached (up to {{count}})"
+    },
+    "imageSource": {
+      "placeholder": "Paste a public image URL, or drag & drop / pick a local image",
+      "upload": "Upload local image",
+      "hint": "≤5MB, PNG/JPEG/WebP supported",
+      "remove": "Remove image",
+      "processingFailed": "File processing failed; please retry",
+      "unavailable": "The file is unavailable"
+    }
+  },
+  "fields": {
+    "quality": "Quality",
+    "outputFormat": "Output format",
+    "outputCompression": "Compression level",
+    "negativePrompt": "Negative prompt",
+    "promptExtend": "Prompt expansion",
+    "watermark": "Watermark",
+    "seed": "Random seed",
+    "thinkingMode": "Thinking mode",
+    "colorPalette": "Color palette",
+    "enableSequential": "Sequential mode",
+    "responseFormat": "Response format",
+    "optimizePromptMode": "Prompt optimization",
+    "nImages": "{{count}}",
+    "seconds": "{{count}}s",
+    "audioAuto": "auto (model controlled)",
+    "audioOrigin": "origin (keep original audio)"
+  },
+  "settings": {
+    "title": "API settings",
+    "subtitle": "Bring your own keys, direct to providers",
+    "closeAria": "Close settings",
+    "securityNote": "API keys are stored only in your browser's localStorage and sent only to the corresponding provider endpoint — never through an intermediate server. Same-origin page scripts can read localStorage; avoid using this on untrusted devices.",
+    "configured": "Configured",
+    "notConfigured": "Not configured",
+    "apiKeyPlaceholder": "sk-...",
+    "apiKeyPlaceholderProvider": "{{provider}} API Key",
+    "endpoint": "Endpoint",
+    "apiVersion": "API Version",
+    "baseUrl": "Base URL",
+    "baseUrlOptional": "Base URL (optional)",
+    "aliyunBaseUrlHint": "Direct browser access requires CORS support: if the workspace endpoint (*.maas.aliyuncs.com) is unavailable, use the standard endpoint https://dashscope.aliyuncs.com/api/v1",
+    "minimaxBaseUrlHint": "Defaults to https://api.minimax.io when empty; direct browser access requires CORS support.",
+    "customHostConfirm": "I understand my API key will be sent to the custom endpoint {{host}}, which is not in the default provider domain list.",
+    "customHostNeedsConfirm": "The custom endpoint {{host}} is not in the default list; tick the confirmation below before saving",
+    "endpointInvalid": "The endpoint is not usable",
+    "validation": {
+      "apiKeyRequired": "API Key is required",
+      "endpointRequired": "Endpoint is required",
+      "baseUrlRequired": "Base URL is required",
+      "apiVersionRequired": "API Version is required"
+    }
+  },
+  "storage": {
+    "unsupported": "This browser does not support auto-saving to a local directory; the latest Chrome or Edge is recommended. You can still generate, but results remain temporary provider URLs and may expire.",
+    "dismissedNote": "Results remain temporary provider URLs and may expire.",
+    "dismissedAction": "Choose a directory to auto-save",
+    "chooseNote": "⚠ Results currently live only in temporary provider URLs and may expire. Choose a local directory to auto-save results after each generation.",
+    "chooseAction": "Choose local save directory",
+    "chooseSkip": "Skip, keep generating",
+    "permissionNote": "⚠ Access to the save directory “{{name}}” has expired; auto-save is paused.",
+    "reauthorize": "Reauthorize",
+    "rechoose": "Choose another directory",
+    "enabled": "Auto-save enabled",
+    "changeDir": "Change directory",
+    "revoke": "Revoke access",
+    "saving": "Saving results…",
+    "savedItem": "✓ Auto-saved {{name}}",
+    "failedItem": "⚠ Auto-save failed: {{reason}}",
+    "failures": {
+      "fetchFailed": "The result URL cannot be read by the browser (the provider disallows cross-origin downloads)",
+      "permission": "Directory access has expired",
+      "writeFailed": "Failed to write into the directory",
+      "unsupported": "This browser does not support saving to a directory"
+    }
+  },
+  "errors": {
+    "generic": "Generation failed; please retry.",
+    "genericRetryLater": "Generation failed; please try again later.",
+    "AUTH_ERROR": "Authentication failed; please check that your API key is correct.",
+    "INVALID_REQUEST": "The request is not supported; please check the model and input parameters.",
+    "INVALID_REQUEST_DETAIL": "The provider rejected the request: {{detail}}",
+    "RATE_LIMITED": "The provider is rate limiting; please try again later.",
+    "TIMEOUT": "The request timed out; please retry.",
+    "NETWORK_ERROR": "Cannot reach the provider; please check the network and endpoint configuration (direct browser access requires CORS support; for Alibaba, use the standard DashScope endpoint).",
+    "UNKNOWN_MODEL": "The selected model is unavailable.",
+    "PROVIDER_ERROR": "The provider failed to process the request; please retry.",
+    "PROVIDER_ERROR_DETAIL": "The provider returned an error: {{detail}}",
+    "NOT_IMPLEMENTED": "This capability is not supported by the SDK yet.",
+    "VALIDATION_ERROR": "Input validation failed; please check and retry.",
+    "CONFIGURATION_ERROR": "{{provider}} is missing credentials: {{detail}}. Configure them in API settings.",
+    "MODEL_UNAVAILABLE": "The selected model is unavailable",
+    "EDIT_NOT_SUPPORTED": "The selected model does not support image editing",
+    "VIDEO_NOT_SUPPORTED": "The selected model does not support video generation",
+    "VIDEO_PROVIDER_UNSUPPORTED": "Video generation is only supported for Alibaba Bailian and MiniMax",
+    "FIRST_FRAME_REQUIRED": "This video model requires a first-frame image",
+    "INPUT_VIDEO_REQUIRED": "This video model requires a source video URL",
+    "ENDPOINT_MISSING_FIELD": "{{field}} is required",
+    "ENDPOINT_INVALID": "{{field}} is not usable: {{detail}}",
+    "ENDPOINT_UNCONFIRMED": "The custom endpoint {{host}} has not been confirmed; confirm it in API settings before sending requests",
+    "endpoint": {
+      "EMPTY": "The endpoint is required",
+      "NOT_URL": "The endpoint is not a valid URL",
+      "NOT_HTTPS": "The endpoint must use HTTPS",
+      "HAS_CREDENTIALS": "The endpoint must not contain a username or password",
+      "NON_STANDARD_PORT": "The endpoint must not use a non-standard port"
+    },
+    "image": {
+      "UNSUPPORTED_TYPE": "Only PNG/JPEG/WebP/BMP/GIF images are supported (SVG is not)",
+      "TOO_LARGE": "The image exceeds the {{max}} cap (currently {{size}}); please compress it and retry"
+    }
+  },
+  "models": {
+    "azure-openai:gpt-image-2": {
+      "recommendation": "Azure synchronous image generation"
+    },
+    "aliyun-bailian:qwen-image-3.0-pro": {
+      "recommendation": "High-quality generation and editing"
+    },
+    "aliyun-bailian:qwen-image-3.0": {
+      "recommendation": "Standard generation and editing; balanced quality and speed"
+    },
+    "aliyun-bailian:qwen-image-2.0-pro": {
+      "recommendation": "Balanced generation and editing"
+    },
+    "aliyun-bailian:qwen-image-2.0-pro-2026-06-22": {
+      "label": "Qwen Image 2.0 Pro (Free Tier)",
+      "recommendation": "Qwen Image 2.0 Pro dated model; free quota may apply"
+    },
+    "aliyun-bailian:qwen-image-2.0": {
+      "recommendation": "Qwen Image 2.0 base model"
+    },
+    "aliyun-bailian:wan2.7-image-pro": {
+      "recommendation": "High quality generation"
+    },
+    "aliyun-bailian:wan2.7-image": {
+      "recommendation": "Balanced generation"
+    },
+    "aliyun-bailian:wan2.6-t2i": {
+      "recommendation": "Async text-to-image; pixel size 1280*1280–1440*1440"
+    },
+    "aliyun-bailian:happyhorse-1.1-t2v": {
+      "label": "HappyHorse 1.1 T2V (Text-to-Video)",
+      "recommendation": "Async text-to-video; 1080P, 3-15 seconds, 24fps MP4"
+    },
+    "aliyun-bailian:happyhorse-1.1-i2v": {
+      "label": "HappyHorse 1.1 I2V (First-Frame-to-Video)",
+      "recommendation": "Async first-frame image-to-video; requires a first frame, ratio follows the first frame"
+    },
+    "aliyun-bailian:happyhorse-1.1-r2v": {
+      "label": "HappyHorse 1.1 R2V (Reference-to-Video)",
+      "recommendation": "1-9 reference images + prompt [Image N] references; reference short side ≥ 400px"
+    },
+    "aliyun-bailian:happyhorse-1.0-video-edit": {
+      "label": "HappyHorse 1.0 Video Edit",
+      "recommendation": "1 source video (public URL only) + 0-5 reference images; no ratio/duration, supports audio_setting"
+    },
+    "doubao-seedream:doubao-seedream-5-0-pro-260628": {
+      "recommendation": "High-precision generation and interactive editing; multi-image/streaming/web search not supported yet"
+    },
+    "doubao-seedream:doubao-seedream-5-0-260128": {
+      "recommendation": "Alias of doubao-seedream-5-0-lite-260128"
+    },
+    "doubao-seedream:doubao-seedream-5-0-lite-260128": {
+      "recommendation": "Balanced generation and editing; multi-image/streaming/web search not supported yet"
+    },
+    "doubao-seedream:doubao-seedream-4-5-251128": {
+      "recommendation": "Generation and editing; jpeg output only"
+    },
+    "doubao-seedream:doubao-seedream-4-0-250828": {
+      "recommendation": "Generation and editing; jpeg output only"
+    },
+    "minimax:MiniMax-H3": {
+      "label": "MiniMax H3 (Hailuo Video)",
+      "recommendation": "t2v / first-&-last-frame i2v / r2v in one model; 2K output, 4-15 seconds; r2v supports image/video/audio references"
+    }
+  }
+}

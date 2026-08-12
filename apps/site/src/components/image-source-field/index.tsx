@@ -9,6 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   formatBytes,
   type ImageSelection,
@@ -35,6 +36,7 @@ export function ImageSourceField({
   onChange,
   disabled,
 }: ImageSourceFieldProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [urlText, setUrlText] = useState(
     value?.kind === "url" ? value.url : ""
@@ -48,7 +50,14 @@ export function ImageSourceField({
     if (!file || disabled) return;
     const validation = validateImageFile(file);
     if (!validation.ok) {
-      setError(validation.error ?? "文件不可用");
+      setError(
+        validation.errorCode === "UNSUPPORTED_TYPE"
+          ? t("errors.image.UNSUPPORTED_TYPE")
+          : t("errors.image.TOO_LARGE", {
+              max: formatBytes(validation.maxBytes),
+              size: formatBytes(validation.size),
+            })
+      );
       return;
     }
     setError("");
@@ -58,7 +67,7 @@ export function ImageSourceField({
       onChange({ kind: "file", hash: entry.hash, entry, fromCache });
       setUrlText("");
     } catch {
-      setError("文件处理失败，请重试");
+      setError(t("playground.imageSource.processingFailed"));
     } finally {
       setUploading(false);
     }
@@ -106,15 +115,15 @@ export function ImageSourceField({
             </p>
             <div className="mt-1.5 flex gap-1.5">
               {fromCache ? (
-                <Badge variant="secondary">来自缓存</Badge>
+                <Badge variant="secondary">{t("common.fromCache")}</Badge>
               ) : (
-                <Badge variant="secondary">已上传</Badge>
+                <Badge variant="secondary">{t("common.uploaded")}</Badge>
               )}
             </div>
           </div>
           <button
             type="button"
-            aria-label="移除图片"
+            aria-label={t("playground.imageSource.remove")}
             className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
             onClick={remove}
           >
@@ -145,7 +154,7 @@ export function ImageSourceField({
         <Input
           type="url"
           value={urlText}
-          placeholder="粘贴公网图片 URL，或拖拽/选择本地图片"
+          placeholder={t("playground.imageSource.placeholder")}
           disabled={disabled}
           className="pl-9"
           onChange={(event) => handleUrlChange(event.target.value)}
@@ -164,10 +173,10 @@ export function ImageSourceField({
           ) : (
             <UploadCloud className="mr-1.5 size-3.5" />
           )}
-          上传本地图片
+          {t("playground.imageSource.upload")}
         </Button>
         <span className="text-muted-foreground/70 text-xs">
-          ≤5MB，支持 PNG/JPEG/WebP
+          {t("playground.imageSource.hint")}
         </span>
         <input
           ref={inputRef}

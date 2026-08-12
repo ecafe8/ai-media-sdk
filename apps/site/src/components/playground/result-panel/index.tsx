@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+
+import type { SiteProvider } from "@/lib/key-store";
 import type {
   SiteModality,
   SitePlaygroundResponse,
@@ -14,7 +17,7 @@ import { ResultStoragePanel } from "../result-storage-panel";
 export interface ResultPanelProps {
   readonly result: SitePlaygroundResponse | undefined;
   readonly prompt: string;
-  readonly provider: string;
+  readonly provider: SiteProvider;
   readonly model: string;
   readonly configured: boolean;
   readonly modality: SiteModality;
@@ -27,6 +30,7 @@ export function ResultPanel({
   model,
   configured,
 }: ResultPanelProps) {
+  const { t } = useTranslation();
   return (
     <section
       aria-live="polite"
@@ -35,12 +39,14 @@ export function ResultPanel({
       <div className="mb-6 flex items-end justify-between border-border/60 border-b pb-4">
         <div>
           <p className="font-semibold text-muted-foreground/70 text-xs uppercase tracking-[0.2em]">
-            Result feed
+            {t("playground.result.eyebrow")}
           </p>
-          <h2 className="mt-1 font-semibold text-lg">生成结果</h2>
+          <h2 className="mt-1 font-semibold text-lg">
+            {t("playground.result.title")}
+          </h2>
         </div>
         <span className="text-muted-foreground/70 text-xs">
-          结果仅作临时预览
+          {t("playground.result.temporaryNote")}
         </span>
       </div>
 

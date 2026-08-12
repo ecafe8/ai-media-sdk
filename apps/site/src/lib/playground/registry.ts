@@ -9,9 +9,11 @@ import type { SiteModel, SiteModelFamily } from "./types";
 /**
  * Minimal site model projection derived directly from the provider package
  * registries (single source of truth for ids/capabilities). Human labels
- * and recommendations come from a small sidecar map. Wan 3.0 is excluded:
- * its heterogeneous `media[]` inputs are not representable by the current
- * forms (mirrors the `apps/web` exclusion).
+ * and recommendations come from a small sidecar map and are
+ * language-neutral (English); per-language display text is resolved by the
+ * UI from the `models` dictionary section (`lib/model-text`). Wan 3.0 is
+ * excluded: its heterogeneous `media[]` inputs are not representable by
+ * the current forms (mirrors the `apps/web` exclusion).
  */
 
 const EXCLUDED_MODEL_IDS: ReadonlySet<string> = new Set(["wan3.0-video"]);
@@ -37,7 +39,7 @@ const MODEL_LABELS: Readonly<
     recommendation: "Balanced generation and editing",
   },
   "aliyun-bailian:qwen-image-2.0-pro-2026-06-22": {
-    label: "Qwen Image 2.0 Pro（免费额度）",
+    label: "Qwen Image 2.0 Pro (Free Tier)",
     recommendation: "Qwen Image 2.0 Pro dated model; free quota may apply",
   },
   "aliyun-bailian:qwen-image-2.0": {
@@ -57,25 +59,28 @@ const MODEL_LABELS: Readonly<
     recommendation: "Async text-to-image; pixel size 1280*1280–1440*1440",
   },
   "aliyun-bailian:happyhorse-1.1-t2v": {
-    label: "HappyHorse 1.1 T2V（文生视频）",
-    recommendation: "文生视频异步任务；1080P，3-15 秒，24fps MP4",
+    label: "HappyHorse 1.1 T2V",
+    recommendation: "Async text-to-video; 1080P, 3-15 seconds, 24fps MP4",
   },
   "aliyun-bailian:happyhorse-1.1-i2v": {
-    label: "HappyHorse 1.1 I2V（首帧图生视频）",
-    recommendation: "首帧图生视频异步任务；需首帧图片，宽高比跟随首帧",
+    label: "HappyHorse 1.1 I2V",
+    recommendation:
+      "Async first-frame image-to-video; requires a first frame, ratio follows the first frame",
   },
   "aliyun-bailian:happyhorse-1.1-r2v": {
-    label: "HappyHorse 1.1 R2V（参考生视频）",
-    recommendation: "1-9 张参考图 + prompt [Image N] 指代；参考图短边≥400px",
+    label: "HappyHorse 1.1 R2V",
+    recommendation:
+      "1-9 reference images + prompt [Image N] references; reference short side ≥ 400px",
   },
   "aliyun-bailian:happyhorse-1.0-video-edit": {
-    label: "HappyHorse 1.0 Video Edit（视频编辑）",
+    label: "HappyHorse 1.0 Video Edit",
     recommendation:
-      "1 个源视频（仅公网 URL）+ 0-5 参考图；无 ratio/duration，支持 audio_setting",
+      "1 source video (public URL only) + 0-5 reference images; no ratio/duration, supports audio_setting",
   },
   "doubao-seedream:doubao-seedream-5-0-pro-260628": {
     label: "Doubao Seedream 5.0 Pro",
-    recommendation: "高精度生成与交互编辑；组图/流式/联网搜索暂不支持",
+    recommendation:
+      "High-precision generation and interactive editing; multi-image/streaming/web search not supported yet",
   },
   "doubao-seedream:doubao-seedream-5-0-260128": {
     label: "Doubao Seedream 5.0 Lite (260128)",
@@ -83,20 +88,21 @@ const MODEL_LABELS: Readonly<
   },
   "doubao-seedream:doubao-seedream-5-0-lite-260128": {
     label: "Doubao Seedream 5.0 Lite",
-    recommendation: "平衡生成与编辑；组图/流式/联网搜索暂不支持",
+    recommendation:
+      "Balanced generation and editing; multi-image/streaming/web search not supported yet",
   },
   "doubao-seedream:doubao-seedream-4-5-251128": {
     label: "Doubao Seedream 4.5",
-    recommendation: "生成与编辑；仅 jpeg 输出",
+    recommendation: "Generation and editing; jpeg output only",
   },
   "doubao-seedream:doubao-seedream-4-0-250828": {
     label: "Doubao Seedream 4.0",
-    recommendation: "生成与编辑；仅 jpeg 输出",
+    recommendation: "Generation and editing; jpeg output only",
   },
   "minimax:MiniMax-H3": {
-    label: "MiniMax H3（海螺视频）",
+    label: "MiniMax H3",
     recommendation:
-      "文生/首尾帧图生/参考生视频三场景；2K 输出，4-15 秒；参考生支持图/视频/音频参考",
+      "t2v / first-&-last-frame i2v / r2v in one model; 2K output, 4-15 seconds; r2v supports image/video/audio references",
   },
 };
 

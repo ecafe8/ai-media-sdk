@@ -122,7 +122,16 @@ export type SiteErrorCode =
   | "NETWORK_ERROR"
   | "UNKNOWN"
   | "CONFIGURATION_ERROR"
-  | "VALIDATION_ERROR";
+  | "VALIDATION_ERROR"
+  | "MODEL_UNAVAILABLE"
+  | "EDIT_NOT_SUPPORTED"
+  | "VIDEO_NOT_SUPPORTED"
+  | "VIDEO_PROVIDER_UNSUPPORTED"
+  | "FIRST_FRAME_REQUIRED"
+  | "INPUT_VIDEO_REQUIRED"
+  | "ENDPOINT_MISSING_FIELD"
+  | "ENDPOINT_INVALID"
+  | "ENDPOINT_UNCONFIRMED";
 
 export interface SitePlaygroundResponse {
   readonly status: "succeeded" | "processing" | "failed";
@@ -144,6 +153,14 @@ export interface SitePlaygroundResponse {
   readonly metadata?: SiteResponseMetadata;
   readonly error?: {
     readonly code: SiteErrorCode;
+    /**
+     * Stable English fallback message; the UI renders localized text from
+     * `code` and never displays this string directly.
+     */
     readonly message: string;
+    /** Raw provider/SDK detail for interpolation into localized text. */
+    readonly detail?: string;
+    /** Structured interpolation values (field/host/reason/...) per code. */
+    readonly context?: Readonly<Record<string, string>>;
   };
 }

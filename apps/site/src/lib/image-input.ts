@@ -43,20 +43,39 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+export type ImageValidationErrorCode = "UNSUPPORTED_TYPE" | "TOO_LARGE";
+
+export type ImageValidationResult =
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      readonly errorCode: ImageValidationErrorCode;
+      readonly maxBytes: number;
+      readonly size: number;
+    };
+
+/**
+ * Validate an image file. Failures carry stable codes and byte counts; the
+ * UI renders localized text from `errors.image.<code>`.
+ */
 export function validateImageFile(
   file: File,
   maxBytes: number = MAX_IMAGE_BYTES
-): { readonly ok: boolean; readonly error?: string } {
+): ImageValidationResult {
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.type)) {
     return {
       ok: false,
-      error: "仅支持 PNG/JPEG/WebP/BMP/GIF 图片（不支持 SVG）",
+      errorCode: "UNSUPPORTED_TYPE",
+      maxBytes,
+      size: file.size,
     };
   }
   if (file.size > maxBytes) {
     return {
       ok: false,
-      error: `图片超过 ${formatBytes(maxBytes)} 上限（当前 ${formatBytes(file.size)}），请压缩后再试`,
+      errorCode: "TOO_LARGE",
+      maxBytes,
+      size: file.size,
     };
   }
   return { ok: true };

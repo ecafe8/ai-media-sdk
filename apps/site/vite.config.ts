@@ -28,12 +28,15 @@ const minimaxSrc = path.resolve(
  * GitHub Pages project sites are served under `/<repo>/`. The single
  * `VITE_SITE_BASE` variable drives both the Vite asset base and (via
  * `import.meta.env.BASE_URL`) the Router basename, so the two can never
- * drift. Local dev always uses the root path.
+ * drift. Local dev always uses the root path; `vite preview` resolves its
+ * config with `command: "serve"` too, so it is distinguished by the
+ * production mode and keeps the deployment base (the dist assets are built
+ * with it).
  */
-export default defineConfig(({ command }) => {
+export default defineConfig(({ command, mode }) => {
   const base =
     process.env.VITE_SITE_BASE ??
-    (command === "serve" ? "/" : "/ai-media-sdk/");
+    (command === "serve" && mode !== "production" ? "/" : "/ai-media-sdk/");
 
   return {
     base,

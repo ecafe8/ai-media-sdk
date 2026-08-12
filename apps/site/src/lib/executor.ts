@@ -45,17 +45,27 @@ export function toImageContent(input: ImageInput): ImageContent {
   return { base64: input.base64, mimeType: input.mimeType };
 }
 
-function configurationError(message: string): SitePlaygroundResponse {
+function configurationError(
+  message: string,
+  detail?: string
+): SitePlaygroundResponse {
   return {
     status: "failed",
-    error: { code: "CONFIGURATION_ERROR", message },
+    error: {
+      code: "CONFIGURATION_ERROR",
+      message,
+      ...(detail ? { detail } : {}),
+    },
   };
 }
 
-function invalidRequest(message: string): SitePlaygroundResponse {
+function localError(
+  code: SiteErrorCode,
+  message: string
+): SitePlaygroundResponse {
   return {
     status: "failed",
-    error: { code: "INVALID_REQUEST", message },
+    error: { code, message },
   };
 }
 
@@ -84,32 +94,48 @@ export async function executeSiteRequest(
   if (!isCredentialsComplete(request.provider, credentials)) {
     const missing = missingCredentialFields(request.provider, credentials);
     return configurationError(
-      `${PROVIDER_LABELS[request.provider]} 缺少凭证：${missing.join("、")}。请在 API 设置中填写。`
+      `${PROVIDER_LABELS[request.provider]} is missing credentials: ${missing.join(", ")}. Configure them in API settings.`,
+      missing.join(", ")
     );
   }
 
   const model = getSiteModel(request.provider, request.model);
   if (!model) {
-    return invalidRequest("所选模型不可用");
+    return localError("MODEL_UNAVAILABLE", "The selected model is unavailable");
   }
   if (request.imageOperation === "edit" && !model.supportsEdit) {
-    return invalidRequest("所选模型不支持图像编辑");
+    return localError(
+      "EDIT_NOT_SUPPORTED",
+      "The selected model does not support image editing"
+    );
   }
   if (request.modality === "video") {
     if (!model.supportsVideo) {
-      return invalidRequest("所选模型不支持视频生成");
+      return localError(
+        "VIDEO_NOT_SUPPORTED",
+        "The selected model does not support video generation"
+      );
     }
     if (
       request.provider !== "aliyun-bailian" &&
       request.provider !== "minimax"
     ) {
-      return invalidRequest("视频生成仅支持 Alibaba Bailian 与 MiniMax");
+      return localError(
+        "VIDEO_PROVIDER_UNSUPPORTED",
+        "Video generation is only supported for Alibaba Bailian and MiniMax"
+      );
     }
     if (model.requiresFirstFrame && !request.referenceImage) {
-      return invalidRequest("该视频模型需要首帧图片");
+      return localError(
+        "FIRST_FRAME_REQUIRED",
+        "This video model requires a first-frame image"
+      );
     }
     if (model.requiresInputVideo && !request.inputVideoUrl) {
-      return invalidRequest("该视频模型需要源视频 URL");
+      return localError(
+        "INPUT_VIDEO_REQUIRED",
+        "This video model requires a source video URL"
+      );
     }
   }
 
@@ -138,7 +164,7 @@ export async function executeSiteRequest(
     }
   } catch (error) {
     if (error instanceof EndpointNotUsableError) {
-      return configurationError(error.message);
+      return endpointNotUsableResponse(error);
     }
     throw error;
   }
@@ -291,6 +317,29 @@ function readVideoUsage(raw: unknown): {
   };
 }
 
+/**
+ * Map a structured endpoint failure to a response error. The `context`
+ * fields drive localized interpolation in the UI (`errors.ENDPOINT_*`).
+ */
+function endpointNotUsableResponse(
+  error: EndpointNotUsableError
+): SitePlaygroundResponse {
+  const code =
+    error.reason === "MISSING_FIELD"
+      ? "ENDPOINT_MISSING_FIELD"
+      : error.reason === "INVALID_ENDPOINT"
+        ? "ENDPOINT_INVALID"
+        : "ENDPOINT_UNCONFIRMED";
+  const context: Record<string, string> = {};
+  if (error.field) context.field = error.field;
+  if (error.host) context.host = error.host;
+  if (error.endpointErrorCode) context.reason = error.endpointErrorCode;
+  return {
+    status: "failed",
+    error: { code, message: error.message, context },
+  };
+}
+
 function toSafeError(
   error: unknown
 ): NonNullable<SitePlaygroundResponse["error"]> {
@@ -298,14 +347,16 @@ function toSafeError(
     return {
       code: error.code,
       message: mapSdkErrorMessage(error.code, error.message),
+      ...(error.message ? { detail: error.message } : {}),
     };
   }
-  return { code: "UNKNOWN", message: "生成失败，请重试。" };
+  return { code: "UNKNOWN", message: "Generation failed; please retry." };
 }
 
 /**
- * Map an SDK error code to an actionable user-facing message. Exported for
- * testing; unknown codes fall back to a generic retry hint without leaking
+ * Map an SDK error code to an actionable English fallback message. The UI
+ * localizes from the error code; this text is the stable fallback and test
+ * surface. Unknown codes fall back to a generic retry hint without leaking
  * internals.
  */
 export function mapSdkErrorMessage(
@@ -314,27 +365,27 @@ export function mapSdkErrorMessage(
 ): string {
   switch (code) {
     case "AUTH_ERROR":
-      return "认证失败，请检查你的 API Key 是否正确。";
+      return "Authentication failed; please check your API key.";
     case "INVALID_REQUEST":
       return detail
-        ? `Provider 拒绝了请求：${detail}`
-        : "请求不被支持，请检查模型与输入参数。";
+        ? `The provider rejected the request: ${detail}`
+        : "The request is not supported; please check the model and input parameters.";
     case "RATE_LIMITED":
-      return "Provider 限流中，请稍后重试。";
+      return "The provider is rate limiting; please try again later.";
     case "TIMEOUT":
-      return "请求超时，请重试。";
+      return "The request timed out; please retry.";
     case "NETWORK_ERROR":
-      return "无法连接 Provider，请检查网络与端点配置（浏览器直连要求端点支持 CORS；阿里云请使用标准 DashScope 端点）。";
+      return "Cannot reach the provider; please check the network and endpoint configuration (direct browser access requires CORS support; for Alibaba use the standard DashScope endpoint).";
     case "UNKNOWN_MODEL":
-      return detail ?? "所选模型不可用。";
+      return detail ?? "The selected model is unavailable.";
     case "PROVIDER_ERROR":
       return detail
-        ? `Provider 返回错误：${detail}`
-        : "Provider 处理失败，请重试。";
+        ? `The provider returned an error: ${detail}`
+        : "The provider failed to process the request; please retry.";
     case "NOT_IMPLEMENTED":
-      return "当前 SDK 不支持该能力。";
+      return "This capability is not supported by the SDK yet.";
     default:
-      return "生成失败，请重试。";
+      return "Generation failed; please retry.";
   }
 }
 

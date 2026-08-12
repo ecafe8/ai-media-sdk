@@ -7,28 +7,48 @@ import {
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
-type ThemeOption = "light" | "system" | "dark";
+export type ThemeOption = "light" | "system" | "dark";
 
 const THEME_OPTIONS: ReadonlyArray<{
   readonly value: ThemeOption;
-  readonly label: string;
   readonly icon: typeof Sun;
 }> = [
-  { value: "light", label: "浅色", icon: Sun },
-  { value: "system", label: "跟随系统", icon: Monitor },
-  { value: "dark", label: "深色", icon: Moon },
+  { value: "light", icon: Sun },
+  { value: "system", icon: Monitor },
+  { value: "dark", icon: Moon },
 ];
+
+/** Language-neutral defaults; consumers may pass localized labels. */
+const DEFAULT_LABELS: Readonly<Record<ThemeOption, string>> = {
+  light: "Light",
+  system: "System",
+  dark: "Dark",
+};
+
+export interface ThemeSwitcherProps {
+  readonly className?: string;
+  /** Localized option labels (tooltip / aria text). */
+  readonly labels?: Partial<Record<ThemeOption, string>>;
+  /** Localized group aria-label. */
+  readonly ariaLabel?: string;
+}
 
 /**
  * Light / system / dark segmented theme switcher built on shadcn
  * ToggleGroup; persists the choice via next-themes.
  */
-export function ThemeSwitcher({ className }: { className?: string }) {
+export function ThemeSwitcher({
+  className,
+  labels,
+  ariaLabel,
+}: ThemeSwitcherProps) {
   const { theme, setTheme } = useTheme();
+  const labelFor = (option: ThemeOption): string =>
+    labels?.[option] ?? DEFAULT_LABELS[option];
 
   return (
     <ToggleGroup
-      aria-label="主题模式"
+      aria-label={ariaLabel ?? "Theme"}
       spacing={1}
       value={
         THEME_OPTIONS.some((option) => option.value === theme)
@@ -48,8 +68,8 @@ export function ThemeSwitcher({ className }: { className?: string }) {
         <ToggleGroupItem
           key={option.value}
           value={option.value}
-          aria-label={option.label}
-          title={option.label}
+          aria-label={labelFor(option.value)}
+          title={labelFor(option.value)}
           className="size-8 rounded-full text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         >
           <option.icon className="size-4" />

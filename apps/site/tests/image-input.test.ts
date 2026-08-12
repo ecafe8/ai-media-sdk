@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   ALLOWED_IMAGE_MIME_TYPES,
+  formatBytes,
   MAX_IMAGE_BYTES,
   parseBulkUrls,
   validateImageFile,
@@ -13,11 +14,13 @@ describe("validateImageFile", () => {
     expect(validateImageFile(file)).toEqual({ ok: true });
   });
 
-  test("rejects SVG", () => {
+  test("rejects SVG with a stable error code", () => {
     const file = new File(["<svg/>"], "a.svg", { type: "image/svg+xml" });
     const result = validateImageFile(file);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("SVG");
+    if (!result.ok) {
+      expect(result.errorCode).toBe("UNSUPPORTED_TYPE");
+    }
   });
 
   test("rejects unknown MIME types", () => {
@@ -25,13 +28,17 @@ describe("validateImageFile", () => {
     expect(validateImageFile(file).ok).toBe(false);
   });
 
-  test("rejects files above the size cap with a readable message", () => {
+  test("rejects files above the size cap with byte counts", () => {
     const big = new File([new Uint8Array(MAX_IMAGE_BYTES + 1)], "big.png", {
       type: "image/png",
     });
     const result = validateImageFile(big);
     expect(result.ok).toBe(false);
-    expect(result.error).toContain("5.0 MB");
+    if (!result.ok) {
+      expect(result.errorCode).toBe("TOO_LARGE");
+      expect(result.maxBytes).toBe(MAX_IMAGE_BYTES);
+      expect(formatBytes(result.size)).toContain("5.0 MB");
+    }
   });
 
   test("accepts a file exactly at the cap", () => {

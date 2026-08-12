@@ -6,6 +6,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SitePlaygroundResponse } from "@/lib/playground/types";
 import {
   chooseDirectory,
@@ -35,11 +36,16 @@ interface FileSaveStatus {
   readonly failure?: SaveFailureReason;
 }
 
-const FAILURE_TEXT: Readonly<Record<SaveFailureReason, string>> = {
-  "fetch-failed": "结果 URL 无法被浏览器读取（Provider 未允许跨域下载）",
-  permission: "目录授权已失效",
-  "write-failed": "写入目录失败",
-  unsupported: "当前浏览器不支持目录保存",
+const FAILURE_KEYS: Readonly<
+  Record<
+    SaveFailureReason,
+    "fetchFailed" | "permission" | "writeFailed" | "unsupported"
+  >
+> = {
+  "fetch-failed": "fetchFailed",
+  permission: "permission",
+  "write-failed": "writeFailed",
+  unsupported: "unsupported",
 };
 
 export function ResultStoragePanel({
@@ -47,6 +53,7 @@ export function ResultStoragePanel({
 }: {
   readonly result: SitePlaygroundResponse | undefined;
 }) {
+  const { t } = useTranslation();
   const supported = isDirectoryPickerSupported();
   const [handle, setHandle] = useState<FileSystemDirectoryHandle | undefined>(
     undefined
@@ -136,10 +143,7 @@ export function ResultStoragePanel({
     return (
       <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-700 text-xs leading-5 dark:text-amber-400">
         <TriangleAlert className="mt-0.5 size-4 shrink-0" />
-        <p>
-          当前浏览器不支持自动保存到本地目录，建议使用最新版 Chrome 或 Edge。
-          当前仍可生成，但结果仅保留 Provider 临时 URL，可能会过期。
-        </p>
+        <p>{t("storage.unsupported")}</p>
       </div>
     );
   }
@@ -148,13 +152,13 @@ export function ResultStoragePanel({
     if (dismissed) {
       return (
         <div className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2 text-muted-foreground text-xs">
-          <span>结果仅保留 Provider 临时 URL，可能过期。</span>
+          <span>{t("storage.dismissedNote")}</span>
           <button
             type="button"
             className="text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
             onClick={() => void choose()}
           >
-            选择目录自动保存
+            {t("storage.dismissedAction")}
           </button>
         </div>
       );
@@ -162,8 +166,7 @@ export function ResultStoragePanel({
     return (
       <div className="rounded-lg border border-border bg-muted/50 px-3 py-3">
         <p className="text-muted-foreground text-xs leading-5">
-          ⚠ 当前结果仅保存在 Provider 临时 URL 中，可能过期。建议选择本地目录，
-          生成完成后自动保存。
+          {t("storage.chooseNote")}
         </p>
         <div className="mt-2.5 flex gap-2">
           <Button
@@ -173,7 +176,7 @@ export function ResultStoragePanel({
             onClick={() => void choose()}
           >
             <FolderOpen className="mr-1.5 size-3.5" />
-            选择本地保存目录
+            {t("storage.chooseAction")}
           </Button>
           <Button
             type="button"
@@ -181,7 +184,7 @@ export function ResultStoragePanel({
             size="sm"
             onClick={() => setDismissed(true)}
           >
-            暂不选择，继续生成
+            {t("storage.chooseSkip")}
           </Button>
         </div>
       </div>
@@ -192,7 +195,7 @@ export function ResultStoragePanel({
     return (
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-3">
         <p className="text-amber-700 text-xs leading-5 dark:text-amber-400">
-          ⚠ 保存目录「{handle.name}」的授权已失效，自动保存已暂停。
+          {t("storage.permissionNote", { name: handle.name })}
         </p>
         <div className="mt-2.5 flex gap-2">
           <Button
@@ -202,7 +205,7 @@ export function ResultStoragePanel({
             onClick={() => void reauthorize()}
           >
             <RefreshCw className="mr-1.5 size-3.5" />
-            重新授权
+            {t("storage.reauthorize")}
           </Button>
           <Button
             type="button"
@@ -210,7 +213,7 @@ export function ResultStoragePanel({
             variant="outline"
             onClick={() => void choose()}
           >
-            重新选择目录
+            {t("storage.rechoose")}
           </Button>
         </div>
       </div>
@@ -223,7 +226,7 @@ export function ResultStoragePanel({
         <div className="flex min-w-0 items-center gap-2 text-xs">
           <FolderCheck className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <span className="font-medium text-emerald-700 dark:text-emerald-400">
-            自动保存已启用
+            {t("storage.enabled")}
           </span>
           <span className="truncate text-emerald-700/80 dark:text-emerald-400/80">
             📁 {handle.name}
@@ -237,7 +240,7 @@ export function ResultStoragePanel({
             className="h-6 px-2 text-xs"
             onClick={() => void choose()}
           >
-            更换目录
+            {t("storage.changeDir")}
           </Button>
           <Button
             type="button"
@@ -246,14 +249,14 @@ export function ResultStoragePanel({
             className="h-6 px-2 text-xs"
             onClick={() => void revoke()}
           >
-            取消授权
+            {t("storage.revoke")}
           </Button>
         </div>
       </div>
 
       {busy ? (
         <p className="mt-2 text-emerald-700/80 text-xs dark:text-emerald-400/80">
-          正在保存结果…
+          {t("storage.saving")}
         </p>
       ) : null}
       {statuses.length > 0 && !busy ? (
@@ -266,12 +269,15 @@ export function ResultStoragePanel({
             >
               {status.saved ? (
                 <span className="text-emerald-700 dark:text-emerald-400">
-                  ✓ 已自动保存 {status.fileName}
+                  {t("storage.savedItem", { name: status.fileName ?? "" })}
                 </span>
               ) : (
                 <span className="text-amber-700 dark:text-amber-400">
-                  ⚠ 自动保存失败：
-                  {FAILURE_TEXT[status.failure ?? "write-failed"]}
+                  {t("storage.failedItem", {
+                    reason: t(
+                      `storage.failures.${FAILURE_KEYS[status.failure ?? "write-failed"]}`
+                    ),
+                  })}
                 </span>
               )}
             </li>

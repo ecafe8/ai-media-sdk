@@ -1,3 +1,4 @@
+import type { FieldLabelKey } from "@/lib/i18n";
 import type { SiteModel } from "@/lib/playground/types";
 
 /**
@@ -60,13 +61,14 @@ export function imageSizeOptions(
 /**
  * Derive the `n` dropdown options for the selected image model. When the
  * model declares `maxN`, the list is `1..maxN`. Otherwise a defensive
- * `1..4` list is returned.
+ * `1..4` list is returned. Labels are counts; the rendering layer localizes
+ * them via `fields.nImages`.
  */
 export function imageNOptions(model: SiteModel): readonly FormOption<number>[] {
   const max = model.maxN ?? 4;
   const list: FormOption<number>[] = [];
   for (let i = 1; i <= max; i += 1) {
-    list.push({ value: i, label: `${i} 张` });
+    list.push({ value: i, label: String(i) });
   }
   return list;
 }
@@ -97,7 +99,8 @@ export type ImageAdvancedFieldId =
 
 export interface ImageAdvancedField {
   readonly id: ImageAdvancedFieldId;
-  readonly label: string;
+  /** Dictionary key (resolved via `t()` in the rendering layer). */
+  readonly label: FieldLabelKey;
   readonly kind: "text" | "number" | "boolean" | "select";
   readonly options?: readonly {
     readonly value: string;
@@ -116,63 +119,83 @@ export function imageAdvancedFieldSet(
   switch (model.family) {
     case "azure-gpt-image":
       return [
-        { id: "azure.quality", label: "质量", kind: "text" },
+        { id: "azure.quality", label: "fields.quality", kind: "text" },
         {
           id: "azure.output_format",
-          label: "输出格式",
+          label: "fields.outputFormat",
           kind: "select",
           options: [
             { value: "png", label: "PNG" },
             { value: "jpeg", label: "JPEG" },
           ],
         },
-        { id: "azure.output_compression", label: "压缩等级", kind: "number" },
+        {
+          id: "azure.output_compression",
+          label: "fields.outputCompression",
+          kind: "number",
+        },
       ];
     case "qwen-multimodal":
       return [
-        { id: "aliyun.negative_prompt", label: "负向提示词", kind: "text" },
+        {
+          id: "aliyun.negative_prompt",
+          label: "fields.negativePrompt",
+          kind: "text",
+        },
         {
           id: "aliyun.prompt_extend",
-          label: "提示词扩写",
+          label: "fields.promptExtend",
           kind: "boolean",
         },
-        { id: "aliyun.watermark", label: "水印", kind: "boolean" },
-        { id: "aliyun.seed", label: "随机种子", kind: "number" },
+        { id: "aliyun.watermark", label: "fields.watermark", kind: "boolean" },
+        { id: "aliyun.seed", label: "fields.seed", kind: "number" },
       ];
     case "wan-image-2.6":
       return [
-        { id: "aliyun.negative_prompt", label: "负向提示词", kind: "text" },
+        {
+          id: "aliyun.negative_prompt",
+          label: "fields.negativePrompt",
+          kind: "text",
+        },
         {
           id: "aliyun.prompt_extend",
-          label: "提示词扩写",
+          label: "fields.promptExtend",
           kind: "boolean",
         },
-        { id: "aliyun.watermark", label: "水印", kind: "boolean" },
-        { id: "aliyun.seed", label: "随机种子", kind: "number" },
+        { id: "aliyun.watermark", label: "fields.watermark", kind: "boolean" },
+        { id: "aliyun.seed", label: "fields.seed", kind: "number" },
       ];
     case "wan-image-2.7":
       return [
-        { id: "aliyun.watermark", label: "水印", kind: "boolean" },
-        { id: "aliyun.seed", label: "随机种子", kind: "number" },
-        { id: "aliyun.thinking_mode", label: "Thinking 模式", kind: "boolean" },
+        { id: "aliyun.watermark", label: "fields.watermark", kind: "boolean" },
+        { id: "aliyun.seed", label: "fields.seed", kind: "number" },
+        {
+          id: "aliyun.thinking_mode",
+          label: "fields.thinkingMode",
+          kind: "boolean",
+        },
         {
           id: "aliyun.color_palette",
-          label: "调色板",
+          label: "fields.colorPalette",
           kind: "text",
         },
         {
           id: "aliyun.enable_sequential",
-          label: "组图模式",
+          label: "fields.enableSequential",
           kind: "boolean",
         },
       ];
     case "doubao-seedream-5-pro":
     case "doubao-seedream-5-lite":
       return [
-        { id: "seedream.watermark", label: "水印", kind: "boolean" },
+        {
+          id: "seedream.watermark",
+          label: "fields.watermark",
+          kind: "boolean",
+        },
         {
           id: "seedream.output_format",
-          label: "输出格式",
+          label: "fields.outputFormat",
           kind: "select",
           options: [
             { value: "png", label: "PNG" },
@@ -181,7 +204,7 @@ export function imageAdvancedFieldSet(
         },
         {
           id: "seedream.response_format",
-          label: "响应格式",
+          label: "fields.responseFormat",
           kind: "select",
           options: [
             { value: "url", label: "URL" },
@@ -190,7 +213,7 @@ export function imageAdvancedFieldSet(
         },
         {
           id: "seedream.optimize_prompt_mode",
-          label: "提示词优化",
+          label: "fields.optimizePromptMode",
           kind: "select",
           options: [
             { value: "standard", label: "Standard" },
@@ -201,10 +224,14 @@ export function imageAdvancedFieldSet(
     case "doubao-seedream-4-5":
     case "doubao-seedream-4-0":
       return [
-        { id: "seedream.watermark", label: "水印", kind: "boolean" },
+        {
+          id: "seedream.watermark",
+          label: "fields.watermark",
+          kind: "boolean",
+        },
         {
           id: "seedream.response_format",
-          label: "响应格式",
+          label: "fields.responseFormat",
           kind: "select",
           options: [
             { value: "url", label: "URL" },
@@ -213,7 +240,7 @@ export function imageAdvancedFieldSet(
         },
         {
           id: "seedream.optimize_prompt_mode",
-          label: "提示词优化",
+          label: "fields.optimizePromptMode",
           kind: "select",
           options: [
             { value: "standard", label: "Standard" },

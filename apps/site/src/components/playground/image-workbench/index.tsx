@@ -12,16 +12,19 @@ import {
 import { Textarea } from "@workspace/ui/components/shadcn/textarea";
 import { LoaderCircle, Sparkles, WandSparkles } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import { ImageSourceField } from "@/components/image-source-field";
 import { PageContainer } from "@/components/layout/page-container";
 import { executeSiteRequest } from "@/lib/executor";
+import { SITE_RESOURCES, type SiteResources, useSiteLang } from "@/lib/i18n";
 import { type ImageSelection, resolveImageInput } from "@/lib/image-input";
 import {
   PROVIDER_LABELS,
   SITE_PROVIDERS,
   type SiteProvider,
 } from "@/lib/key-store";
+import { useModelText } from "@/lib/model-text";
 import type { SiteModel, SitePlaygroundResponse } from "@/lib/playground/types";
 import { Field } from "../lib/field";
 import {
@@ -32,12 +35,17 @@ import {
 } from "../lib/image-form-schema";
 import { ResultPanel } from "../result-panel";
 
-const PROMPTS = ["竖版的王国保卫战游戏界面", "一张可爱的人像摄影"];
-
 interface ImageWorkbenchProps {
   readonly models: readonly SiteModel[];
   readonly configuredProviders: ReadonlySet<SiteProvider>;
   readonly onOpenSettings: () => void;
+}
+
+type ValidationKey = keyof SiteResources["playground"]["validation"];
+
+interface ValidationError {
+  readonly key: ValidationKey;
+  readonly count?: number;
 }
 
 /**
@@ -49,6 +57,11 @@ export function ImageWorkbench({
   configuredProviders,
   onOpenSettings,
 }: ImageWorkbenchProps) {
+  const { t } = useTranslation();
+  const lang = useSiteLang();
+  const modelText = useModelText();
+  const samplePrompts = SITE_RESOURCES[lang].playground.samplePrompts.image;
+
   const imageModels = useMemo(
     () =>
       models.filter(
@@ -75,7 +88,7 @@ export function ImageWorkbench({
   >({});
   const [result, setResult] = useState<SitePlaygroundResponse>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [validationError, setValidationError] = useState("");
+  const [validationError, setValidationError] = useState<ValidationError>();
 
   const providerModels = useMemo(
     () => imageModels.filter((m) => m.provider === provider),
@@ -129,32 +142,32 @@ export function ImageWorkbench({
     setReferenceImage(undefined);
     setAdvancedValues({});
     setResult(undefined);
-    setValidationError("");
+    setValidationError(undefined);
   }
 
   async function submit() {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt) {
-      setValidationError("请输入提示词后再开始生成。");
+      setValidationError({ key: "promptRequired" });
       return;
     }
     if (!providerConfigured) {
-      setValidationError("该 Provider 尚未配置凭证，请先在 API 设置中填写。");
+      setValidationError({ key: "providerNotConfigured" });
       return;
     }
     if (operation === "edit" && !referenceImage) {
-      setValidationError("编辑模式需要一张参考图（URL 或本地上传）。");
+      setValidationError({ key: "editNeedsReference" });
       return;
     }
 
-    setValidationError("");
+    setValidationError(undefined);
     setIsSubmitting(true);
     setResult({ status: "processing" });
     try {
       const resolvedReference = await resolveImageInput(referenceImage);
       if (operation === "edit" && !resolvedReference) {
         setResult(undefined);
-        setValidationError("参考图缓存已失效，请重新选择图片。");
+        setValidationError({ key: "referenceCacheMiss" });
         return;
       }
 
@@ -185,12 +198,17 @@ export function ImageWorkbench({
     } catch {
       setResult({
         status: "failed",
-        error: { code: "NETWORK_ERROR", message: "生成失败，请稍后重试。" },
+        error: {
+          code: "NETWORK_ERROR",
+          message: "Generation failed; please try again later.",
+        },
       });
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  const currentModelText = currentModel ? modelText(currentModel) : undefined;
 
   return (
     <PageContainer className="grid gap-5 py-4 lg:grid-cols-[340px_minmax(0,1fr)] lg:py-6">
@@ -200,8 +218,12 @@ export function ImageWorkbench({
             <WandSparkles className="size-4" />
           </div>
           <div>
-            <h2 className="font-semibold">图像工作台</h2>
-            <p className="text-muted-foreground text-xs">文生图 / 图生图</p>
+            <h2 className="font-semibold">
+              {t("playground.imageWorkbench.title")}
+            </h2>
+            <p className="text-muted-foreground text-xs">
+              {t("playground.imageWorkbench.subtitle")}
+            </p>
           </div>
         </div>
 
@@ -213,7 +235,7 @@ export function ImageWorkbench({
               className={`rounded-md px-3 py-2 transition ${operation === "generate" ? "bg-card font-medium shadow-sm" : "text-muted-foreground"}`}
               onClick={() => setOperation("generate")}
             >
-              文生图
+              {t("playground.imageWorkbench.generate")}
             </button>
             <button
               type="button"
@@ -222,17 +244,17 @@ export function ImageWorkbench({
               className={`rounded-md px-3 py-2 transition ${operation === "edit" ? "bg-card font-medium shadow-sm" : "text-muted-foreground"} disabled:cursor-not-allowed disabled:opacity-40`}
               onClick={() => setOperation("edit")}
             >
-              图生图
+              {t("playground.imageWorkbench.edit")}
             </button>
           </div>
 
-          <Field label="Provider">
+          <Field label={t("common.provider")}>
             <Select
               value={provider}
               items={SITE_PROVIDERS.map((item) => ({
                 value: item,
                 label: `${PROVIDER_LABELS[item]}${
-                  configuredProviders.has(item) ? "" : "（未配置）"
+                  configuredProviders.has(item) ? "" : t("common.notConfigured")
                 }`,
               }))}
               onValueChange={(value) => {
@@ -241,7 +263,10 @@ export function ImageWorkbench({
                 }
               }}
             >
-              <SelectTrigger aria-label="Provider" className="w-full">
+              <SelectTrigger
+                aria-label={t("common.provider")}
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -249,7 +274,9 @@ export function ImageWorkbench({
                   {SITE_PROVIDERS.map((item) => (
                     <SelectItem key={item} value={item}>
                       {PROVIDER_LABELS[item]}
-                      {configuredProviders.has(item) ? "" : "（未配置）"}
+                      {configuredProviders.has(item)
+                        ? ""
+                        : t("common.notConfigured")}
                     </SelectItem>
                   ))}
                 </SelectGroup>
@@ -257,34 +284,40 @@ export function ImageWorkbench({
             </Select>
           </Field>
 
-          <Field label="模型">
+          <Field label={t("common.model")}>
             <Select
               value={modelId}
               items={providerModels.map((item) => {
                 const usable = item.supportsGenerate || item.supportsEdit;
+                const label = modelText(item).label;
                 return {
                   value: item.id,
-                  label: usable ? item.label : `${item.label}（暂不支持）`,
+                  label: usable
+                    ? label
+                    : `${label}${t("playground.imageWorkbench.modelNotSupported")}`,
                 };
               })}
               onValueChange={(value) => {
                 if (typeof value === "string") changeModel(value);
               }}
             >
-              <SelectTrigger aria-label="模型" className="w-full">
+              <SelectTrigger aria-label={t("common.model")} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   {providerModels.map((item) => {
                     const usable = item.supportsGenerate || item.supportsEdit;
+                    const label = modelText(item).label;
                     return (
                       <SelectItem
                         key={item.id}
                         value={item.id}
                         disabled={!usable}
                       >
-                        {usable ? item.label : `${item.label}（暂不支持）`}
+                        {usable
+                          ? label
+                          : `${label}${t("playground.imageWorkbench.modelNotSupported")}`}
                       </SelectItem>
                     );
                   })}
@@ -292,12 +325,16 @@ export function ImageWorkbench({
               </SelectContent>
             </Select>
             <p className="mt-2 text-muted-foreground text-xs leading-5">
-              {currentModel?.recommendation ?? "该 Provider 暂无图像模型"}
+              {currentModelText?.recommendation ??
+                t("playground.imageWorkbench.noModels")}
             </p>
           </Field>
 
           {operation === "edit" && canEdit ? (
-            <Field label="参考图" required>
+            <Field
+              label={t("playground.imageWorkbench.referenceImage")}
+              required
+            >
               <ImageSourceField
                 value={referenceImage}
                 onChange={setReferenceImage}
@@ -305,17 +342,17 @@ export function ImageWorkbench({
             </Field>
           ) : null}
 
-          <Field label="提示词" required>
+          <Field label={t("playground.prompt.label")} required>
             <Textarea
               value={prompt}
               rows={5}
-              placeholder="描述你想生成的画面..."
+              placeholder={t("playground.prompt.placeholder")}
               aria-describedby="prompt-error"
               className="min-h-32 resize-y"
               onChange={(event) => setPrompt(event.target.value)}
             />
             <div className="mt-2 flex flex-wrap gap-2">
-              {PROMPTS.map((item) => (
+              {samplePrompts.map((item) => (
                 <button
                   type="button"
                   key={item}
@@ -330,7 +367,7 @@ export function ImageWorkbench({
 
           {operation === "generate" ? (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="清晰度">
+              <Field label={t("playground.size")}>
                 <Select
                   value={size}
                   items={sizeOptions.map((opt) => ({
@@ -341,7 +378,10 @@ export function ImageWorkbench({
                     if (typeof value === "string") setSize(value);
                   }}
                 >
-                  <SelectTrigger aria-label="清晰度" className="w-full">
+                  <SelectTrigger
+                    aria-label={t("playground.size")}
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -355,25 +395,28 @@ export function ImageWorkbench({
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="生成数量">
+              <Field label={t("playground.count")}>
                 <Select
                   value={String(n)}
                   items={nOptions.map((opt) => ({
                     value: String(opt.value),
-                    label: opt.label,
+                    label: t("fields.nImages", { count: opt.value }),
                   }))}
                   onValueChange={(value) => {
                     if (typeof value === "string") setN(Number(value));
                   }}
                 >
-                  <SelectTrigger aria-label="生成数量" className="w-full">
+                  <SelectTrigger
+                    aria-label={t("playground.count")}
+                    className="w-full"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
                       {nOptions.map((opt) => (
                         <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label}
+                          {t("fields.nImages", { count: opt.value })}
                         </SelectItem>
                       ))}
                     </SelectGroup>
@@ -386,7 +429,7 @@ export function ImageWorkbench({
           {advancedFields.length > 0 ? (
             <details className="rounded-lg border border-border bg-muted/50 px-3 py-2">
               <summary className="cursor-pointer font-medium text-foreground text-sm">
-                高级选项
+                {t("playground.advancedOptions")}
               </summary>
               <div className="mt-3 grid gap-3">
                 {advancedFields.map((field) => (
@@ -412,7 +455,9 @@ export function ImageWorkbench({
               role="alert"
               className="rounded-lg bg-destructive/10 px-3 py-2 text-destructive text-sm"
             >
-              {validationError}
+              {t(`playground.validation.${validationError.key}`, {
+                count: validationError.count ?? 0,
+              })}
             </p>
           ) : null}
 
@@ -423,7 +468,7 @@ export function ImageWorkbench({
               className="flex-1"
               onClick={reset}
             >
-              重置
+              {t("common.reset")}
             </Button>
             <Button
               type="button"
@@ -436,18 +481,18 @@ export function ImageWorkbench({
               ) : (
                 <Sparkles className="mr-2 size-4" />
               )}
-              {isSubmitting ? "生成中" : "开始生成"}
+              {isSubmitting ? t("common.generating") : t("common.generate")}
             </Button>
           </div>
           {!providerConfigured ? (
             <p className="text-amber-600 text-xs leading-5 dark:text-amber-400">
-              当前 Provider 未配置凭证。
+              {t("playground.credentialsHint")}
               <button
                 type="button"
                 className="ml-1 text-emerald-700 underline underline-offset-2 dark:text-emerald-400"
                 onClick={onOpenSettings}
               >
-                去设置 API Key
+                {t("playground.credentialsHintAction")}
               </button>
             </p>
           ) : null}
@@ -475,6 +520,7 @@ function AdvancedFieldControl({
   value: string | number | boolean | undefined;
   onChange: (value: string | number | boolean) => void;
 }) {
+  const { t } = useTranslation();
   if (field.kind === "boolean") {
     return (
       // biome-ignore lint/a11y/noLabelWithoutControl: shadcn Checkbox renders a native button control inside the label
@@ -483,14 +529,14 @@ function AdvancedFieldControl({
           checked={typeof value === "boolean" ? value : false}
           onCheckedChange={(checked) => onChange(checked === true)}
         />
-        {field.label}
+        {t(field.label)}
       </label>
     );
   }
   if (field.kind === "select") {
     const options = field.options ?? [];
     return (
-      <Field label={field.label}>
+      <Field label={t(field.label)}>
         <Select
           value={typeof value === "string" && value !== "" ? value : null}
           items={options.map((opt) => ({
@@ -502,7 +548,7 @@ function AdvancedFieldControl({
           }}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="未指定" />
+            <SelectValue placeholder={t("common.unspecified")} />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -519,7 +565,7 @@ function AdvancedFieldControl({
   }
   if (field.kind === "number") {
     return (
-      <Field label={field.label}>
+      <Field label={t(field.label)}>
         <Input
           type="number"
           value={typeof value === "number" ? String(value) : ""}
@@ -533,7 +579,7 @@ function AdvancedFieldControl({
     );
   }
   return (
-    <Field label={field.label}>
+    <Field label={t(field.label)}>
       <Input
         type="text"
         value={typeof value === "string" ? value : ""}

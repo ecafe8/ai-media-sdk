@@ -264,12 +264,33 @@ const DEFAULT_HOST_ALLOWLIST: Readonly<
   minimax: [".minimax.io"],
 };
 
+/**
+ * Stable endpoint-validation error codes. The UI renders localized text
+ * from `errors.endpoint.<code>`; `ENDPOINT_ERROR_TEXT` provides English
+ * fallbacks for non-UI consumers.
+ */
+export type EndpointErrorCode =
+  | "EMPTY"
+  | "NOT_URL"
+  | "NOT_HTTPS"
+  | "HAS_CREDENTIALS"
+  | "NON_STANDARD_PORT";
+
+export const ENDPOINT_ERROR_TEXT: Readonly<Record<EndpointErrorCode, string>> =
+  {
+    EMPTY: "The endpoint is required",
+    NOT_URL: "The endpoint is not a valid URL",
+    NOT_HTTPS: "The endpoint must use HTTPS",
+    HAS_CREDENTIALS: "The endpoint must not contain a username or password",
+    NON_STANDARD_PORT: "The endpoint must not use a non-standard port",
+  };
+
 export interface EndpointValidation {
   readonly ok: boolean;
   /** Host is structurally valid but outside the default allowlist. */
   readonly isCustomHost: boolean;
   readonly host?: string;
-  readonly error?: string;
+  readonly errorCode?: EndpointErrorCode;
 }
 
 /**
@@ -282,33 +303,33 @@ export function validateProviderEndpoint(
   value: string | undefined
 ): EndpointValidation {
   if (!value?.trim()) {
-    return { ok: false, isCustomHost: false, error: "端点不能为空" };
+    return { ok: false, isCustomHost: false, errorCode: "EMPTY" };
   }
   let url: URL;
   try {
     url = new URL(value.trim());
   } catch {
-    return { ok: false, isCustomHost: false, error: "端点不是合法的 URL" };
+    return { ok: false, isCustomHost: false, errorCode: "NOT_URL" };
   }
   if (url.protocol !== "https:") {
     return {
       ok: false,
       isCustomHost: false,
-      error: "端点必须使用 HTTPS 协议",
+      errorCode: "NOT_HTTPS",
     };
   }
   if (url.username || url.password) {
     return {
       ok: false,
       isCustomHost: false,
-      error: "端点不允许包含用户名或密码",
+      errorCode: "HAS_CREDENTIALS",
     };
   }
   if (url.port !== "" && url.port !== "443") {
     return {
       ok: false,
       isCustomHost: false,
-      error: "端点不允许使用非标准端口",
+      errorCode: "NON_STANDARD_PORT",
     };
   }
   const host = url.hostname.toLowerCase();

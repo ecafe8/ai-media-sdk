@@ -1,6 +1,9 @@
 import { toImageUrl } from "@ai-media/sdk";
 import { ImagePlus, LoaderCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
+import { useErrorText } from "@/lib/error-text";
+import type { SiteProvider } from "@/lib/key-store";
 import type { SitePlaygroundResponse } from "@/lib/playground/types";
 
 /**
@@ -11,7 +14,7 @@ import type { SitePlaygroundResponse } from "@/lib/playground/types";
 export interface ResultFeedProps {
   readonly result: SitePlaygroundResponse | undefined;
   readonly prompt: string;
-  readonly provider: string;
+  readonly provider: SiteProvider;
   readonly model: string;
   readonly configured: boolean;
 }
@@ -23,6 +26,7 @@ export function ResultFeed({
   model,
   configured,
 }: ResultFeedProps) {
+  const errorText = useErrorText();
   if (!result) {
     return <EmptyState configured={configured} />;
   }
@@ -30,22 +34,25 @@ export function ResultFeed({
     return <ProcessingState provider={provider} model={model} />;
   }
   if (result.status === "failed") {
-    return <FailureState message={result.error?.message ?? "请求失败"} />;
+    return <FailureState message={errorText(result.error, provider)} />;
   }
   return <SuccessState result={result} prompt={prompt} />;
 }
 
 function EmptyState({ configured }: { configured: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[420px] flex-col items-center justify-center rounded-xl border border-border border-dashed bg-muted/50 px-6 text-center">
       <div className="rounded-2xl bg-card p-4 text-muted-foreground shadow-sm">
         <ImagePlus className="size-8" />
       </div>
-      <h3 className="mt-5 font-semibold">还没有生成结果</h3>
+      <h3 className="mt-5 font-semibold">
+        {t("playground.result.emptyTitle")}
+      </h3>
       <p className="mt-2 max-w-sm text-muted-foreground text-sm leading-6">
         {configured
-          ? "在左侧填写提示词并开始生成。"
-          : "先在右上角 API 设置中填写 Provider 凭证，再开始体验。"}
+          ? t("playground.result.emptyConfigured")
+          : t("playground.result.emptyUnconfigured")}
       </p>
     </div>
   );
@@ -58,31 +65,35 @@ function ProcessingState({
   provider: string;
   model: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
       <LoaderCircle className="size-10 animate-spin text-emerald-600" />
-      <h3 className="mt-5 font-semibold">正在处理</h3>
+      <h3 className="mt-5 font-semibold">
+        {t("playground.result.processingTitle")}
+      </h3>
       <p className="mt-2 text-muted-foreground text-sm">
         {provider} / {model}
       </p>
       <p className="mt-1 text-muted-foreground/70 text-xs">
-        请勿重复提交，Provider 结果可能是临时 URL。
+        {t("playground.result.processingNote")}
       </p>
     </div>
   );
 }
 
 function FailureState({ message }: { message: string }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[420px] flex-col items-center justify-center text-center">
       <div className="rounded-full bg-destructive/10 px-4 py-2 font-medium text-destructive text-sm">
-        生成失败
+        {t("playground.result.failedBadge")}
       </div>
       <p className="mt-4 max-w-md text-muted-foreground text-sm leading-6">
         {message}
       </p>
       <p className="mt-2 text-muted-foreground/70 text-xs">
-        可修改左侧输入后重试，不会自动切换 Provider。
+        {t("playground.result.failedNote")}
       </p>
     </div>
   );
@@ -95,12 +106,13 @@ function SuccessState({
   result: SitePlaygroundResponse;
   prompt: string;
 }) {
+  const { t } = useTranslation();
   if (result.modality === "video") {
     return (
       <div>
         <div className="mb-4 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
           <span className="rounded-full bg-emerald-500/10 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400">
-            视频生成成功
+            {t("playground.result.videoSuccess")}
           </span>
           <span>{result.metadata?.provider}</span>
           <span>/</span>
@@ -153,7 +165,7 @@ function SuccessState({
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
         <span className="rounded-full bg-emerald-500/10 px-3 py-1 font-medium text-emerald-700 dark:text-emerald-400">
-          生成成功
+          {t("playground.result.imageSuccess")}
         </span>
         <span>{result.metadata?.provider}</span>
         <span>/</span>
@@ -171,7 +183,7 @@ function SuccessState({
               {toImageUrl(image) ? (
                 <img
                   src={toImageUrl(image)}
-                  alt={`生成结果 ${index + 1}`}
+                  alt={t("playground.result.imageAlt", { count: index + 1 })}
                   className="size-full object-cover"
                 />
               ) : (
@@ -192,7 +204,7 @@ function SuccessState({
                   rel="noreferrer"
                   className="block truncate text-emerald-700 hover:underline dark:text-emerald-400"
                 >
-                  {image.url ?? "查看图片数据"}
+                  {image.url ?? t("playground.result.viewImageData")}
                 </a>
               ) : null}
             </div>

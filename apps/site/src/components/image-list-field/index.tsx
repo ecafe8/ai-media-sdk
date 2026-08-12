@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   formatBytes,
   type ImageSelection,
@@ -40,6 +41,7 @@ export function ImageListField({
   maxCount,
   disabled,
 }: ImageListFieldProps) {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [urlText, setUrlText] = useState("");
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -68,18 +70,30 @@ export function ImageListField({
         }
         const validation = validateImageFile(file);
         if (!validation.ok) {
-          setError(validation.error ?? "部分文件不可用");
+          setError(
+            validation.errorCode === "UNSUPPORTED_TYPE"
+              ? t("errors.image.UNSUPPORTED_TYPE")
+              : t("errors.image.TOO_LARGE", {
+                  max: formatBytes(validation.maxBytes),
+                  size: formatBytes(validation.size),
+                })
+          );
           continue;
         }
         const { entry, fromCache } = await storeMedia(file);
         next.push({ kind: "file", hash: entry.hash, entry, fromCache });
       }
       if (rejected > 0) {
-        setError(`最多 ${maxCount} 张参考图，已忽略 ${rejected} 个文件`);
+        setError(
+          t("playground.imageList.capExceededFiles", {
+            count: maxCount,
+            dropped: rejected,
+          })
+        );
       }
       commit(next);
     } catch {
-      setError("文件处理失败，请重试");
+      setError(t("playground.imageList.processingFailed"));
     } finally {
       setUploading(false);
     }
@@ -89,11 +103,11 @@ export function ImageListField({
     const trimmed = urlText.trim();
     if (!trimmed) return;
     if (!isValidHttpUrl(trimmed)) {
-      setError("请输入合法的 http(s) URL");
+      setError(t("playground.imageList.invalidUrl"));
       return;
     }
     if (atCap) {
-      setError(`最多 ${maxCount} 张参考图`);
+      setError(t("playground.imageList.capReached", { count: maxCount }));
       return;
     }
     setError("");
@@ -104,7 +118,7 @@ export function ImageListField({
   function addBulkUrls() {
     const { valid, invalid } = parseBulkUrls(bulkText);
     if (valid.length === 0) {
-      setError("未解析到合法的 http(s) URL");
+      setError(t("playground.imageList.bulkNoneParsed"));
       return;
     }
     const room = maxCount - values.length;
@@ -118,9 +132,15 @@ export function ImageListField({
     setBulkText("");
     if (dropped > 0 || invalid.length > 0) {
       const parts: string[] = [];
-      if (dropped > 0) parts.push(`超出上限，忽略 ${dropped} 个`);
-      if (invalid.length > 0) parts.push(`${invalid.length} 个非法 URL 被忽略`);
-      setError(parts.join("；"));
+      if (dropped > 0) {
+        parts.push(t("playground.imageList.bulkDropped", { count: dropped }));
+      }
+      if (invalid.length > 0) {
+        parts.push(
+          t("playground.imageList.bulkInvalid", { count: invalid.length })
+        );
+      }
+      setError(parts.join("; "));
     }
   }
 
@@ -134,7 +154,7 @@ export function ImageListField({
     <div className="space-y-3">
       {values.length === 0 ? (
         <p className="rounded-lg border border-border border-dashed bg-muted/50 px-3 py-4 text-center text-muted-foreground/70 text-sm">
-          暂无参考图，顺序即 prompt 中的 [Image N]
+          {t("playground.imageList.empty")}
         </p>
       ) : (
         <ol className="space-y-2">
@@ -172,9 +192,13 @@ export function ImageListField({
                         {formatBytes(selection.entry.size)}
                       </span>
                       {selection.fromCache ? (
-                        <Badge variant="secondary">来自缓存</Badge>
+                        <Badge variant="secondary">
+                          {t("common.fromCache")}
+                        </Badge>
                       ) : (
-                        <Badge variant="secondary">已上传</Badge>
+                        <Badge variant="secondary">
+                          {t("common.uploaded")}
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -189,7 +213,9 @@ export function ImageListField({
               )}
               <button
                 type="button"
-                aria-label={`移除第 ${index + 1} 张`}
+                aria-label={t("playground.imageList.removeItem", {
+                  count: index + 1,
+                })}
                 className="shrink-0 rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                 onClick={() => removeAt(index)}
               >
@@ -202,7 +228,7 @@ export function ImageListField({
 
       {atCap ? (
         <p className="text-amber-600 text-xs dark:text-amber-400">
-          已达上限（最多 {maxCount} 张）
+          {t("playground.imageList.atCap", { count: maxCount })}
         </p>
       ) : (
         <div className="space-y-2">
@@ -219,7 +245,7 @@ export function ImageListField({
               ) : (
                 <UploadCloud className="mr-1.5 size-3.5" />
               )}
-              上传图片
+              {t("playground.imageList.upload")}
             </Button>
             <input
               ref={inputRef}
@@ -241,7 +267,7 @@ export function ImageListField({
             <Input
               type="url"
               value={urlText}
-              placeholder="粘贴单张图片 URL"
+              placeholder={t("playground.imageList.singleUrlPlaceholder")}
               disabled={disabled}
               onChange={(event) => setUrlText(event.target.value)}
               onKeyDown={(event) => {
@@ -270,14 +296,12 @@ export function ImageListField({
             className="rounded-lg border border-border bg-muted/50 px-3 py-2"
           >
             <summary className="cursor-pointer text-muted-foreground text-sm">
-              批量粘贴 URL
+              {t("playground.imageList.bulkSummary")}
             </summary>
             <Textarea
               value={bulkText}
               rows={3}
-              placeholder={
-                "https://.../1.png, https://.../2.png\n逗号或换行分隔"
-              }
+              placeholder={t("playground.imageList.bulkPlaceholder")}
               disabled={disabled}
               className="mt-2 resize-y"
               onChange={(event) => setBulkText(event.target.value)}
@@ -290,7 +314,7 @@ export function ImageListField({
               disabled={disabled || !bulkText.trim()}
               onClick={addBulkUrls}
             >
-              解析并添加
+              {t("playground.imageList.bulkAdd")}
             </Button>
           </details>
         </div>
