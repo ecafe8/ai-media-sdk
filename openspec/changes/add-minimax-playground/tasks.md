@@ -32,4 +32,4 @@
 
 - [x] 5.1 Run `bun run lint`, `bun run typecheck`, `bun run build`, and `bun run test`.
 - [x] 5.2 Verify the site Pages build locally (`bun run site:preview` smoke check).
-- [ ] 5.3 Review the final diff, stage only intended files, and commit on the current branch.
+- [x] 5.3 Review the final diff, stage only intended files, and commit on the current branch.
