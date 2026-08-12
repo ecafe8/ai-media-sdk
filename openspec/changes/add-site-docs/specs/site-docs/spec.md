@@ -23,6 +23,11 @@
 - **WHEN** 用户在一篇文档底部点击"下一篇"
 - **THEN** 导航到侧边栏顺序中的下一篇文档
 
+#### Scenario: 用户通过 TOC 定位章节
+
+- **WHEN** 用户打开一篇含多级标题的文档并点击右侧 TOC 中的某个条目
+- **THEN** 页面滚动到对应标题锚点位置，该锚点与正文标题一致
+
 ### Requirement: 部署深链兼容
 
 文档区所有深链 SHALL 在 GitHub Pages 部署形态下可用：资源引用 SHALL 与站点统一 base path 一致，客户端路由 SHALL 经由现有 SPA 404 回退文档接管，直接访问 `/ai-media-sdk/docs/<slug>` 与本地开发访问 `/docs/<slug>` 行为一致。
@@ -34,7 +39,7 @@
 
 ### Requirement: 文档信息架构完整性
 
-文档区 SHALL 包含以下页面（slug 与顺序以文档清单为准）：入门（introduction、quick-start）；指南（image-generation、video-generation、parameters、results、error-handling、file-upload）；Provider 参考（azure-openai、aliyun-bailian、seedream）；uploader；FAQ；API 参考。文档清单与文档文件 SHALL 保持一致：清单中每个条目必须对应一个可渲染的文档，每个文档必须出现在清单中；构建期 SHALL 有自动化检查保证该一致性。
+文档区 SHALL 包含以下页面（slug 与顺序以文档清单为准）：入门（introduction、quick-start）；指南（image-generation、video-generation、parameters、results、error-handling、file-upload）；Provider 参考（azure-openai、aliyun-bailian、seedream）；uploader；FAQ；API 参考。文档清单与文档文件 SHALL 保持一致：清单中每个条目必须对应一个可渲染的文档，每个文档必须出现在清单中；构建期 SHALL 有自动化检查保证该一致性。API 参考条目为生成内容：清单 SHALL 显式标记生成类条目；生成产物缺失时（未运行生成步骤的开发/测试场景），对应条目 SHALL 渲染引导运行生成命令的占位页，SHALL NOT 渲染空白页或报错，一致性检查对生成类条目 SHALL 以运行生成步骤后的状态为准。
 
 #### Scenario: 构建期清单一致性检查
 
@@ -48,7 +53,7 @@
 
 ### Requirement: 入门与指南内容要求
 
-quick-start 页 SHALL 包含安装命令、运行时要求（Node.js >= 20 或 Bun、ESM-only）与一个可直接运行的最小示例（构造 Provider → `generateImage` → 读取 `result.content`）。image-generation 页 SHALL 覆盖 `generateImage` 与 `editImage` 的用法、参数预检行为（非法参数在任何网络请求前抛出 `INVALID_REQUEST`）与参考图数量上限。video-generation 页 SHALL 覆盖 `submitImageTask` / `submitVideoTask`、`TaskHandle` 字段与 `wait()` 的轮询/超时/中止选项，以及各视频输入模式（`firstFrame` / `referenceImages` / `inputVideo`）的适用条件。parameters 页 SHALL 说明公共参数（`prompt` / `n` / `size` 的像素形式与档位形式）与 `providerOptions.<provider>` 命名空间规则。results 页 SHALL 说明 `GenerationResult` / `ImageContent` / `VideoContent` 结构、`toImageUrl` 用法，并明确警告 Provider 返回的结果 URL 是临时的、需及时持久化。file-upload 页 SHALL 说明 uploader 的开发/测试定位、Aliyun 与 Google 两条上传链路、`UploadedFile` 结构与 `UploaderError` 错误码，并明确生产环境应使用自有持久存储。
+quick-start 页 SHALL 包含安装命令、运行时要求（Node.js >= 20 或 Bun、ESM-only）与一个可直接运行的最小示例（构造 Provider → `generateImage` → 读取 `result.content`）。image-generation 页 SHALL 覆盖 `generateImage` 与 `editImage` 的用法、参数预检行为（非法参数在任何网络请求前抛出 `INVALID_REQUEST`）与参考图数量上限。video-generation 页 SHALL 覆盖 `submitImageTask` / `submitVideoTask`、`TaskHandle` 字段与 `wait()` 的轮询/超时/中止选项，以及各视频输入模式（`firstFrame` / `referenceImages` / `inputVideo`）的适用条件。parameters 页 SHALL 说明公共参数（`prompt` / `n` / `size` 的像素形式与档位形式）与 `providerOptions.<provider>` 命名空间规则。results 页 SHALL 说明 `GenerationResult` / `ImageContent` / `VideoContent` 结构、`toImageUrl` 用法，并明确警告 Provider 返回的结果 URL 是临时的、需及时持久化。file-upload 页（指南视角）SHALL 说明 uploader 的开发/测试定位、Aliyun 与 Google 两条上传链路的工作流与同 `editImage` 的集成示例，并明确生产环境应使用自有持久存储；uploader 包参考细节（子路径导出、完整配置表、`UploadedFile` 形状、`UploaderError` 错误码表）SHALL 由 uploader 页作为唯一维护点，file-upload 与 uploader 两页 SHALL 互相链接且不重复维护错误码表。
 
 #### Scenario: 新用户按 quick-start 跑通首次生成
 
@@ -107,9 +112,14 @@ FAQ 页 SHALL 至少覆盖以下主题：API Key 的获取与配置位置（含�
 
 ### Requirement: 文档呈现质量
 
-文档页 SHALL 与站点现有视觉体系一致：使用站点统一的内容容器宽度规则、深浅色主题与共享 UI 组件；代码块 SHALL 有语法高亮且随主题切换；表格 SHALL 使用站点共享表格样式。文档语言 SHALL 为简体中文（代码、标识符、包名除外）。
+文档页 SHALL 与站点现有视觉体系一致：使用站点统一的内容容器宽度规则、深浅色主题与共享 UI 组件；代码块 SHALL 有语法高亮且随主题切换；表格 SHALL 使用站点共享表格样式。每个文档页 SHALL 将该页标题写入浏览器标题（`document.title`）。文档语言 SHALL 为简体中文（代码、标识符、包名除外）。
 
 #### Scenario: 深色模式下阅读文档
 
 - **WHEN** 用户切换到深色主题并浏览任一文档页
 - **THEN** 正文、代码块、表格、侧边栏均可正常阅读，无颜色失效或不可读文本
+
+#### Scenario: 浏览器标题跟随文档页
+
+- **WHEN** 用户打开任一文档页
+- **THEN** 浏览器标题包含该页标题，与侧边栏显示的标题一致
