@@ -1,34 +1,17 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync } from "node:fs";
 
-interface PackageManifest {
-  name: string;
-  version: string;
-  private?: boolean;
-  description?: string;
-  main?: string;
-  types?: string;
-  files?: string[];
-  exports?: Record<string, unknown>;
-  publishConfig?: { access?: string };
-  dependencies?: Record<string, string>;
-}
+import {
+  type PackageManifest,
+  RELEASE_PACKAGE_DIRECTORIES,
+  ROOT,
+  readManifest,
+} from "./release-packages.ts";
 
 interface RegistryVersionResult {
   version: string;
   published: boolean;
 }
-
-const ROOT = resolve(__dirname, "..");
-const PACKAGES: string[] = [
-  "packages/ai-media-sdk",
-  "packages/uploader",
-  "packages/provider-azure-openai",
-  "packages/provider-aliyun-bailian",
-  "packages/provider-volcengine",
-  "packages/provider-minimax",
-];
 const REQUIRED_FILES = ["package.json", "README.md"];
 const FORBIDDEN_PATTERNS = [
   /\.env($|\.)/,
@@ -50,11 +33,6 @@ function run(command: string, args: string[]): void {
       `Command failed with exit code ${result.status ?? "unknown"}`
     );
   }
-}
-
-function readManifest(packageDirectory: string): PackageManifest {
-  const path = resolve(ROOT, packageDirectory, "package.json");
-  return JSON.parse(readFileSync(path, "utf8")) as PackageManifest;
 }
 
 function validateManifest(
@@ -196,7 +174,7 @@ function checkPackedFiles(
 }
 
 function main(): void {
-  for (const packageDirectory of PACKAGES) {
+  for (const packageDirectory of RELEASE_PACKAGE_DIRECTORIES) {
     const manifest = readManifest(packageDirectory);
     validateManifest(packageDirectory, manifest);
     validateRegistryVersions(packageDirectory, manifest);
@@ -206,13 +184,13 @@ function main(): void {
   }
 
   run("bun", ["run", "lint"]);
-  for (const packageDirectory of PACKAGES) {
+  for (const packageDirectory of RELEASE_PACKAGE_DIRECTORIES) {
     run("bun", ["run", "--cwd", packageDirectory, "typecheck:release"]);
   }
   run("bun", ["run", "build"]);
   run("bun", ["run", "test"]);
 
-  for (const packageDirectory of PACKAGES) {
+  for (const packageDirectory of RELEASE_PACKAGE_DIRECTORIES) {
     checkPackedFiles(packageDirectory, readManifest(packageDirectory));
   }
 }

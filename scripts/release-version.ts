@@ -1,31 +1,13 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-interface PackageManifest {
-  name: string;
-  version: string;
-  dependencies?: Record<string, string>;
-}
-
-const ROOT = resolve(__dirname, "..");
-const PACKAGE_DIRECTORIES = [
-  "packages/ai-media-sdk",
-  "packages/uploader",
-  "packages/provider-azure-openai",
-  "packages/provider-aliyun-bailian",
-  "packages/provider-volcengine",
-];
-const PROVIDER_PACKAGE_NAMES = new Set([
-  "@ai-media/provider-azure-openai",
-  "@ai-media/provider-aliyun-bailian",
-  "@ai-media/provider-volcengine",
-]);
-
-function readManifest(directory: string): PackageManifest {
-  return JSON.parse(
-    readFileSync(resolve(ROOT, directory, "package.json"), "utf8")
-  ) as PackageManifest;
-}
+import {
+  isProvider,
+  type PackageManifest,
+  RELEASE_PACKAGE_DIRECTORIES,
+  ROOT,
+  readManifest,
+} from "./release-packages.ts";
 
 function writeManifest(directory: string, manifest: PackageManifest): void {
   writeFileSync(
@@ -57,7 +39,7 @@ function resolveVersion(
 
 function main(): void {
   const requestedVersion = process.argv[2];
-  const manifests = PACKAGE_DIRECTORIES.map((directory) => ({
+  const manifests = RELEASE_PACKAGE_DIRECTORIES.map((directory) => ({
     directory,
     manifest: readManifest(directory),
   }));
@@ -69,7 +51,7 @@ function main(): void {
   const version = resolveVersion(sdk.manifest.version, requestedVersion);
   for (const { directory, manifest } of manifests) {
     manifest.version = version;
-    if (PROVIDER_PACKAGE_NAMES.has(manifest.name)) {
+    if (isProvider(manifest)) {
       manifest.dependencies = {
         ...manifest.dependencies,
         "@ai-media/sdk": `^${version}`,

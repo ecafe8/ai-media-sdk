@@ -1,11 +1,10 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-interface PackageManifest {
-  name: string;
-  version: string;
-}
+import {
+  type PackageManifest,
+  RELEASE_PACKAGE_DIRECTORIES,
+  ROOT,
+  readManifest,
+} from "./release-packages.ts";
 
 interface ReleaseOptions {
   dryRun: boolean;
@@ -13,23 +12,9 @@ interface ReleaseOptions {
   tag: string;
 }
 
-const ROOT = resolve(__dirname, "..");
-const PACKAGE_DIRECTORIES = [
-  "packages/ai-media-sdk",
-  "packages/uploader",
-  "packages/provider-azure-openai",
-  "packages/provider-aliyun-bailian",
-  "packages/provider-volcengine",
-];
-const PACKAGE_JSON_PATHS = PACKAGE_DIRECTORIES.map(
+const PACKAGE_JSON_PATHS = RELEASE_PACKAGE_DIRECTORIES.map(
   (directory) => `${directory}/package.json`
 );
-
-function readManifest(directory: string): PackageManifest {
-  return JSON.parse(
-    readFileSync(resolve(ROOT, directory, "package.json"), "utf8")
-  ) as PackageManifest;
-}
 
 function run(command: string, args: string[], inherit = true): string {
   console.log(`\n> ${command} ${args.join(" ")}`);
@@ -71,7 +56,7 @@ function parseOptions(): ReleaseOptions {
 }
 
 function assertVersionConsistency(): string {
-  const manifests = PACKAGE_DIRECTORIES.map(readManifest);
+  const manifests = RELEASE_PACKAGE_DIRECTORIES.map(readManifest);
   const versions = new Set(manifests.map((manifest) => manifest.version));
   if (versions.size !== 1) {
     throw new Error(
@@ -194,7 +179,7 @@ function main(): void {
   );
   run("bun", ["run", "release:check"]);
 
-  const manifests = PACKAGE_DIRECTORIES.map(readManifest);
+  const manifests = RELEASE_PACKAGE_DIRECTORIES.map(readManifest);
   publish(manifests, options);
   if (options.dryRun) {
     console.log(

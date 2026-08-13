@@ -47,13 +47,14 @@ bun run release -- --push
 
 ## 发布包
 
-当前发布以下 5 个公开包：
+当前发布以下 6 个公开包：
 
 1. `@ai-media/sdk`
 2. `@ai-media/uploader`
 3. `@ai-media/provider-azure-openai`
 4. `@ai-media/provider-aliyun-bailian`
 5. `@ai-media/provider-volcengine`
+6. `@ai-media/provider-minimax`
 
 不要发布以下 workspace 包：
 
@@ -179,6 +180,7 @@ npm pack --dry-run --json --workspace=@ai-media/uploader
 npm pack --dry-run --json --workspace=@ai-media/provider-azure-openai
 npm pack --dry-run --json --workspace=@ai-media/provider-aliyun-bailian
 npm pack --dry-run --json --workspace=@ai-media/provider-volcengine
+npm pack --dry-run --json --workspace=@ai-media/provider-minimax
 ```
 
 ## 正式发布
@@ -244,6 +246,7 @@ npm publish --workspace=@ai-media/uploader --access public
 npm publish --workspace=@ai-media/provider-azure-openai --access public
 npm publish --workspace=@ai-media/provider-aliyun-bailian --access public
 npm publish --workspace=@ai-media/provider-volcengine --access public
+npm publish --workspace=@ai-media/provider-minimax --access public
 ```
 
 每次发布后确认 npm registry 中的版本已经可见：
@@ -254,6 +257,7 @@ npm view @ai-media/uploader version
 npm view @ai-media/provider-azure-openai version
 npm view @ai-media/provider-aliyun-bailian version
 npm view @ai-media/provider-volcengine version
+npm view @ai-media/provider-minimax version
 ```
 
 provider 发布前，确认它依赖的 `@ai-media/sdk` 版本已经可以被 npm registry 安装。
@@ -273,6 +277,7 @@ bun add --cwd /tmp/ai-media-release-smoke @ai-media/sdk @ai-media/uploader
 npm view @ai-media/provider-azure-openai dependencies
 npm view @ai-media/provider-aliyun-bailian dependencies
 npm view @ai-media/provider-volcengine dependencies
+npm view @ai-media/provider-minimax dependencies
 ```
 
 如果需要撤回版本，只能在 npm 允许的撤回窗口内执行；优先发布修复版本，不要依赖删除已发布版本作为常规回滚方案。
