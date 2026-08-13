@@ -22,12 +22,17 @@ import { PlaygroundPage } from "@/pages/playground";
 
 /**
  * Derive the Router basename from the Vite asset base so the two can never
- * drift (GitHub Pages serves the site under `/<repo>/`). Root deployments
- * yield an empty basename. The language segment lives inside the basename.
+ * drift (GitHub Pages serves the site under `/<repo>/`). A custom domain
+ * mounts the same artifact at the root path, so the basename collapses to an
+ * empty string whenever the current pathname is not under the asset base.
+ * Root deployments yield an empty basename. The language segment lives inside
+ * the basename.
  */
 function deriveBasename(): string {
   const base = (import.meta.env.BASE_URL ?? "/").replace(/\/+$/, "");
-  return base;
+  if (base === "") return "";
+  const { pathname } = window.location;
+  return pathname === base || pathname.startsWith(`${base}/`) ? base : "";
 }
 
 /**

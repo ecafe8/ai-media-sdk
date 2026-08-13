@@ -26,7 +26,7 @@
 - `turbo test` builds dependencies first; a failed or missing build can therefore be a test prerequisite issue.
 - `bun run dev` starts only `apps/web` on `http://localhost:3000`. The uploader web example has its own `bun run --cwd examples/uploader-web dev` command.
 - Provider examples use `bun run --cwd examples/<name> start` after their environment file is configured.
-- Verify the GitHub Pages build locally with `bun run site:preview`: it builds `apps/site` with the Pages base path and serves `dist/` (including the SPA `404.html` fallback) at `http://localhost:4173/ai-media-sdk/`.
+- Verify the GitHub Pages build locally with `bun run site:preview`: it builds `apps/site` with the Pages base path and serves `dist/` (including the SPA `404.html` fallback) at `http://localhost:4173/ai-media-sdk/`. The same artifact also serves a custom domain mounted at the root path: postbuild mirrors the entry and `assets/` under the base path so absolute asset URLs resolve on both mounts, and the Router basename is detected at runtime.
 
 ## Conventions That Affect Changes
 
