@@ -202,6 +202,76 @@ describe("Playground generate route", () => {
     expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
   });
 
+  test("rejects a size outside the model's supportedSizes pre-flight", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "doubao-seedream",
+          model: "doubao-seedream-5-0-pro-260628",
+          modality: "image",
+          imageOperation: "generate",
+          prompt: "a red apple",
+          size: "8K",
+          credentials: { apiKey: "test-key" },
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    const body = await response.json();
+    expect(body.status).toBe("failed");
+    expect(body.error.code).toBe("INVALID_REQUEST");
+    expect(body.error.message).toContain('"8K"');
+  });
+
+  test("rejects n exceeding the model's maxN pre-flight", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "doubao-seedream",
+          model: "doubao-seedream-5-0-pro-260628",
+          modality: "image",
+          imageOperation: "generate",
+          prompt: "a red apple",
+          n: 2,
+          credentials: { apiKey: "test-key" },
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    const body = await response.json();
+    expect(body.error.code).toBe("INVALID_REQUEST");
+    expect(body.error.message).toContain("maximum of 1");
+  });
+
+  test("rejects a tier size on a pixel-only model pre-flight", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          provider: "aliyun-bailian",
+          model: "qwen-image-2.0-pro",
+          modality: "image",
+          imageOperation: "generate",
+          prompt: "a red apple",
+          size: "2K",
+          credentials: {
+            apiKey: "test-key",
+            baseUrl: "https://dashscope.aliyuncs.com",
+          },
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    const body = await response.json();
+    expect(body.error.code).toBe("INVALID_REQUEST");
+    expect(body.error.message).toContain('"2K"');
+  });
+
   test("rejects malformed reference video/audio URLs before Provider dispatch", async () => {
     for (const field of ["referenceVideoUrls", "referenceAudioUrls"]) {
       const response = await POST(

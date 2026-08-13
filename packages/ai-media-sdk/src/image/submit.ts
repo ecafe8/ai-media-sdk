@@ -1,6 +1,7 @@
 import { submitTask } from "../async/index.ts";
 import type { ImageContent } from "../contracts/content.ts";
 import { SdkError, type TaskHandle } from "../contracts/index.ts";
+import { validatePublicParams } from "./generate.ts";
 import type {
   ImageGenerationInput,
   ImageGenerationRequest,
@@ -13,7 +14,8 @@ import type {
  * dispatch method and asynchronous return contract differ. Generic over
  * `TParams` so callers selecting a model by literal id get compile-time
  * narrowing of `size`/`n`/`providerOptions.<namespace>` exactly as in
- * `generateImage`.
+ * `generateImage`. Public `size`/`n` are validated against the model's
+ * capability metadata pre-flight, same as `generateImage`.
  */
 export async function submitImageTask<
   TParams extends ImageGenerationInput = ImageGenerationInput,
@@ -36,13 +38,7 @@ export async function submitImageTask<
     });
   }
 
-  if (prompt.length === 0) {
-    throw new SdkError({
-      code: "INVALID_REQUEST",
-      message: "prompt must not be empty",
-    });
-  }
-
   const input: ImageGenerationInput = { prompt, n, size, providerOptions };
+  validatePublicParams(input, model.capabilities);
   return submitTask<ImageContent[]>({ model, modality: "image", input });
 }

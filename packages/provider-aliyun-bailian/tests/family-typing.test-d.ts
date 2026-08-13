@@ -16,6 +16,7 @@ import {
   createAliyunBailianProvider,
 } from "@ai-media/provider-aliyun-bailian";
 import {
+  editImage,
   generateImage,
   type ImageGenerationInput,
   submitImageTask,
@@ -174,6 +175,23 @@ submitVideoTask({
 declare const dynamicImageId: string;
 const dynamicImageModel = aliyun.image(dynamicImageId);
 generateImage({ model: dynamicImageModel, prompt: "p", size: "anything" });
+
+// `editImage` is generic over `ImageEditInput`. No edit-family params exist
+// yet, so family-typed image models fall back to the default edit shape:
+// `images` stays required and the pre-change request form type-checks.
+editImage({
+  model: qwenModel,
+  prompt: "p",
+  images: [{ url: "https://x/in.png" }],
+});
+editImage({
+  model: dynamicImageModel,
+  prompt: "p",
+  images: [{ url: "https://x/in.png" }],
+  providerOptions: { aliyun: { negative_prompt: "blurry" } },
+});
+// @ts-expect-error ImageEditInput requires `images`
+editImage({ model: qwenModel, prompt: "p" });
 
 declare const dynamicVideoId: string;
 const dynamicVideoModel = aliyun.video(dynamicVideoId);
