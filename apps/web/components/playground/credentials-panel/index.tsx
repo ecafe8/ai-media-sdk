@@ -64,7 +64,7 @@ const CREDENTIAL_FIELD_SPECS: Readonly<
       hint: "区域化 DashScope 地址，需包含 WorkspaceId 与区域。",
     },
   ],
-  "doubao-seedream": [
+  volcengine: [
     {
       key: "apiKey",
       label: "Ark API Key",

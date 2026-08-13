@@ -26,7 +26,7 @@ const PACKAGES: string[] = [
   "packages/uploader",
   "packages/provider-azure-openai",
   "packages/provider-aliyun-bailian",
-  "packages/provider-seedream",
+  "packages/provider-volcengine",
   "packages/provider-minimax",
 ];
 const REQUIRED_FILES = ["package.json", "README.md"];

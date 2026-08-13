@@ -12,7 +12,7 @@ describe("site model projection", () => {
     expect(getSiteModel("azure-openai", "gpt-image-2")).toBeDefined();
     expect(getSiteModel("aliyun-bailian", "qwen-image-2.0-pro")).toBeDefined();
     expect(
-      getSiteModel("doubao-seedream", "doubao-seedream-4-5-251128")
+      getSiteModel("volcengine", "doubao-seedream-4-5-251128")
     ).toBeDefined();
     expect(getSiteModel("minimax", "MiniMax-H3")).toBeDefined();
   });

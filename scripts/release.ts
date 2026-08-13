@@ -19,7 +19,7 @@ const PACKAGE_DIRECTORIES = [
   "packages/uploader",
   "packages/provider-azure-openai",
   "packages/provider-aliyun-bailian",
-  "packages/provider-seedream",
+  "packages/provider-volcengine",
 ];
 const PACKAGE_JSON_PATHS = PACKAGE_DIRECTORIES.map(
   (directory) => `${directory}/package.json`

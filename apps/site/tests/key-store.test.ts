@@ -36,11 +36,11 @@ describe("key-store sanitization", () => {
   test("drops entries without an apiKey", () => {
     const mock = installMockWindow();
     mock.store["ai-media-site.credentials.v1"] = JSON.stringify({
-      "doubao-seedream": {
+      volcengine: {
         baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
       },
     });
-    expect(getCredentials("doubao-seedream")).toBeUndefined();
+    expect(getCredentials("volcengine")).toBeUndefined();
   });
 
   test("tolerates corrupted JSON", () => {
@@ -51,8 +51,8 @@ describe("key-store sanitization", () => {
 
   test("ignores values containing the pipe character", () => {
     const mock = installMockWindow();
-    setCredentials("doubao-seedream", { apiKey: "abc|def" });
-    expect(getCredentials("doubao-seedream")?.apiKey).toBe("abc|def");
+    setCredentials("volcengine", { apiKey: "abc|def" });
+    expect(getCredentials("volcengine")?.apiKey).toBe("abc|def");
     expect(mock.store["ai-media-site.credentials.v1"]).toContain("abc|def");
   });
 });
@@ -88,10 +88,8 @@ describe("key-store completeness", () => {
     ).toBe(true);
   });
 
-  test("seedream requires only apiKey", () => {
-    expect(isCredentialsComplete("doubao-seedream", { apiKey: "k" })).toBe(
-      true
-    );
+  test("volcengine requires only apiKey", () => {
+    expect(isCredentialsComplete("volcengine", { apiKey: "k" })).toBe(true);
   });
 
   test("minimax requires only apiKey", () => {
@@ -109,9 +107,7 @@ describe("key-store completeness", () => {
       "Endpoint",
       "API Version",
     ]);
-    expect(missingCredentialFields("doubao-seedream", { apiKey: "k" })).toEqual(
-      []
-    );
+    expect(missingCredentialFields("volcengine", { apiKey: "k" })).toEqual([]);
   });
 });
 
@@ -123,27 +119,27 @@ describe("key-store persistence and isolation", () => {
       endpoint: "https://x.openai.azure.com",
       apiVersion: "v",
     });
-    setCredentials("doubao-seedream", { apiKey: "sd" });
+    setCredentials("volcengine", { apiKey: "sd" });
     expect(getCredentials("azure-openai")?.apiKey).toBe("az");
-    expect(getCredentials("doubao-seedream")?.apiKey).toBe("sd");
+    expect(getCredentials("volcengine")?.apiKey).toBe("sd");
 
     clearCredentials("azure-openai");
     expect(getCredentials("azure-openai")).toBeUndefined();
-    expect(getCredentials("doubao-seedream")?.apiKey).toBe("sd");
+    expect(getCredentials("volcengine")?.apiKey).toBe("sd");
 
     clearAllCredentials();
-    expect(getCredentials("doubao-seedream")).toBeUndefined();
+    expect(getCredentials("volcengine")).toBeUndefined();
   });
 
   test("configured providers reflect only complete credential sets", () => {
     installMockWindow();
-    setCredentials("doubao-seedream", { apiKey: "sd" });
+    setCredentials("volcengine", { apiKey: "sd" });
     setCredentials("azure-openai", { apiKey: "az" }); // incomplete
     const configured = getConfiguredProviders({
-      "doubao-seedream": { apiKey: "sd" },
+      volcengine: { apiKey: "sd" },
       "azure-openai": { apiKey: "az" },
     });
-    expect(configured.has("doubao-seedream")).toBe(true);
+    expect(configured.has("volcengine")).toBe(true);
     expect(configured.has("azure-openai")).toBe(false);
   });
 });
@@ -164,12 +160,12 @@ describe("endpoint validation", () => {
     expect(bailian.ok).toBe(true);
     expect(bailian.isCustomHost).toBe(false);
 
-    const seedream = validateProviderEndpoint(
-      "doubao-seedream",
+    const volcengine = validateProviderEndpoint(
+      "volcengine",
       "https://ark.cn-beijing.volces.com/api/v3"
     );
-    expect(seedream.ok).toBe(true);
-    expect(seedream.isCustomHost).toBe(false);
+    expect(volcengine.ok).toBe(true);
+    expect(volcengine.isCustomHost).toBe(false);
 
     const minimax = validateProviderEndpoint(
       "minimax",
@@ -181,7 +177,7 @@ describe("endpoint validation", () => {
 
   test("flags non-allowlisted hosts as custom", () => {
     const custom = validateProviderEndpoint(
-      "doubao-seedream",
+      "volcengine",
       "https://my-proxy.example.com"
     );
     expect(custom.ok).toBe(true);
@@ -191,7 +187,7 @@ describe("endpoint validation", () => {
 
   test("rejects non-HTTPS endpoints", () => {
     const http = validateProviderEndpoint(
-      "doubao-seedream",
+      "volcengine",
       "http://ark.cn-beijing.volces.com/api/v3"
     );
     expect(http.ok).toBe(false);
@@ -200,7 +196,7 @@ describe("endpoint validation", () => {
 
   test("rejects endpoints with embedded credentials", () => {
     const withUser = validateProviderEndpoint(
-      "doubao-seedream",
+      "volcengine",
       "https://user:pass@ark.cn-beijing.volces.com/api/v3"
     );
     expect(withUser.ok).toBe(false);
@@ -208,20 +204,16 @@ describe("endpoint validation", () => {
 
   test("rejects non-standard ports", () => {
     const port = validateProviderEndpoint(
-      "doubao-seedream",
+      "volcengine",
       "https://ark.cn-beijing.volces.com:8080/api/v3"
     );
     expect(port.ok).toBe(false);
   });
 
   test("rejects invalid URLs and empty values", () => {
-    expect(validateProviderEndpoint("doubao-seedream", "not a url").ok).toBe(
-      false
-    );
-    expect(validateProviderEndpoint("doubao-seedream", "").ok).toBe(false);
-    expect(validateProviderEndpoint("doubao-seedream", undefined).ok).toBe(
-      false
-    );
+    expect(validateProviderEndpoint("volcengine", "not a url").ok).toBe(false);
+    expect(validateProviderEndpoint("volcengine", "").ok).toBe(false);
+    expect(validateProviderEndpoint("volcengine", undefined).ok).toBe(false);
   });
 });
 

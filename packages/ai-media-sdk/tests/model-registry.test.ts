@@ -30,11 +30,11 @@ const aliyunRegistry: ModelRegistry = {
   ],
 };
 
-const seedreamRegistry: ModelRegistry = {
-  providerId: "doubao-seedream",
+const volcengineRegistry: ModelRegistry = {
+  providerId: "volcengine",
   models: [
     {
-      providerId: "doubao-seedream",
+      providerId: "volcengine",
       id: "doubao-seedream-5-0-pro-260628",
       modality: "image",
       capabilities: imageCap,
@@ -58,7 +58,7 @@ describe("model-registry aggregation contract", () => {
   test("collectSupportedModels merges consts and ModelListable instances in source order", () => {
     const models = collectSupportedModels(
       aliyunRegistry,
-      seedreamRegistry,
+      volcengineRegistry,
       azureListable
     );
 
@@ -105,7 +105,7 @@ describe("model-registry aggregation contract", () => {
   });
 
   test("findSupportedModel locates a known model and returns undefined for an unknown one", () => {
-    const models = collectSupportedModels(aliyunRegistry, seedreamRegistry);
+    const models = collectSupportedModels(aliyunRegistry, volcengineRegistry);
 
     expect(
       findSupportedModel(models, "aliyun-bailian", "qwen-image-2.0-pro")?.id

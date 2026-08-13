@@ -1,7 +1,7 @@
 import { ALIYUN_MODEL_REGISTRY } from "@ai-media/provider-aliyun-bailian";
 import { AZURE_MODEL_REGISTRY } from "@ai-media/provider-azure-openai";
 import { MINIMAX_MODEL_REGISTRY } from "@ai-media/provider-minimax";
-import { SEEDREAM_MODEL_REGISTRY } from "@ai-media/provider-seedream";
+import { VOLCENGINE_MODEL_REGISTRY } from "@ai-media/provider-volcengine";
 
 import type {
   PlaygroundModel,
@@ -15,7 +15,7 @@ export const PLAYGROUND_PROVIDERS: readonly {
 }[] = [
   { id: "azure-openai", label: "Azure OpenAI" },
   { id: "aliyun-bailian", label: "Alibaba Bailian" },
-  { id: "doubao-seedream", label: "Doubao Seedream" },
+  { id: "volcengine", label: "Volcengine Ark" },
   { id: "minimax", label: "MiniMax" },
 ];
 
@@ -86,23 +86,23 @@ const PLAYGROUND_LABELS: Readonly<
     recommendation:
       "全能参考视频生成；支持文生/图生/首尾帧/参考生视频；Playground 暂不支持",
   },
-  "doubao-seedream:doubao-seedream-5-0-pro-260628": {
+  "volcengine:doubao-seedream-5-0-pro-260628": {
     label: "Doubao Seedream 5.0 Pro",
     recommendation: "高精度生成与交互编辑；组图/流式/联网搜索暂不支持",
   },
-  "doubao-seedream:doubao-seedream-5-0-260128": {
+  "volcengine:doubao-seedream-5-0-260128": {
     label: "Doubao Seedream 5.0 Lite (260128)",
     recommendation: "Alias of doubao-seedream-5-0-lite-260128",
   },
-  "doubao-seedream:doubao-seedream-5-0-lite-260128": {
+  "volcengine:doubao-seedream-5-0-lite-260128": {
     label: "Doubao Seedream 5.0 Lite",
     recommendation: "平衡生成与编辑；组图/流式/联网搜索暂不支持",
   },
-  "doubao-seedream:doubao-seedream-4-5-251128": {
+  "volcengine:doubao-seedream-4-5-251128": {
     label: "Doubao Seedream 4.5",
     recommendation: "生成与编辑；仅 jpeg 输出",
   },
-  "doubao-seedream:doubao-seedream-4-0-250828": {
+  "volcengine:doubao-seedream-4-0-250828": {
     label: "Doubao Seedream 4.0",
     recommendation: "生成与编辑；仅 jpeg 输出",
   },
@@ -183,11 +183,11 @@ function fromAliyun(
 }
 
 /**
- * Derive a `PlaygroundModel` from a Seedream registry entry. The family slug
- * is derived from the model id so the form can distinguish 5.0 Pro / 5.0
+ * Derive a `PlaygroundModel` from a Volcengine Ark registry entry. The family
+ * slug is derived from the model id so the form can distinguish 5.0 Pro / 5.0
  * Lite / 4.5 / 4.0 for Advanced Options (4.x omits `output_format`).
  */
-function seedreamFamilySlug(id: string): PlaygroundModelFamily {
+function volcengineFamilySlug(id: string): PlaygroundModelFamily {
   if (id === "doubao-seedream-5-0-pro-260628") return "doubao-seedream-5-pro";
   if (
     id === "doubao-seedream-5-0-260128" ||
@@ -199,18 +199,18 @@ function seedreamFamilySlug(id: string): PlaygroundModelFamily {
   return "doubao-seedream-4-0";
 }
 
-function fromSeedream(
+function fromVolcengine(
   id: string,
-  entry: (typeof SEEDREAM_MODEL_REGISTRY)[string]
+  entry: (typeof VOLCENGINE_MODEL_REGISTRY)[string]
 ): PlaygroundModel {
   const caps = entry.capabilities;
-  const { label, recommendation } = labelFor("doubao-seedream", id);
+  const { label, recommendation } = labelFor("volcengine", id);
   return {
     id,
     label,
-    provider: "doubao-seedream",
+    provider: "volcengine",
     modality: caps.modality === "video" ? "video" : "image",
-    family: seedreamFamilySlug(id),
+    family: volcengineFamilySlug(id),
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
     supportsVideo: false,
@@ -303,8 +303,8 @@ export const PLAYGROUND_MODELS: readonly PlaygroundModel[] = [
   ...Object.entries(ALIYUN_MODEL_REGISTRY)
     .filter(([id]) => !ALIYUN_PLAYGROUND_EXCLUDED.has(id))
     .map(([id, entry]) => fromAliyun(id, entry)),
-  ...Object.entries(SEEDREAM_MODEL_REGISTRY).map(([id, entry]) =>
-    fromSeedream(id, entry)
+  ...Object.entries(VOLCENGINE_MODEL_REGISTRY).map(([id, entry]) =>
+    fromVolcengine(id, entry)
   ),
   ...Object.entries(MINIMAX_MODEL_REGISTRY).map(([id, entry]) =>
     fromMinimax(id, entry)

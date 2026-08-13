@@ -7,7 +7,7 @@ import {
   resolveAliyunCredentials,
   resolveAzureCredentials,
   resolveMiniMaxCredentials,
-  resolveSeedreamCredentials,
+  resolveVolcengineCredentials,
 } from "./provider-credentials";
 
 const EMPTY_CONFIG: AppConfig = {
@@ -93,22 +93,22 @@ describe("resolveAliyunCredentials", () => {
   });
 });
 
-describe("resolveSeedreamCredentials", () => {
+describe("resolveVolcengineCredentials", () => {
   test("prefers visitor credentials and keeps baseUrl optional", () => {
     expect(
-      resolveSeedreamCredentials({ apiKey: "user-key" }, FULL_CONFIG)
+      resolveVolcengineCredentials({ apiKey: "user-key" }, FULL_CONFIG)
     ).toEqual({ apiKey: "user-key" });
   });
 
   test("falls back to the environment including the base URL", () => {
-    expect(resolveSeedreamCredentials(undefined, FULL_CONFIG)).toEqual({
+    expect(resolveVolcengineCredentials(undefined, FULL_CONFIG)).toEqual({
       apiKey: "env-ark-key",
       baseUrl: "https://env.volces.com/api/v3",
     });
   });
 
   test("raises a configuration error when no source is complete", () => {
-    expect(() => resolveSeedreamCredentials(undefined, EMPTY_CONFIG)).toThrow(
+    expect(() => resolveVolcengineCredentials(undefined, EMPTY_CONFIG)).toThrow(
       /Ark API Key/
     );
   });
@@ -145,9 +145,7 @@ describe("isProviderConfiguredByEnv", () => {
   test("reports every Provider configured for a full environment", () => {
     expect(isProviderConfiguredByEnv("azure-openai", FULL_CONFIG)).toBe(true);
     expect(isProviderConfiguredByEnv("aliyun-bailian", FULL_CONFIG)).toBe(true);
-    expect(isProviderConfiguredByEnv("doubao-seedream", FULL_CONFIG)).toBe(
-      true
-    );
+    expect(isProviderConfiguredByEnv("volcengine", FULL_CONFIG)).toBe(true);
     expect(isProviderConfiguredByEnv("minimax", FULL_CONFIG)).toBe(true);
   });
 
@@ -156,9 +154,7 @@ describe("isProviderConfiguredByEnv", () => {
     expect(isProviderConfiguredByEnv("aliyun-bailian", EMPTY_CONFIG)).toBe(
       false
     );
-    expect(isProviderConfiguredByEnv("doubao-seedream", EMPTY_CONFIG)).toBe(
-      false
-    );
+    expect(isProviderConfiguredByEnv("volcengine", EMPTY_CONFIG)).toBe(false);
     expect(isProviderConfiguredByEnv("minimax", EMPTY_CONFIG)).toBe(false);
   });
 });

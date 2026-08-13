@@ -37,7 +37,7 @@
 
 - [ ] 6.1 `providers/azure-openai.mdx`：概览/安装/配置字段表（apiKey/endpoint/apiVersion）/快速开始/模型表（`ProviderModelTable`，数据驱动）/`providerOptions.azure` 字段表（quality/output_format/output_compression）/限制（仅同步、n=1、不支持编辑与异步）+ 自定义 deployment 注册（`createAzureModel`/`provider.createModel`、`UNKNOWN_MODEL`、`listModels`）（spec"Provider 页统一内容模板"）
 - [ ] 6.2 `providers/aliyun-bailian.mdx`：同七段式；覆盖 DashScope 配置（apiKey、Workspace baseUrl）、图像 + 视频模型表（数据驱动）、`providerOptions.aliyun`、`oss://` URL 自动注入 `X-DashScope-OssResourceResolve`、异步任务说明、临时 URL 提示
-- [ ] 6.3 `providers/seedream.mdx`：同七段式；覆盖 ARK 配置、模型表（数据驱动）、`providerOptions.seedream`、size 两形态（supportedSizes + maxResolution）说明
+- [ ] 6.3 `providers/volcengine.mdx`：同七段式；覆盖 ARK 配置、模型表（数据驱动）、`providerOptions.volcengine`、size 两形态（supportedSizes + maxResolution）说明
 - [ ] 6.4 三页错误处理段均链接 `/docs/error-handling`，不复制错误码表
 
 ## 7. 内容：uploader 与 FAQ

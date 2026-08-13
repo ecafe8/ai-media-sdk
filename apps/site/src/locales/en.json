@@ -359,19 +359,19 @@
       "label": "HappyHorse 1.0 Video Edit",
       "recommendation": "1 source video (public URL only) + 0-5 reference images; no ratio/duration, supports audio_setting"
     },
-    "doubao-seedream:doubao-seedream-5-0-pro-260628": {
+    "volcengine:doubao-seedream-5-0-pro-260628": {
       "recommendation": "High-precision generation and interactive editing; multi-image/streaming/web search not supported yet"
     },
-    "doubao-seedream:doubao-seedream-5-0-260128": {
+    "volcengine:doubao-seedream-5-0-260128": {
       "recommendation": "Alias of doubao-seedream-5-0-lite-260128"
     },
-    "doubao-seedream:doubao-seedream-5-0-lite-260128": {
+    "volcengine:doubao-seedream-5-0-lite-260128": {
       "recommendation": "Balanced generation and editing; multi-image/streaming/web search not supported yet"
     },
-    "doubao-seedream:doubao-seedream-4-5-251128": {
+    "volcengine:doubao-seedream-4-5-251128": {
       "recommendation": "Generation and editing; jpeg output only"
     },
-    "doubao-seedream:doubao-seedream-4-0-250828": {
+    "volcengine:doubao-seedream-4-0-250828": {
       "recommendation": "Generation and editing; jpeg output only"
     },
     "minimax:MiniMax-H3": {

@@ -39,7 +39,7 @@
 
 ### Requirement: 文档信息架构完整性
 
-文档区 SHALL 包含以下页面（slug 与顺序以文档清单为准）：入门（introduction、quick-start）；指南（image-generation、video-generation、parameters、results、error-handling、file-upload）；Provider 参考（azure-openai、aliyun-bailian、seedream）；uploader；FAQ；API 参考。文档清单与文档文件 SHALL 保持一致：清单中每个条目必须对应一个可渲染的文档，每个文档必须出现在清单中；构建期 SHALL 有自动化检查保证该一致性。API 参考条目为生成内容：清单 SHALL 显式标记生成类条目；生成产物缺失时（未运行生成步骤的开发/测试场景），对应条目 SHALL 渲染引导运行生成命令的占位页，SHALL NOT 渲染空白页或报错，一致性检查对生成类条目 SHALL 以运行生成步骤后的状态为准。
+文档区 SHALL 包含以下页面（slug 与顺序以文档清单为准）：入门（introduction、quick-start）；指南（image-generation、video-generation、parameters、results、error-handling、file-upload）；Provider 参考（azure-openai、aliyun-bailian、volcengine）；uploader；FAQ；API 参考。文档清单与文档文件 SHALL 保持一致：清单中每个条目必须对应一个可渲染的文档，每个文档必须出现在清单中；构建期 SHALL 有自动化检查保证该一致性。API 参考条目为生成内容：清单 SHALL 显式标记生成类条目；生成产物缺失时（未运行生成步骤的开发/测试场景），对应条目 SHALL 渲染引导运行生成命令的占位页，SHALL NOT 渲染空白页或报错，一致性检查对生成类条目 SHALL 以运行生成步骤后的状态为准。
 
 #### Scenario: 构建期清单一致性检查
 

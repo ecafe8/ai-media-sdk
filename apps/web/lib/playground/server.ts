@@ -11,9 +11,9 @@ import {
   type MiniMaxProvider,
 } from "@ai-media/provider-minimax";
 import {
-  createSeedreamProvider,
-  type SeedreamProvider,
-} from "@ai-media/provider-seedream";
+  createVolcengineProvider,
+  type VolcengineProvider,
+} from "@ai-media/provider-volcengine";
 import {
   createTransport,
   editImage,
@@ -34,7 +34,7 @@ import {
   resolveAliyunCredentials,
   resolveAzureCredentials,
   resolveMiniMaxCredentials,
-  resolveSeedreamCredentials,
+  resolveVolcengineCredentials,
 } from "./provider-credentials";
 import { getPlaygroundModel } from "./registry";
 import type {
@@ -55,7 +55,7 @@ export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
   for (const provider of [
     "azure-openai",
     "aliyun-bailian",
-    "doubao-seedream",
+    "volcengine",
     "minimax",
   ] as const) {
     if (isProviderConfiguredByEnv(provider, config)) {
@@ -134,9 +134,9 @@ export function createProviderSelection(
     return { model, instance: provider.image(request.model) };
   }
 
-  if (request.provider === "doubao-seedream") {
-    const provider: SeedreamProvider = createSeedreamProvider(
-      resolveSeedreamCredentials(request.credentials, config),
+  if (request.provider === "volcengine") {
+    const provider: VolcengineProvider = createVolcengineProvider(
+      resolveVolcengineCredentials(request.credentials, config),
       {
         transport: createTransport({
           defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,

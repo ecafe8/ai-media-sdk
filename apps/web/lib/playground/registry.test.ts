@@ -40,7 +40,7 @@ describe("Playground capability registry", () => {
 
   test("registers Seedream 5.0 pro as editable with max 10 images", () => {
     const model = getPlaygroundModel(
-      "doubao-seedream",
+      "volcengine",
       "doubao-seedream-5-0-pro-260628"
     );
     expect(model?.supportsGenerate).toBe(true);
@@ -50,29 +50,29 @@ describe("Playground capability registry", () => {
 
   test("lists both Seedream alias ids", () => {
     const canonical = getPlaygroundModel(
-      "doubao-seedream",
+      "volcengine",
       "doubao-seedream-5-0-260128"
     );
     const lite = getPlaygroundModel(
-      "doubao-seedream",
+      "volcengine",
       "doubao-seedream-5-0-lite-260128"
     );
     expect(canonical?.maxEditImages).toBe(14);
     expect(lite?.maxEditImages).toBe(14);
     const model45 = getPlaygroundModel(
-      "doubao-seedream",
+      "volcengine",
       "doubao-seedream-4-5-251128"
     );
     expect(model45?.supportsEdit).toBe(true);
     const model40 = getPlaygroundModel(
-      "doubao-seedream",
+      "volcengine",
       "doubao-seedream-4-0-250828"
     );
     expect(model40?.supportsGenerate).toBe(true);
   });
 
   test("marks Seedream models configured only when the provider is configured", () => {
-    const models = getClientPlaygroundModels(new Set(["doubao-seedream"]));
+    const models = getClientPlaygroundModels(new Set(["volcengine"]));
     const pro = models.find(
       (model) => model.id === "doubao-seedream-5-0-pro-260628"
     );

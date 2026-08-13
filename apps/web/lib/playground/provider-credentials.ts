@@ -28,7 +28,7 @@ export interface ResolvedAliyunCredentials {
   readonly baseUrl: string;
 }
 
-export interface ResolvedSeedreamCredentials {
+export interface ResolvedVolcengineCredentials {
   readonly apiKey: string;
   readonly baseUrl?: string;
 }
@@ -110,13 +110,13 @@ export function resolveAliyunCredentials(
 }
 
 /**
- * Resolve the effective Volcengine Ark (Seedream) credentials. Same
+ * Resolve the effective Volcengine Ark credentials. Same
  * precedence rules as `resolveAzureCredentials`; `baseUrl` stays optional.
  */
-export function resolveSeedreamCredentials(
+export function resolveVolcengineCredentials(
   user: PlaygroundCredentials | undefined,
   config: AppConfig
-): ResolvedSeedreamCredentials {
+): ResolvedVolcengineCredentials {
   if (user?.apiKey.trim()) {
     return {
       apiKey: user.apiKey.trim(),
@@ -130,13 +130,13 @@ export function resolveSeedreamCredentials(
     };
   }
   throw new PlaygroundConfigurationError(
-    "服务端未配置 Doubao Seedream。请填写你的 Ark API Key 后再体验。"
+    "服务端未配置 Volcengine Ark。请填写你的 Ark API Key 后再体验。"
   );
 }
 
 /**
  * Resolve the effective MiniMax credentials. Same precedence rules as
- * `resolveSeedreamCredentials`; `baseUrl` stays optional and falls back to
+ * `resolveVolcengineCredentials`; `baseUrl` stays optional and falls back to
  * the provider's `https://api.minimax.io` default.
  */
 export function resolveMiniMaxCredentials(
@@ -179,7 +179,7 @@ export function isProviderConfiguredByEnv(
       return Boolean(
         config.ALIYUN_BAILIAN_API_KEY && config.ALIYUN_BAILIAN_BASE_URL
       );
-    case "doubao-seedream":
+    case "volcengine":
       return Boolean(config.ARK_API_KEY);
     case "minimax":
       return Boolean(config.MINIMAX_API_KEY);

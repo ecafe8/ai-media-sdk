@@ -24,11 +24,11 @@
       "@ai-media/provider-azure-openai/*": [
         "../../packages/provider-azure-openai/src/*"
       ],
-      "@ai-media/provider-seedream": [
-        "../../packages/provider-seedream/src/index.ts"
+      "@ai-media/provider-volcengine": [
+        "../../packages/provider-volcengine/src/index.ts"
       ],
-      "@ai-media/provider-seedream/*": [
-        "../../packages/provider-seedream/src/*"
+      "@ai-media/provider-volcengine/*": [
+        "../../packages/provider-volcengine/src/*"
       ],
       "@ai-media/provider-minimax": [
         "../../packages/provider-minimax/src/index.ts"

@@ -88,7 +88,7 @@ describe("Playground generate route", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          provider: "doubao-seedream",
+          provider: "volcengine",
           model: "doubao-seedream-4-5-251128",
           modality: "image",
           imageOperation: "generate",
@@ -130,7 +130,7 @@ describe("Playground generate route", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          provider: "doubao-seedream",
+          provider: "volcengine",
           model: "doubao-seedream-4-5-251128",
           modality: "image",
           imageOperation: "generate",
@@ -208,7 +208,7 @@ describe("Playground generate route", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          provider: "doubao-seedream",
+          provider: "volcengine",
           model: "doubao-seedream-5-0-pro-260628",
           modality: "image",
           imageOperation: "generate",
@@ -231,7 +231,7 @@ describe("Playground generate route", () => {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          provider: "doubao-seedream",
+          provider: "volcengine",
           model: "doubao-seedream-5-0-pro-260628",
           modality: "image",
           imageOperation: "generate",

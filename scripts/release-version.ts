@@ -13,12 +13,12 @@ const PACKAGE_DIRECTORIES = [
   "packages/uploader",
   "packages/provider-azure-openai",
   "packages/provider-aliyun-bailian",
-  "packages/provider-seedream",
+  "packages/provider-volcengine",
 ];
 const PROVIDER_PACKAGE_NAMES = new Set([
   "@ai-media/provider-azure-openai",
   "@ai-media/provider-aliyun-bailian",
-  "@ai-media/provider-seedream",
+  "@ai-media/provider-volcengine",
 ]);
 
 function readManifest(directory: string): PackageManifest {

@@ -1,7 +1,7 @@
 import { ALIYUN_MODEL_REGISTRY } from "@ai-media/provider-aliyun-bailian";
 import { AZURE_MODEL_REGISTRY } from "@ai-media/provider-azure-openai";
 import { MINIMAX_MODEL_REGISTRY } from "@ai-media/provider-minimax";
-import { SEEDREAM_MODEL_REGISTRY } from "@ai-media/provider-seedream";
+import { VOLCENGINE_MODEL_REGISTRY } from "@ai-media/provider-volcengine";
 
 import type { SiteProvider } from "../key-store";
 import type { SiteModel, SiteModelFamily } from "./types";
@@ -77,25 +77,25 @@ const MODEL_LABELS: Readonly<
     recommendation:
       "1 source video (public URL only) + 0-5 reference images; no ratio/duration, supports audio_setting",
   },
-  "doubao-seedream:doubao-seedream-5-0-pro-260628": {
+  "volcengine:doubao-seedream-5-0-pro-260628": {
     label: "Doubao Seedream 5.0 Pro",
     recommendation:
       "High-precision generation and interactive editing; multi-image/streaming/web search not supported yet",
   },
-  "doubao-seedream:doubao-seedream-5-0-260128": {
+  "volcengine:doubao-seedream-5-0-260128": {
     label: "Doubao Seedream 5.0 Lite (260128)",
     recommendation: "Alias of doubao-seedream-5-0-lite-260128",
   },
-  "doubao-seedream:doubao-seedream-5-0-lite-260128": {
+  "volcengine:doubao-seedream-5-0-lite-260128": {
     label: "Doubao Seedream 5.0 Lite",
     recommendation:
       "Balanced generation and editing; multi-image/streaming/web search not supported yet",
   },
-  "doubao-seedream:doubao-seedream-4-5-251128": {
+  "volcengine:doubao-seedream-4-5-251128": {
     label: "Doubao Seedream 4.5",
     recommendation: "Generation and editing; jpeg output only",
   },
-  "doubao-seedream:doubao-seedream-4-0-250828": {
+  "volcengine:doubao-seedream-4-0-250828": {
     label: "Doubao Seedream 4.0",
     recommendation: "Generation and editing; jpeg output only",
   },
@@ -124,7 +124,7 @@ function aliyunFamilySlug(
   return family;
 }
 
-function seedreamFamilySlug(id: string): SiteModelFamily {
+function volcengineFamilySlug(id: string): SiteModelFamily {
   if (id === "doubao-seedream-5-0-pro-260628") return "doubao-seedream-5-pro";
   if (
     id === "doubao-seedream-5-0-260128" ||
@@ -167,18 +167,18 @@ function fromAliyun(
   };
 }
 
-function fromSeedream(
+function fromVolcengine(
   id: string,
-  entry: (typeof SEEDREAM_MODEL_REGISTRY)[string]
+  entry: (typeof VOLCENGINE_MODEL_REGISTRY)[string]
 ): SiteModel {
   const caps = entry.capabilities;
-  const { label, recommendation } = labelsFor("doubao-seedream", id);
+  const { label, recommendation } = labelsFor("volcengine", id);
   return {
     id,
     label,
-    provider: "doubao-seedream",
+    provider: "volcengine",
     modality: caps.modality === "video" ? "video" : "image",
-    family: seedreamFamilySlug(id),
+    family: volcengineFamilySlug(id),
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
     supportsVideo: false,
@@ -257,9 +257,9 @@ export const SITE_MODELS: readonly SiteModel[] = [
       const model = fromAliyun(id, entry);
       return model ? [model] : [];
     }),
-  ...Object.entries(SEEDREAM_MODEL_REGISTRY)
+  ...Object.entries(VOLCENGINE_MODEL_REGISTRY)
     .filter(([id]) => !EXCLUDED_MODEL_IDS.has(id))
-    .map(([id, entry]) => fromSeedream(id, entry)),
+    .map(([id, entry]) => fromVolcengine(id, entry)),
   ...Object.entries(MINIMAX_MODEL_REGISTRY)
     .filter(([id]) => !EXCLUDED_MODEL_IDS.has(id))
     .map(([id, entry]) => fromMinimax(id, entry)),

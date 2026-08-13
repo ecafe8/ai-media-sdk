@@ -27,7 +27,7 @@ describe("executor local interception", () => {
   test("missing credentials fail locally without any network call", async () => {
     const fetchSpy = countFetchCalls();
     const response = await executeSiteRequest({
-      provider: "doubao-seedream",
+      provider: "volcengine",
       model: "doubao-seedream-4-5-251128",
       modality: "image",
       prompt: "a cat",
@@ -57,13 +57,13 @@ describe("executor local interception", () => {
 
   test("unconfirmed custom endpoint is rejected before any request", async () => {
     installMockWindow();
-    setCredentials("doubao-seedream", {
+    setCredentials("volcengine", {
       apiKey: "k",
       baseUrl: "https://my-proxy.example.com/api/v3",
     });
     const fetchSpy = countFetchCalls();
     const response = await executeSiteRequest({
-      provider: "doubao-seedream",
+      provider: "volcengine",
       model: "doubao-seedream-4-5-251128",
       modality: "image",
       prompt: "a cat",
@@ -76,10 +76,10 @@ describe("executor local interception", () => {
 
   test("unknown model is rejected locally", async () => {
     installMockWindow();
-    setCredentials("doubao-seedream", { apiKey: "k" });
+    setCredentials("volcengine", { apiKey: "k" });
     const fetchSpy = countFetchCalls();
     const response = await executeSiteRequest({
-      provider: "doubao-seedream",
+      provider: "volcengine",
       model: "no-such-model",
       modality: "image",
       prompt: "a cat",

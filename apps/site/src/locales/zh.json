@@ -353,19 +353,19 @@
       "label": "HappyHorse 1.0 Video Edit（视频编辑）",
       "recommendation": "1 个源视频（仅公网 URL）+ 0-5 参考图；无 ratio/duration，支持 audio_setting"
     },
-    "doubao-seedream:doubao-seedream-5-0-pro-260628": {
+    "volcengine:doubao-seedream-5-0-pro-260628": {
       "recommendation": "高精度生成与交互编辑；组图/流式/联网搜索暂不支持"
     },
-    "doubao-seedream:doubao-seedream-5-0-260128": {
+    "volcengine:doubao-seedream-5-0-260128": {
       "recommendation": "doubao-seedream-5-0-lite-260128 的别名"
     },
-    "doubao-seedream:doubao-seedream-5-0-lite-260128": {
+    "volcengine:doubao-seedream-5-0-lite-260128": {
       "recommendation": "平衡生成与编辑；组图/流式/联网搜索暂不支持"
     },
-    "doubao-seedream:doubao-seedream-4-5-251128": {
+    "volcengine:doubao-seedream-4-5-251128": {
       "recommendation": "生成与编辑；仅 jpeg 输出"
     },
-    "doubao-seedream:doubao-seedream-4-0-250828": {
+    "volcengine:doubao-seedream-4-0-250828": {
       "recommendation": "生成与编辑；仅 jpeg 输出"
     },
     "minimax:MiniMax-H3": {

@@ -15,7 +15,7 @@
     "@ai-media/provider-aliyun-bailian": "workspace:*",
     "@ai-media/provider-azure-openai": "workspace:*",
     "@ai-media/provider-minimax": "workspace:*",
-    "@ai-media/provider-seedream": "workspace:*",
+    "@ai-media/provider-volcengine": "workspace:*",
     "@ai-media/sdk": "workspace:*",
     "@workspace/ui": "workspace:*",
     "i18next": "^26.3.6",

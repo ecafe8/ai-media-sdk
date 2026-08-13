@@ -51,11 +51,9 @@ describe("isCredentialsComplete", () => {
     );
   });
 
-  test("accepts apiKey alone for doubao-seedream", () => {
-    expect(isCredentialsComplete("doubao-seedream", { apiKey: "key" })).toBe(
-      true
-    );
-    expect(isCredentialsComplete("doubao-seedream", undefined)).toBe(false);
+  test("accepts apiKey alone for volcengine", () => {
+    expect(isCredentialsComplete("volcengine", { apiKey: "key" })).toBe(true);
+    expect(isCredentialsComplete("volcengine", undefined)).toBe(false);
   });
 
   test("accepts apiKey alone for minimax", () => {
@@ -67,8 +65,8 @@ describe("isCredentialsComplete", () => {
 describe("stored credentials without a window", () => {
   test("set/clear are safe no-ops when window is unavailable", () => {
     expect(() =>
-      setStoredCredentials("doubao-seedream", { apiKey: "key" })
+      setStoredCredentials("volcengine", { apiKey: "key" })
     ).not.toThrow();
-    expect(() => clearStoredCredentials("doubao-seedream")).not.toThrow();
+    expect(() => clearStoredCredentials("volcengine")).not.toThrow();
   });
 });

@@ -1,7 +1,7 @@
 import type { AliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
 import type { AzureOpenAIProvider } from "@ai-media/provider-azure-openai";
 import type { MiniMaxProvider } from "@ai-media/provider-minimax";
-import type { SeedreamProvider } from "@ai-media/provider-seedream";
+import type { VolcengineProvider } from "@ai-media/provider-volcengine";
 import {
   editImage,
   type GenerationResult,
@@ -155,8 +155,8 @@ export async function executeSiteRequest(
           : (providerInstance as AliyunBailianProvider).video(request.model);
     } else if (request.provider === "azure-openai") {
       instance = (providerInstance as AzureOpenAIProvider).image(request.model);
-    } else if (request.provider === "doubao-seedream") {
-      instance = (providerInstance as SeedreamProvider).image(request.model);
+    } else if (request.provider === "volcengine") {
+      instance = (providerInstance as VolcengineProvider).image(request.model);
     } else {
       instance = (providerInstance as AliyunBailianProvider).image(
         request.model

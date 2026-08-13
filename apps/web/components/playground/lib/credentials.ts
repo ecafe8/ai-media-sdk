@@ -26,7 +26,7 @@ const STORAGE_KEY = "ai-media-playground.credentials.v1";
 const PROVIDER_IDS: readonly PlaygroundProvider[] = [
   "azure-openai",
   "aliyun-bailian",
-  "doubao-seedream",
+  "volcengine",
   "minimax",
 ];
 
@@ -167,7 +167,7 @@ export function isCredentialsComplete(
       return Boolean(normalized.endpoint && normalized.apiVersion);
     case "aliyun-bailian":
       return Boolean(normalized.baseUrl);
-    case "doubao-seedream":
+    case "volcengine":
       return true;
     case "minimax":
       return true;

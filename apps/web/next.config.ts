@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     "@ai-media/provider-aliyun-bailian",
     "@ai-media/provider-azure-openai",
     "@ai-media/provider-minimax",
-    "@ai-media/provider-seedream",
+    "@ai-media/provider-volcengine",
   ],
 };
 

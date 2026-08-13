@@ -607,7 +607,7 @@ function AdvancedFieldControl({
  */
 function advancedNamespace(
   family: PlaygroundModel["family"] | undefined
-): "azure" | "aliyun" | "seedream" | undefined {
+): "azure" | "aliyun" | "volcengine" | undefined {
   if (!family) return undefined;
   if (family === "azure-gpt-image") return "azure";
   if (
@@ -617,7 +617,7 @@ function advancedNamespace(
   ) {
     return "aliyun";
   }
-  if (family.startsWith("doubao-seedream")) return "seedream";
+  if (family.startsWith("doubao-seedream")) return "volcengine";
   return undefined;
 }
 

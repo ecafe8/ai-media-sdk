@@ -12,20 +12,20 @@ import { useSyncExternalStore } from "react";
 export type SiteProvider =
   | "azure-openai"
   | "aliyun-bailian"
-  | "doubao-seedream"
+  | "volcengine"
   | "minimax";
 
 export const SITE_PROVIDERS: readonly SiteProvider[] = [
   "azure-openai",
   "aliyun-bailian",
-  "doubao-seedream",
+  "volcengine",
   "minimax",
 ];
 
 export const PROVIDER_LABELS: Readonly<Record<SiteProvider, string>> = {
   "azure-openai": "Azure OpenAI",
   "aliyun-bailian": "Alibaba Bailian",
-  "doubao-seedream": "Doubao Seedream",
+  volcengine: "Volcengine Ark",
   minimax: "MiniMax",
 };
 
@@ -35,7 +35,7 @@ export interface ProviderCredentials {
   readonly endpoint?: string;
   /** Azure OpenAI API version. */
   readonly apiVersion?: string;
-  /** Bailian DashScope / Seedream Ark / MiniMax base URL. */
+  /** Bailian DashScope / Volcengine Ark / MiniMax base URL. */
   readonly baseUrl?: string;
 }
 
@@ -232,7 +232,7 @@ export function isCredentialsComplete(
       );
     case "aliyun-bailian":
       return Boolean(credentials.baseUrl?.trim());
-    case "doubao-seedream":
+    case "volcengine":
       return true;
     case "minimax":
       return true;
@@ -260,7 +260,7 @@ const DEFAULT_HOST_ALLOWLIST: Readonly<
 > = {
   "azure-openai": [".openai.azure.com", ".cognitiveservices.azure.com"],
   "aliyun-bailian": [".aliyuncs.com"],
-  "doubao-seedream": [".volces.com"],
+  volcengine: [".volces.com"],
   minimax: [".minimax.io"],
 };
 
@@ -357,7 +357,7 @@ export function missingCredentialFields(
     case "aliyun-bailian":
       if (!credentials?.baseUrl?.trim()) missing.push("Base URL");
       break;
-    case "doubao-seedream":
+    case "volcengine":
       break;
     case "minimax":
       break;

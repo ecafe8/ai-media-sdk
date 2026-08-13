@@ -70,7 +70,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [drafts, setDrafts] = useState<Record<SiteProvider, ProviderDraft>>({
     "azure-openai": { ...EMPTY_DRAFT },
     "aliyun-bailian": { ...EMPTY_DRAFT },
-    "doubao-seedream": { ...EMPTY_DRAFT },
+    volcengine: { ...EMPTY_DRAFT },
     minimax: { ...EMPTY_DRAFT },
   });
   const [messages, setMessages] = useState<
@@ -84,7 +84,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     setDrafts({
       "azure-openai": initDraft("azure-openai", credentials),
       "aliyun-bailian": initDraft("aliyun-bailian", credentials),
-      "doubao-seedream": initDraft("doubao-seedream", credentials),
+      volcengine: initDraft("volcengine", credentials),
       minimax: initDraft("minimax", credentials),
     });
     setMessages({});
@@ -278,7 +278,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             const message = messages[provider];
             const configured = Boolean(
               credentials[provider]?.apiKey &&
-                (provider === "doubao-seedream" ||
+                (provider === "volcengine" ||
                   provider === "minimax" ||
                   (provider === "azure-openai"
                     ? credentials[provider]?.endpoint &&

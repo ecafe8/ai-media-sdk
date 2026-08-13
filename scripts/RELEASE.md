@@ -53,7 +53,7 @@ bun run release -- --push
 2. `@ai-media/uploader`
 3. `@ai-media/provider-azure-openai`
 4. `@ai-media/provider-aliyun-bailian`
-5. `@ai-media/provider-seedream`
+5. `@ai-media/provider-volcengine`
 
 不要发布以下 workspace 包：
 
@@ -178,7 +178,7 @@ npm pack --dry-run --json --workspace=@ai-media/sdk
 npm pack --dry-run --json --workspace=@ai-media/uploader
 npm pack --dry-run --json --workspace=@ai-media/provider-azure-openai
 npm pack --dry-run --json --workspace=@ai-media/provider-aliyun-bailian
-npm pack --dry-run --json --workspace=@ai-media/provider-seedream
+npm pack --dry-run --json --workspace=@ai-media/provider-volcengine
 ```
 
 ## 正式发布
@@ -243,7 +243,7 @@ npm publish --workspace=@ai-media/sdk --access public
 npm publish --workspace=@ai-media/uploader --access public
 npm publish --workspace=@ai-media/provider-azure-openai --access public
 npm publish --workspace=@ai-media/provider-aliyun-bailian --access public
-npm publish --workspace=@ai-media/provider-seedream --access public
+npm publish --workspace=@ai-media/provider-volcengine --access public
 ```
 
 每次发布后确认 npm registry 中的版本已经可见：
@@ -253,7 +253,7 @@ npm view @ai-media/sdk version
 npm view @ai-media/uploader version
 npm view @ai-media/provider-azure-openai version
 npm view @ai-media/provider-aliyun-bailian version
-npm view @ai-media/provider-seedream version
+npm view @ai-media/provider-volcengine version
 ```
 
 provider 发布前，确认它依赖的 `@ai-media/sdk` 版本已经可以被 npm registry 安装。
@@ -272,7 +272,7 @@ bun add --cwd /tmp/ai-media-release-smoke @ai-media/sdk @ai-media/uploader
 ```bash
 npm view @ai-media/provider-azure-openai dependencies
 npm view @ai-media/provider-aliyun-bailian dependencies
-npm view @ai-media/provider-seedream dependencies
+npm view @ai-media/provider-volcengine dependencies
 ```
 
 如果需要撤回版本，只能在 npm 允许的撤回窗口内执行；优先发布修复版本，不要依赖删除已发布版本作为常规回滚方案。

@@ -15,9 +15,9 @@ const azureSrc = path.resolve(
   __dirname,
   "../../packages/provider-azure-openai/src"
 );
-const seedreamSrc = path.resolve(
+const volcengineSrc = path.resolve(
   __dirname,
-  "../../packages/provider-seedream/src"
+  "../../packages/provider-volcengine/src"
 );
 const minimaxSrc = path.resolve(
   __dirname,
@@ -74,12 +74,12 @@ export default defineConfig(({ command, mode }) => {
           replacement: `${azureSrc}/$1`,
         },
         {
-          find: "@ai-media/provider-seedream",
-          replacement: path.resolve(seedreamSrc, "index.ts"),
+          find: "@ai-media/provider-volcengine",
+          replacement: path.resolve(volcengineSrc, "index.ts"),
         },
         {
-          find: /^@ai-media\/provider-seedream\/(.+)$/,
-          replacement: `${seedreamSrc}/$1`,
+          find: /^@ai-media\/provider-volcengine\/(.+)$/,
+          replacement: `${volcengineSrc}/$1`,
         },
         {
           find: "@ai-media/provider-minimax",

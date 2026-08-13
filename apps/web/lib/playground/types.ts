@@ -3,7 +3,7 @@ import type { ImageContent, SdkErrorCode, VideoContent } from "@ai-media/sdk";
 export type PlaygroundProvider =
   | "azure-openai"
   | "aliyun-bailian"
-  | "doubao-seedream"
+  | "volcengine"
   | "minimax";
 
 /**
@@ -98,7 +98,7 @@ export interface PlaygroundModel {
  * Required fields per Provider:
  * - `azure-openai`: `apiKey` + `endpoint` + `apiVersion`
  * - `aliyun-bailian`: `apiKey` + `baseUrl`
- * - `doubao-seedream`: `apiKey` (`baseUrl` optional)
+ * - `volcengine`: `apiKey` (`baseUrl` optional)
  * - `minimax`: `apiKey` (`baseUrl` optional)
  */
 export interface PlaygroundCredentials {
@@ -107,7 +107,7 @@ export interface PlaygroundCredentials {
   readonly endpoint?: string;
   /** Azure OpenAI API version. */
   readonly apiVersion?: string;
-  /** Bailian DashScope / Seedream Ark / MiniMax base URL. */
+  /** Bailian DashScope / Volcengine Ark / MiniMax base URL. */
   readonly baseUrl?: string;
 }
 

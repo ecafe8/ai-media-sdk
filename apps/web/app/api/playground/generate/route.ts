@@ -9,7 +9,7 @@ import type {
 const PROVIDERS = new Set([
   "azure-openai",
   "aliyun-bailian",
-  "doubao-seedream",
+  "volcengine",
   "minimax",
 ]);
 const MODALITIES = new Set(["image", "video"]);

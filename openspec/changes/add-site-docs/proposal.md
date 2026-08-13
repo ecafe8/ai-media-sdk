@@ -9,7 +9,7 @@
 ## What Changes
 
 - 在 `apps/site` 新增 `/docs` 文档区：MDX 渲染管线、侧边栏 + TOC 文档布局、嵌套路由（兼容现有 GitHub Pages base path 与 `404.html` SPA 深链回退）。
-- 文档内容采用 Diátaxis 分层，共 13 篇手写文档：入门（introduction、quick-start）、指南（image-generation、video-generation、parameters、results、error-handling、file-upload）、Provider 参考（azure-openai、aliyun-bailian、seedream，统一七段式模板）、uploader、FAQ。
+- 文档内容采用 Diátaxis 分层，共 13 篇手写文档：入门（introduction、quick-start）、指南（image-generation、video-generation、parameters、results、error-handling、file-upload）、Provider 参考（azure-openai、aliyun-bailian、volcengine，统一七段式模板）、uploader、FAQ。
 - Provider 页模型表与能力徽章为数据驱动：MDX 组件直接 import 各 Provider 包的模型注册表（`SupportedModel[]`），与落地页 `SITE_MODELS` 同源，代码变更文档自动跟随。
 - 新增 TypeDoc API 参考：`typedoc` + `typedoc-plugin-markdown` 从 `@ai-media/sdk`、3 个 provider 包、`@ai-media/uploader` 的 TSDoc 生成 Markdown，纳入 site 构建前置步骤，产物不提交。
 - 错误码表（`SdkError` code 表）只在 error-handling 页维护一份，其余页面链接引用。

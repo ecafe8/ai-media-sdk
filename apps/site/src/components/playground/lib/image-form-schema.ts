@@ -92,10 +92,10 @@ export type ImageAdvancedFieldId =
   | "aliyun.thinking_mode"
   | "aliyun.color_palette"
   | "aliyun.enable_sequential"
-  | "seedream.watermark"
-  | "seedream.output_format"
-  | "seedream.response_format"
-  | "seedream.optimize_prompt_mode";
+  | "volcengine.watermark"
+  | "volcengine.output_format"
+  | "volcengine.response_format"
+  | "volcengine.optimize_prompt_mode";
 
 export interface ImageAdvancedField {
   readonly id: ImageAdvancedFieldId;
@@ -189,12 +189,12 @@ export function imageAdvancedFieldSet(
     case "doubao-seedream-5-lite":
       return [
         {
-          id: "seedream.watermark",
+          id: "volcengine.watermark",
           label: "fields.watermark",
           kind: "boolean",
         },
         {
-          id: "seedream.output_format",
+          id: "volcengine.output_format",
           label: "fields.outputFormat",
           kind: "select",
           options: [
@@ -203,7 +203,7 @@ export function imageAdvancedFieldSet(
           ],
         },
         {
-          id: "seedream.response_format",
+          id: "volcengine.response_format",
           label: "fields.responseFormat",
           kind: "select",
           options: [
@@ -212,7 +212,7 @@ export function imageAdvancedFieldSet(
           ],
         },
         {
-          id: "seedream.optimize_prompt_mode",
+          id: "volcengine.optimize_prompt_mode",
           label: "fields.optimizePromptMode",
           kind: "select",
           options: [
@@ -225,12 +225,12 @@ export function imageAdvancedFieldSet(
     case "doubao-seedream-4-0":
       return [
         {
-          id: "seedream.watermark",
+          id: "volcengine.watermark",
           label: "fields.watermark",
           kind: "boolean",
         },
         {
-          id: "seedream.response_format",
+          id: "volcengine.response_format",
           label: "fields.responseFormat",
           kind: "select",
           options: [
@@ -239,7 +239,7 @@ export function imageAdvancedFieldSet(
           ],
         },
         {
-          id: "seedream.optimize_prompt_mode",
+          id: "volcengine.optimize_prompt_mode",
           label: "fields.optimizePromptMode",
           kind: "select",
           options: [

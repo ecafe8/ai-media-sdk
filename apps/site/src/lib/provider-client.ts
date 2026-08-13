@@ -11,9 +11,9 @@ import {
   type MiniMaxProvider,
 } from "@ai-media/provider-minimax";
 import {
-  createSeedreamProvider,
-  type SeedreamProvider,
-} from "@ai-media/provider-seedream";
+  createVolcengineProvider,
+  type VolcengineProvider,
+} from "@ai-media/provider-volcengine";
 import { createTransport } from "@ai-media/sdk";
 
 import {
@@ -36,7 +36,7 @@ export const SITE_PROVIDER_TIMEOUT_MS = 120_000;
 export type AnySiteProvider =
   | AzureOpenAIProvider
   | AliyunBailianProvider
-  | SeedreamProvider
+  | VolcengineProvider
   | MiniMaxProvider;
 
 export type EndpointUnusableReason =
@@ -144,7 +144,7 @@ export function buildSiteProvider(
     );
   }
 
-  if (provider === "doubao-seedream") {
+  if (provider === "volcengine") {
     const baseUrl = assertEndpointUsable(
       provider,
       "Base URL",
@@ -152,7 +152,7 @@ export function buildSiteProvider(
       confirmedHosts,
       false
     );
-    return createSeedreamProvider(
+    return createVolcengineProvider(
       {
         apiKey: credentials.apiKey.trim(),
         ...(baseUrl ? { baseUrl } : {}),

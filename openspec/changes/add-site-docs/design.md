@@ -35,7 +35,7 @@ apps/site/src/content/docs/
   introduction.mdx  quick-start.mdx
   image-generation.mdx  video-generation.mdx  parameters.mdx
   results.mdx  error-handling.mdx  file-upload.mdx
-  providers/azure-openai.mdx  providers/aliyun-bailian.mdx  providers/seedream.mdx
+  providers/azure-openai.mdx  providers/aliyun-bailian.mdx  providers/volcengine.mdx
   uploader.mdx  faq.mdx
   api/                 # TypeDoc 生成目录（.gitignore）
 ```

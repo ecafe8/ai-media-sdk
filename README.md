@@ -15,7 +15,7 @@
 | `@ai-media/sdk`                     | Provider 无关的核心契约与图像/视频任务抽象         |
 | `@ai-media/provider-azure-openai`   | Azure OpenAI 图像生成 Provider（同步 API）         |
 | `@ai-media/provider-aliyun-bailian` | 阿里云百炼（DashScope）图像 + 视频 Provider        |
-| `@ai-media/provider-seedream`       | 火山引擎方舟 Doubao-Seedream 图像生成 Provider     |
+| `@ai-media/provider-volcengine`     | 火山引擎方舟（Doubao-Seedream）图像生成 Provider   |
 | `@ai-media/provider-minimax`        | MiniMax（海螺）视频生成 Provider（异步 V2 API）    |
 | `@ai-media/uploader`                | Provider 输入文件的临时上传辅助（Aliyun / Google） |
 
@@ -71,8 +71,8 @@ cp examples/aliyun-video/.env.example examples/aliyun-video/.env
 bun run --cwd examples/aliyun-video start
 
 # 火山方舟 Doubao-Seedream 图像生成（同步）
-cp examples/seedream-image/.env.example examples/seedream-image/.env
-bun run --cwd examples/seedream-image start
+cp examples/volcengine-image/.env.example examples/volcengine-image/.env
+bun run --cwd examples/volcengine-image start
 
 # 上传本地文件后作为编辑输入（Aliyun 临时上传）
 cp examples/uploader-aliyun/.env.example examples/uploader-aliyun/.env
@@ -84,7 +84,7 @@ bun run --cwd examples/uploader-web dev
 
 图像示例默认提交一次请求、输出一张图，可通过命令行参数传入 prompt。缺少凭据时会在发起任何网络请求前失败，错误输出不包含凭据或 Provider 原始响应。
 
-示例默认模型：阿里云图像示例默认 `qwen-image-2.0-pro-2026-06-22`（支持生成与编辑），可用 `ALIYUN_BAILIAN_IMAGE_MODEL` 覆盖；Wan 系列推荐 `wan2.7-image-pro`（高质量）与 `wan2.7-image`（均衡），走异步任务路径；Seedream 示例默认 `doubao-seedream-5-0-pro-260628`。
+示例默认模型：阿里云图像示例默认 `qwen-image-2.0-pro-2026-06-22`（支持生成与编辑），可用 `ALIYUN_BAILIAN_IMAGE_MODEL` 覆盖；Wan 系列推荐 `wan2.7-image-pro`（高质量）与 `wan2.7-image`（均衡），走异步任务路径；火山方舟示例默认 `doubao-seedream-5-0-pro-260628`，可用 `VOLCENGINE_IMAGE_MODEL` 覆盖。
 
 ### 视频示例
 
