@@ -1,10 +1,3 @@
-## RENAMED Requirements
-
-### Requirement: Video generation stays Aliyun-only
-
-FROM: Video generation stays Aliyun-only
-TO: Video generation is available for Aliyun and MiniMax
-
 ## MODIFIED Requirements
 
 ### Requirement: Video generation is available for Aliyun and MiniMax

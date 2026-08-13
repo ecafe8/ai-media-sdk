@@ -5,12 +5,12 @@
 ## Requirements
 ### Requirement: Landing page presents the product and playground entry
 
-站点根路由 SHALL 提供 Landing 页，包含产品 hero、核心特性介绍、模型支持矩阵与进入 Playground 的入口。模型矩阵 SHALL 由 SDK 模型注册表（`PLAYGROUND_MODELS`）在运行时派生，按 Provider 分组展示模型与能力（生成/编辑/视频），不得手工硬编码模型清单。Landing 页 SHALL 包含隐私说明：体验者 Key 仅存于其浏览器并直接发送给对应 Provider，不经过任何中间服务器。
+站点根路由 SHALL 提供 Landing 页，包含产品 hero、核心特性介绍、模型支持矩阵与进入 Playground 的入口。模型矩阵 SHALL 由 SDK 模型注册表（`PLAYGROUND_MODELS`）在运行时派生，按 Provider 分组展示模型与能力（生成/编辑/视频），不得手工硬编码模型清单。Landing 页的 Provider 文案 SHALL 覆盖全部已接入的 Provider（Azure OpenAI、Alibaba Bailian、Volcengine Ark Seedream 与 MiniMax）。Landing 页 SHALL 包含隐私说明：体验者 Key 仅存于其浏览器并直接发送给对应 Provider，不经过任何中间服务器。
 
 #### Scenario: Model matrix reflects the SDK registry
 
 - **WHEN** 访问者打开 Landing 页
-- **THEN** 模型矩阵 SHALL 展示注册表中全部三家 Provider 的模型及其能力标记，且与 `PLAYGROUND_MODELS` 数据一致
+- **THEN** 模型矩阵 SHALL 展示注册表中全部 Provider（含 MiniMax）的模型及其能力标记，且与 `PLAYGROUND_MODELS` 数据一致
 
 #### Scenario: Privacy statement is visible before entering the playground
 
@@ -19,17 +19,22 @@
 
 ### Requirement: SPA routing with landing and playground routes
 
-站点 SHALL 提供 `/`（Landing）与 `/playground` 两个客户端路由，支持浏览器前进/后退与深链访问。Router basename SHALL 从与 Vite base 相同的配置派生；部署环境下直接访问项目子路径下的 `/playground` SHALL 能正常渲染 Playground 而非平台错误页。
+站点 SHALL 提供语言前缀下的 Landing 与 Playground 客户端路由(`/zh`、`/zh/playground`、`/en`、`/en/playground`),支持浏览器前进/后退与深链访问。根路径 `/` SHALL 重定向到体验者默认语言的 Landing。Router basename SHALL 从与 Vite base 相同的配置派生,语言前缀 SHALL 位于 basename 之内;部署环境下直接访问项目子路径下的语言前缀路由(如 `/<repo>/en/playground`)SHALL 能正常渲染对应页面而非平台错误页。
 
 #### Scenario: Deep link to the playground renders
 
-- **WHEN** 访问者在部署环境直接打开 `/playground` 深链
-- **THEN** 站点 SHALL 渲染 Playground 页而不是 404 或平台错误页
+- **WHEN** 访问者在部署环境直接打开 `/en/playground` 深链
+- **THEN** 站点 SHALL 渲染英文 Playground 页而不是 404 或平台错误页
 
 #### Scenario: Project-site basename remains aligned
 
-- **WHEN** 站点部署在 `/<repo>/` 子路径并直接刷新 `/<repo>/playground`
-- **THEN** 静态资源 SHALL 返回成功，客户端 Router SHALL 匹配 Playground 路由而不是回到 Landing 或显示路由错误
+- **WHEN** 站点部署在 `/<repo>/` 子路径并直接刷新 `/<repo>/zh/playground`
+- **THEN** 静态资源 SHALL 返回成功,客户端 Router SHALL 匹配 Playground 路由而不是回到 Landing 或显示路由错误
+
+#### Scenario: Root path redirects to a locale landing
+
+- **WHEN** 访问者打开站点根路径 `/`
+- **THEN** 站点 SHALL 重定向到默认语言的 Landing,且 Landing 内容按该语言渲染
 
 ### Requirement: Playground shell shows BYO environment state
 

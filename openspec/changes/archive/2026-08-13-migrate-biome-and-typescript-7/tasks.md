@@ -76,4 +76,4 @@
 
 - [x] 10.1 Update `AGENTS.md` Toolchain bullet: TypeScript `^5` → `^7.0.2` and note tsgo native binary
 - [x] 10.2 Update `packages/typescript-config/README.md` if it references TS 5.x specifics — documented all configs incl. new `emit-dts.json`
-- [ ] 10.3 Archive this change via the OpenSpec archive workflow once both phases are merged and green
+- [x] 10.3 Archive this change via the OpenSpec archive workflow once both phases are merged and green
