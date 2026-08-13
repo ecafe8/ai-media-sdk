@@ -58,5 +58,5 @@
 - [x] 6.2 Thread `validatePublicParams` into `submitImageTask` so async image models (Wan 2.7/2.6) get the same size/n pre-flight as `generateImage`; cover both entry points in `tests/image-size-validation.test.ts` and the `image-param-validation` spec.
 - [x] 6.3 Add the three route-level negative cases (size out of closed set, n over maxN, tier on pixel-only model) to `apps/web/app/api/playground/generate/route.test.ts`.
 - [x] 6.4 Realign change artifacts with the post-implementation drift: `model-family-typing` (provider-neutral wording + MiniMax video overload + all four dispatch entry points), `model-registry-aggregation` (four registries incl. `minimaxModelRegistry`; MiniMax full-registry fields), `playground-form` (locale-neutral labels for the i18n site playground, `VideoScenario`/flag-driven video operations instead of `VideoOperation`, wan-image-2.6 advanced field set, `optimize_prompt_mode` naming, `thinking_mode` boolean), `design.md` (case-sensitive `supportedSizes`, Decision 7 table refresh, resolved Open Questions), `proposal.md` (same terminology fixes + follow-up-change notes).
-- [ ] 6.5 Run full gates `bun run lint && bun run typecheck && bun run build && bun run test`; fix any regression.
-- [ ] 6.6 Commit the alignment work on `main` and archive the change (deltas merge into `openspec/specs/`).
+- [x] 6.5 Run full gates `bun run lint && bun run typecheck && bun run build && bun run test`; fix any regression.
+- [x] 6.6 Commit the alignment work and archive the change (deltas merge into `openspec/specs/`).
