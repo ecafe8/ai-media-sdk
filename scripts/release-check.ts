@@ -1,12 +1,13 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
   type PackageManifest,
   RELEASE_PACKAGE_DIRECTORIES,
   ROOT,
   readManifest,
-} from "./release-packages.ts";
+} from "./release-packages";
 
 interface RegistryVersionResult {
   version: string;
