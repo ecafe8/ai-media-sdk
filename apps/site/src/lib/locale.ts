@@ -8,8 +8,8 @@ export const SUPPORTED_LANGS = ["zh", "en"] as const;
 
 export type SiteLang = (typeof SUPPORTED_LANGS)[number];
 
-/** Source language of the site copy; fallback for unsupported URL segments. */
-export const DEFAULT_LANG: SiteLang = "zh";
+/** Default language; fallback for unsupported URL segments. */
+export const DEFAULT_LANG: SiteLang = "en";
 
 export const LANG_LABELS: Readonly<Record<SiteLang, string>> = {
   zh: "中文",

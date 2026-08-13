@@ -45,7 +45,7 @@
 
 纯函数模块,便于 bun test:
 
-- `SUPPORTED_LANGS = ["zh", "en"] as const`;默认语言 `zh`(现有文案源语言)。
+- `SUPPORTED_LANGS = ["zh", "en"] as const`;默认语言 `en`(面向国际开发者的公开站点)。
 - `detectLocale(saved, navigatorLanguages)`:已保存选择 > `navigator.languages` 中首个匹配(`zh*` → zh,`en*`/其他 → en)> 默认。
 - 持久化键 `site.lang`(localStorage);`LangLayout` 与切换器写入。
 - 语言生效时同步 `document.documentElement.lang` 与 `document.title`(键 `meta.title`)。

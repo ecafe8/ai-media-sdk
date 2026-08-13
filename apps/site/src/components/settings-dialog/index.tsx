@@ -91,6 +91,18 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Scroll lock: while the dialog is open the page behind it must not
+  // scroll, so only the dialog's own scrollbar is visible. The lock is set
+  // on the document element, whose overflow always applies to the viewport.
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.documentElement.style.overflow = previous;
+    };
+  }, [open]);
+
   if (!open) return null;
 
   function messageText(message: SettingsMessage): string {

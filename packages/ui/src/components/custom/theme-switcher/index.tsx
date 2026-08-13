@@ -70,7 +70,7 @@ export function ThemeSwitcher({
           value={option.value}
           aria-label={labelFor(option.value)}
           title={labelFor(option.value)}
-          className="size-7 rounded-full text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          className="size-7 rounded-full text-muted-foreground data-pressed:bg-card data-pressed:text-foreground data-pressed:shadow-sm"
         >
           <option.icon className="size-4" />
         </ToggleGroupItem>
