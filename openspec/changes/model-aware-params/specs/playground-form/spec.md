@@ -2,17 +2,17 @@
 
 ### Requirement: The Playground exposes capability-aware generation controls
 
-The Playground SHALL provide a top-level modality switcher with at least three tabs: 图像 (image), 视频 (video), 音频 (audio). The 音频 tab SHALL be visible but disabled with an explanatory tooltip ("即将推出" or equivalent); selecting an enabled tab SHALL fully reset the form state (provider, model, operation, prompt, all media inputs, all size/n/resolution/ratio/duration/audio_setting fields, advanced options, and result feed) so no field from the previous modality contaminates the new one. Within each modality, the form SHALL provide visible, keyboard-operable controls for Provider, model, operation (image: 文生图/图生图; video: t2v/i2v/r2v/video-edit inferred from the selected model), prompt, and generation parameters. It SHALL show only compatible models/fields or explicitly explain why an option is unavailable.
+The Playground SHALL provide a top-level modality switcher with three tabs: image, video, and audio. Tab labels SHALL be rendered in the active locale where the app is internationalised (Chinese: 图像/视频/音频; English: Image/Video/Audio). The audio tab SHALL be visible but disabled with an explanatory "coming soon" tooltip (localised, e.g. "即将推出" / "Coming soon"); selecting an enabled tab SHALL fully reset the form state (provider, model, operation/scenario, prompt, all media inputs, all size/n/resolution/ratio/duration/audio_setting fields, advanced options, and result feed) so no field from the previous modality contaminates the new one. Within each modality, the form SHALL provide visible, keyboard-operable controls for Provider, model, operation, prompt, and generation parameters. The image workbench SHALL offer a generate/edit operation toggle (edit disabled for models without `supportsEdit`). Video models SHALL NOT use an operation enum: multi-scenario models (one model id serving several scenarios, e.g. MiniMax-H3) SHALL render a scenario selector (t2v/i2v/r2v), while flag-driven models (e.g. HappyHorse) SHALL derive their inputs from registry flags (`requiresFirstFrame` for i2v, `requiresInputVideo` for video-edit) without a selector. The form SHALL show only compatible models/fields or explicitly explain why an option is unavailable. This requirement applies to both the server-mediated playground (`apps/web`) and the BYO-key playground (`apps/site`); in the internationalised site app every user-facing label SHALL come from the active locale's translation resources (see the `site-i18n` capability).
 
 #### Scenario: Switch modality resets the form
 
-- **WHEN** the user fills the image form (prompt, size, n, advanced options) and then activates the 视频 tab, then switches back to the 图像 tab
+- **WHEN** the user fills the image form (prompt, size, n, advanced options) and then activates the video tab, then switches back to the image tab
 - **THEN** all previously entered image-form fields SHALL be cleared; the form SHALL present a fresh default state with the first compatible model and its first supported `size` value
 
 #### Scenario: Audio tab is visible but disabled
 
 - **WHEN** the user opens the Playground
-- **THEN** the top-level modality switcher SHALL show an 音频 tab; the tab SHALL be visibly disabled and pointer-events disabled; activating it SHALL produce no navigation, and a tooltip SHALL explain that audio is reserved
+- **THEN** the top-level modality switcher SHALL show an audio tab; the tab SHALL be visibly disabled and pointer-events disabled; activating it SHALL produce no navigation, and a localised tooltip SHALL explain that audio is reserved
 
 #### Scenario: Configure text-to-image
 
@@ -51,12 +51,12 @@ The Playground SHALL use a two-pane desktop layout and a stacked narrow-screen l
 
 ### Requirement: The form derives size, output count, and video parameters from the selected model
 
-The form SHALL derive the options for the image `size`/`n` dropdowns and the video `resolution`/`ratio`/`duration` dropdowns from the selected model's declared capabilities (`supportedSizes`/`maxResolution`/`maxN` for image; `supportedResolutions`/`supportedAspectRatios` for video) projected from the Provider registries. When the model accepts a closed `supportedSizes` set, the `size` dropdown SHALL list exactly those values. When the model accepts free-form pixel sizes within a `maxResolution`, the dropdown SHALL list pixel presets within the cap (e.g. `1024x1024`, `2048x2048`, `2048x1024`, `1024x2048`) and the validator SHALL enforce the cap. The `n` dropdown SHALL list `1..maxN` when `maxN` is defined, otherwise `1..4`. The default selected value for every model-derived dropdown SHALL be the first option of the derived list. Switching models SHALL re-derive the dropdowns and reset the selected values to the new first option.
+The form SHALL derive the options for the image `size`/`n` dropdowns and the video `resolution`/`ratio`/`duration` dropdowns from the selected model's declared capabilities (`supportedSizes`/`maxResolution`/`maxN` for image; the Provider registry's `supportedResolutions`/`supportedAspectRatios` for video) projected from the Provider registries. When the model accepts a closed `supportedSizes` set, the `size` dropdown SHALL list exactly those values, labelled by the raw value (no Provider-specific marketing labels). When the model accepts free-form pixel sizes within a `maxResolution`, the dropdown SHALL list pixel presets within the cap (e.g. `1024x1024`, `2048x2048`, `2048x1024`, `1024x2048`) and the validator SHALL enforce the cap. The `n` dropdown SHALL list `1..maxN` when `maxN` is defined, otherwise `1..4`. The default selected value for every model-derived dropdown SHALL be the first option of the derived list. Switching models SHALL re-derive the dropdowns and reset the selected values to the new first option. Video dropdowns follow the same registry-driven rule per Provider (Aliyun HappyHorse/Wan 3.0 and MiniMax-H3); MiniMax-specific scenario rules (ratio availability, 4-15s duration) are defined by the MiniMax scenario requirement above.
 
 #### Scenario: Image size dropdown reflects model supportedSizes
 
 - **WHEN** the user selects the Doubao Seedream 5.0 Pro model
-- **THEN** the `size` dropdown SHALL contain only `1K` and `2K`, the `2K` value SHALL NOT appear as `2K横图` (the Aliyun-style label SHALL NOT leak), and the default selection SHALL be `1K`
+- **THEN** the `size` dropdown SHALL contain only `1K` and `2K`, each labelled by its raw value (no Aliyun-style label such as `2K横图` SHALL leak), and the default selection SHALL be `1K`
 
 #### Scenario: Image size dropdown reflects pixel maxResolution
 
@@ -80,7 +80,7 @@ The form SHALL derive the options for the image `size`/`n` dropdowns and the vid
 
 ### Requirement: The form exposes a collapsible Advanced Options section for provider-native options
 
-The form SHALL render a collapsed "高级选项" section below the basic parameters. When expanded, the section SHALL render only the controls for `providerOptions.<namespace>` fields that the selected model's family supports: Azure `gpt-image-2` exposes `quality`, `output_format`, `output_compression` under `providerOptions.azure`; Aliyun Qwen-family models expose `negative_prompt`, `prompt_extend`, `watermark`, `seed` under `providerOptions.aliyun`; Aliyun Wan-family models expose `watermark`, `seed`, `thinking_mode`, `color_palette`, `enable_sequential`; Doubao Seedream 5.x models expose `watermark`, `output_format` (omitted on 4.x), `response_format`, `optimize_prompt_options.mode` under `providerOptions.seedream`. Fields that the selected model does not support SHALL NOT appear. The Advanced Options section SHALL start collapsed and SHALL NOT block submission when collapsed.
+The image workbench SHALL render a collapsed Advanced Options section below the basic parameters, titled per the active locale where the app is internationalised ("高级选项" / "Advanced options"). When expanded, the section SHALL render only the controls for `providerOptions.<namespace>` fields that the selected model's family supports: Azure `gpt-image-2` exposes `quality`, `output_format`, `output_compression` under `providerOptions.azure`; Aliyun Qwen-family models (including `qwen-image-3.0`) and Aliyun Wan 2.6 image models expose `negative_prompt`, `prompt_extend`, `watermark`, `seed` under `providerOptions.aliyun`; Aliyun Wan 2.7 image models expose `watermark`, `seed`, `thinking_mode` (boolean), `color_palette`, `enable_sequential`; Doubao Seedream 5.x models expose `watermark`, `output_format` (omitted on 4.x), `response_format`, `optimize_prompt_mode` under `providerOptions.seedream`. Fields that the selected model does not support SHALL NOT appear. The Advanced Options section SHALL start collapsed and SHALL NOT block submission when collapsed.
 
 #### Scenario: Azure advanced options
 
@@ -90,7 +90,7 @@ The form SHALL render a collapsed "高级选项" section below the basic paramet
 #### Scenario: Seedream 4.x omits output_format
 
 - **WHEN** the user expands Advanced Options while Doubao Seedream 4.5 is selected
-- **THEN** the section SHALL show `watermark`, `response_format`, `optimize_prompt_options.mode` and SHALL NOT show `output_format`
+- **THEN** the section SHALL show `watermark`, `response_format`, `optimize_prompt_mode` and SHALL NOT show `output_format`
 
 #### Scenario: Collapsed Advanced Options does not block submission
 
