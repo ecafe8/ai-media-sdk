@@ -1,26 +1,4 @@
-# model-registry-aggregation Specification
-
-## Purpose
-Lets SDK consumers discover each Provider's supported models and uniformly reject unknown model ids before any network call, while keeping the modality-neutral core free of Provider-specific model lists.
-## Requirements
-### Requirement: Core exposes a stable UNKNOWN_MODEL error code
-
-The `@ai-media/sdk` package SHALL expose an `UNKNOWN_MODEL` `SdkErrorCode` that is non-retryable by default, plus an `unknownModel(modelId, providerId?)` helper that returns an `SdkError` carrying that code. The message SHALL name the model id and, when supplied, the provider id, and SHALL NOT include credentials or request bodies. `UNKNOWN_MODEL` is reserved for "model id is not present in the relevant Provider registry"; capability or modality mismatches for known models SHALL continue to use `INVALID_REQUEST`.
-
-#### Scenario: Unknown model error is non-retryable
-
-- **WHEN** an unknown model id is rejected at a Provider factory
-- **THEN** the thrown `SdkError` SHALL have `code: "UNKNOWN_MODEL"` and `retryable: false`
-
-#### Scenario: Helper message carries provider context
-
-- **WHEN** `unknownModel("foo", "aliyun-bailian")` is called
-- **THEN** the resulting `SdkError.message` SHALL mention both the model id `"foo"` and the provider id `"aliyun-bailian"`, and SHALL NOT mention any API key
-
-#### Scenario: Known-but-incompatible model stays INVALID_REQUEST
-
-- **WHEN** a known model id is rejected because its capabilities do not match the request (e.g. `edit` on a non-editable model, or a video model via `provider.image()`)
-- **THEN** the error SHALL remain `INVALID_REQUEST`, not `UNKNOWN_MODEL`
+## MODIFIED Requirements
 
 ### Requirement: Core exposes a model-registry aggregation contract
 
@@ -46,30 +24,6 @@ The `@ai-media/sdk` package SHALL expose a `SupportedModel` projection (carrying
 - **WHEN** a Provider's in-package registry declares `supportedSizes`, `maxResolution`, or `maxN` for a model
 - **THEN** the projected `SupportedModel.capabilities` for that model SHALL carry those fields unchanged, so consumers (including Playground) can drive UI and validation from the aggregation result
 
-### Requirement: Core aggregation helpers merge and query provider model lists
-
-`collectSupportedModels(...sources)` SHALL accept any mix of `ModelRegistry` consts and `ModelListable` Provider instances and return a flat `readonly SupportedModel[]` preserving source order. `findSupportedModel(models, providerId, modelId)` SHALL return the matching `SupportedModel` or `undefined`. `isSupportedModel(models, providerId, modelId)` SHALL return a boolean. Lookup SHALL be stable for duplicate `(providerId, modelId)` pairs (first match wins) and SHALL NOT perform network access.
-
-#### Scenario: Collect merges multiple provider lists
-
-- **WHEN** `collectSupportedModels(aliyunModelRegistry, seedreamModelRegistry, azureModelRegistry)` is called
-- **THEN** the result SHALL contain every model from all three registries in source order; when the same `(providerId, modelId)` pair appears more than once, only the first occurrence SHALL be kept (subsequent duplicates are dropped)
-
-#### Scenario: Find locates a known model
-
-- **WHEN** `findSupportedModel(models, "aliyun-bailian", "qwen-image-2.0-pro")` is called against an aggregate containing that pair
-- **THEN** it SHALL return the `SupportedModel` entry
-
-#### Scenario: Find returns undefined for an unknown model
-
-- **WHEN** `findSupportedModel(models, "aliyun-bailian", "not-a-real-model")` is called
-- **THEN** it SHALL return `undefined` and SHALL NOT throw
-
-#### Scenario: isSupportedModel returns a boolean
-
-- **WHEN** `isSupportedModel(models, "azure-openai", "gpt-image-2")` is called
-- **THEN** it SHALL return `true` when the pair is present and `false` otherwise
-
 ### Requirement: Each Provider exposes its model registry and a listModels instance accessor
 
 Every Provider package SHALL export a `*ModelRegistry` const of type `ModelRegistry` (the common projection of its in-package registry) AND expose a `listModels(): readonly SupportedModel[]` instance method on its Provider interface. The instance method SHALL return the same projection as the exported const (single source of truth, zero-overhead wrapper). The Provider's full in-package registry (with Provider-specific fields, including Aliyun's `family`/`paramSupport`/`requiresFirstFrame`/`requiresInputVideo`/`maxReferenceImages`/`supportedResolutions`/`supportedAspectRatios`, Seedream's `paramSupport`/`outputFormats`, and MiniMax's `family`/`supportedResolutions`/`supportedAspectRatios`/`maxReferenceImages`/`maxReferenceVideos`/`maxReferenceAudios`) SHALL also remain exported for Provider-specific concerns. Provider-specific fields SHALL NOT enter the common `SupportedModel` projection; consumers needing them import the Provider's full registry directly.
@@ -93,4 +47,3 @@ Every Provider package SHALL export a `*ModelRegistry` const of type `ModelRegis
 
 - **WHEN** a consumer needs the per-model list of supported `resolution`/`ratio` strings for an Aliyun HappyHorse/Wan 3.0 video model or a MiniMax-H3 video model
 - **THEN** the consumer SHALL import `ALIYUN_MODEL_REGISTRY` or `MINIMAX_MODEL_REGISTRY` directly; the common `SupportedModel` projection SHALL NOT carry `supportedResolutions`/`supportedAspectRatios` (they are Provider-specific)
-

@@ -26,7 +26,7 @@ PRD context that constrains the design: `docs/prd/main-prd.md` §8.1 requires "�
 
 **Non-Goals:**
 
-- Per-**model** (rather than per-**family**) TypeScript overloads. Per-model id is too granular and high-maintenance; family-level overloads cover ~10 unions across 3 providers with the same DX value. The `string` fallback absorbs the rest.
+- Per-**model** (rather than per-**family**) TypeScript overloads. Per-model id is too granular and high-maintenance; family-level `TParams` types shared by same-family model ids (one literal overload per known registry model) cover all four Providers with the same DX value. The `string` fallback absorbs the rest.
 - Lifting Aliyun video `supportedResolutions`/`supportedAspectRatios` into the common `ModelCapability`. They stay in `AliyunModelEntry` (provider-specific) because only the Aliyun adapter and Playground consume them; lifting would force every future Provider to spell out video fields.
 - Changing the runtime shape of `ModelInstance`, `AdapterRequest`, or the adapter `generate`/`edit` contract. The third `TParams` generic is purely a compile-time phantom.
 - Lifting `providerOptions.<namespace>` typing into the core. `providerOptions` remains `Readonly<Record<string, unknown>>` at the core; the family `TParams` does the per-model narrowing at the Provider boundary, keeping the core Provider-agnostic.
@@ -53,7 +53,7 @@ PRD context that constrains the design: `docs/prd/main-prd.md` §8.1 requires "�
 
 ```
 if input.size is undefined -> pass
-if caps.supportedSizes?.includes(input.size, case-insensitive) -> pass
+if caps.supportedSizes?.includes(input.size, case-sensitive) -> pass
 if caps.maxResolution is defined:
     match input.size against /^(\d+)[x*](\d+)$/i
     if no match -> INVALID_REQUEST("size must be WxH or one of {supportedSizes|—}")
@@ -64,11 +64,11 @@ if caps.supportedSizes is defined: -> INVALID_REQUEST("size not in {supportedSiz
 pass (backwards compat)
 ```
 
-Case-insensitive `supportedSizes` lookup is intentional: `1024X1024` and `1024x1024` should both pass Azure's closed set; the existing Aliyun adapter does `x`→`*` substitution at the adapter boundary, so the validator accepts `x` or `*` interchangeably and the adapter normalises downstream.
+`supportedSizes` lookup is case-sensitive: tier identifiers (`"1K"`, `"2K"`, `"auto"`) are matched verbatim so callers stay aligned with each Provider's documented wire format. The pixel-form regex separately accepts `x`, `X`, or `*` as the separator for free-form `WxH` values; the existing Aliyun adapter does `x`→`*` substitution at the adapter boundary, so callers may pass either separator and the adapter normalises downstream.
 
 **Alternatives considered:**
 
-- Case-sensitive enum match. Rejected: the existing `x`→`*` substitution pattern means callers may pass either separator; being strict at validation forces callers to know the adapter's preferred form, defeating the "model-aware but provider-agnostic" goal.
+- Case-insensitive enum match for `supportedSizes`. Rejected during implementation: tier identifiers are Provider-documented literals, and case-insensitive matching would accept spellings the wire API rejects; separator flexibility is handled by the pixel-form regex instead.
 - Deferring size validation to each adapter. Rejected: PRD §8.1 demands "请求前报错" and the core already runs `validatePublicParams` pre-flight; consolidating here keeps the contract in one place and lets Playground trust the same `SupportedModel` data without re-implementing.
 
 ### Decision 3: Phantom `TParams` generic on `ModelInstance` + per-family factory overloads
@@ -87,10 +87,11 @@ Each Provider's `image(modelId: string): ImageModelInstance` (default) gains lit
 
 ```ts
 image(modelId: "gpt-image-2"): ImageModelInstance<AzureGptImage2Params>;
-image(modelId: "wan2.7-image-pro"): ImageModelInstance<AliyunWan27ImageProParams>;
+image(modelId: "wan2.7-image-pro"): ImageModelInstance<AliyunWan27ProImageParams>;
 image(modelId: "qwen-image-2.0-pro"): ImageModelInstance<AliyunQwenImageParams>;
 image(modelId: "doubao-seedream-5-0-pro-260628"): ImageModelInstance<Seedream5ProParams>;
-// ~6 family overloads total
+video(modelId: "MiniMax-H3"): VideoModelInstance<MiniMaxH3VideoParams>;
+// one literal overload per known registry model id, across all Providers
 image(modelId: string): ImageModelInstance;  // fallback, untyped
 ```
 
@@ -102,7 +103,7 @@ export function generateImage<TParams extends ImageGenerationInput>(
 ): Promise<GenerationResult<ImageContent[]>>;
 ```
 
-The intersection `{ model } & Omit<TParams, "model">` ensures the request's `size`/`n`/`providerOptions` shapes are constrained by the bound model's `TParams`. When `TParams = ImageGenerationInput` (the default), `Omit<TParams, "model">` is `{ prompt; n?; size?; providerOptions? }` and the request shape matches the pre-change contract — no breakage.
+The intersection `{ model } & Omit<TParams, "model">` ensures the request's `size`/`n`/`providerOptions` shapes are constrained by the bound model's `TParams`. When `TParams = ImageGenerationInput` (the default), `Omit<TParams, "model">` is `{ prompt; n?; size?; providerOptions? }` and the request shape matches the pre-change contract — no breakage. The same pattern applies to `editImage` (`TParams extends ImageEditInput`), `submitImageTask` (`TParams extends ImageGenerationInput`), and `submitVideoTask` (`TParams extends VideoGenerationInput`), so every dispatch entry point narrows consistently.
 
 **Why `TParams = unknown` on the underlying `ModelInstance` but `ImageModelInstance` defaults to `ImageGenerationInput`:** The base `ModelInstance` is modality-neutral; image and video have different default param shapes. Specialised aliases supply the right default. Existing call sites that don't mention `TParams` get the alias's default, which keeps them compiling.
 
@@ -149,7 +150,7 @@ Each function reads `model.supportedSizes`/`maxResolution`/`maxN`/`supportedReso
 
 ### Decision 6: Aliyun video resolution/ratio validation moves from module consts to registry-driven
 
-**Choice:** Add `supportedResolutions: readonly string[]` and `supportedAspectRatios: readonly string[]` to `AliyunModelEntry` (`packages/provider-aliyun-bailian/src/provider/registry.ts`). Populate per HappyHorse model. Replace the hardcoded `VIDEO_RESOLUTIONS`/`VIDEO_EDIT_RESOLUTIONS` consts in `provider/index.ts` with reads from the registry entry. The adapter continues to throw `INVALID_REQUEST` for out-of-allowlist values, just with the allowlist sourced from the registry.
+**Choice:** Add `supportedResolutions: readonly string[]` and `supportedAspectRatios: readonly string[]` to `AliyunModelEntry` (`packages/provider-aliyun-bailian/src/provider/registry.ts`). Populate per Aliyun video model (HappyHorse; Wan 3.0 was added later by its own change using the same fields). Replace the hardcoded `VIDEO_RESOLUTIONS`/`VIDEO_EDIT_RESOLUTIONS` consts in `provider/index.ts` with reads from the registry entry. The adapter continues to throw `INVALID_REQUEST` for out-of-allowlist values, just with the allowlist sourced from the registry. MiniMax later adopted the identical pattern in `MiniMaxModelEntry`.
 
 **Rationale:** Same single-source-of-truth principle as Decision 1; Playground can read the same fields (projected via `PlaygroundModel`) to render dropdowns.
 
@@ -162,13 +163,16 @@ Per `docs/prd/sub-provider-adapters/tech.md` §4.1/§4.3/§4.4:
 | Provider / model | supportedSizes | maxResolution | maxN |
 | --- | --- | --- | --- |
 | Azure `gpt-image-2` | `["1024x1024","1024x1536","1536x1024","auto"]` | — | `1` |
-| Aliyun `qwen-image-3.0-pro` / `qwen-image-2.0-pro` / `qwen-image-2.0-pro-2026-06-22` / `qwen-image-2.0` | — | `{ width: 2048, height: 2048 }` | `6` |
-| Aliyun `wan2.7-image-pro` | — | `{ width: 4096, height: 4096 }` | `4` |
-| Aliyun `wan2.7-image` | — | `{ width: 2048, height: 2048 }` | `4` |
+| Aliyun `qwen-image-3.0-pro` / `qwen-image-3.0` / `qwen-image-2.0-pro` / `qwen-image-2.0-pro-2026-06-22` / `qwen-image-2.0` | — | `{ width: 2048, height: 2048 }` | `6` |
+| Aliyun `wan2.7-image-pro` | `["1K","2K","4K"]` | `{ width: 4096, height: 4096 }` | `4` |
+| Aliyun `wan2.7-image` | `["1K","2K"]` | `{ width: 2048, height: 2048 }` | `4` |
+| Aliyun `wan2.6-t2i` | — (pixel-only, `1280*1280`–`1440*1440`) | `{ width: 1440, height: 1440 }` | `4` |
 | Seedream `doubao-seedream-5-0-pro-260628` | `["1K","2K"]` | `{ width: 2048, height: 2048 }` | `1` |
 | Seedream `doubao-seedream-5-0-260128` / `doubao-seedream-5-0-lite-260128` | `["2K","3K","4K"]` | `{ width: 4096, height: 4096 }` | `1` |
 | Seedream `doubao-seedream-4-5-251128` | `["2K","4K"]` | `{ width: 4096, height: 4096 }` | `1` |
 | Seedream `doubao-seedream-4-0-250828` | `["1K","2K","4K"]` | `{ width: 4096, height: 4096 }` | `1` |
+
+The `wan2.7-image-pro`/`wan2.7-image` rows gained their `supportedSizes` and `qwen-image-3.0`/`wan2.6-t2i` were registered by the post-implementation live-docs alignment fix (commit `86ac362`); without the tier lists, `validateSize` rejected documented `size: "2K"` values for Wan models.
 
 Aliyun video (`AliyunModelEntry` fields, not on `ModelCapability`):
 
@@ -178,6 +182,9 @@ Aliyun video (`AliyunModelEntry` fields, not on `ModelCapability`):
 | `happyhorse-1.1-i2v` | `["480P","720P","1080P"]` | `[]` (no ratio param) |
 | `happyhorse-1.1-r2v` | `["480P","720P","1080P"]` | `["16:9","9:16","1:1","4:3","3:4","4:5","5:4","9:21","21:9"]` |
 | `happyhorse-1.0-video-edit` | `["720P","1080P"]` | `[]` (no ratio/duration param) |
+| `wan3.0-video` | `["480P","720P","1080P"]` | `["adaptive","16:9","4:3","1:1","3:4","9:16"]` |
+
+MiniMax video follows the same pattern in its own registry (`MiniMaxModelEntry`, added by the follow-up `add-minimax-provider` change): `MiniMax-H3` declares `supportedResolutions: ["768P","2K"]` and `supportedAspectRatios: ["adaptive","21:9","16:9","4:3","1:1","3:4","9:16"]` plus reference-media caps.
 
 `maxN: 1` for Seedream reflects the synchronous Ark API's single-image output per call (consistent with PRD §4.4 line 159 `n` not being a Seedream-supported public param). `maxN: 1` for Azure `gpt-image-2` reflects the live deployment's `n=1` limit.
 
@@ -201,5 +208,8 @@ Rollback: Each part is independent. Rolling back Part 1 alone re-broadens the va
 
 ## Open Questions
 
-- Should the family `TParams` also narrow `n` to a literal type when `maxN` is small (e.g. `1` for Seedream)? Current plan: yes for `maxN <= 4` (literal `1 | 2 | 3 | 4`); for larger caps (`6` for Qwen) use `number` capped at runtime only, to avoid bloating the union. Deferrable: the exact threshold can be tuned per family during Part 3 implementation without changing the spec.
-- Whether to expose `pixelSize(w, h)` and `tierSize("2K")` helpers from the SDK root. Current plan: yes, as zero-cost identity functions returning a `string` — they exist purely for self-documenting call sites. Deferrable: if Part 3 implementation finds them noise, they can be dropped without affecting specs.
+All resolved during implementation/final alignment:
+
+- `n` literal narrowing: implemented as literal unions for every family (`n?: 1` for Azure/Seedream, `1 | 2 | 3 | 4` for Wan, `1 | … | 6` for Qwen); the runtime `validateN` cap remains the source of truth.
+- `pixelSize(w, h)`/`tierSize(tier)` helpers: implemented in `image/request.ts`, exported from the SDK root, and covered by `tests/image-size-validation.test.ts`.
+- Async image pre-flight: `submitImageTask` now runs the same `validatePublicParams` pre-flight as `generateImage` (added during final alignment after Wan async image models gained `supportedSizes` metadata); the `image-param-validation` spec covers both entry points.

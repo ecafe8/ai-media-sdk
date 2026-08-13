@@ -45,7 +45,7 @@ const PLAYGROUND_LABELS: Readonly<
     recommendation: "Balanced generation and editing",
   },
   "aliyun-bailian:qwen-image-2.0-pro-2026-06-22": {
-    label: "Qwen Image 2.0 Pro（免费额度）",
+    label: "Qwen Image 2.0 Pro（2026-06-22）",
     recommendation: "Qwen Image 2.0 Pro dated model; free quota may apply",
   },
   "aliyun-bailian:qwen-image-2.0": {

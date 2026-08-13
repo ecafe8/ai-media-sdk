@@ -184,9 +184,17 @@ export async function generateImage<
  * Validates `model.capabilities.edit` and the image count against
  * `maxEditImages`, builds a modality-neutral `AdapterRequest`, and dispatches
  * to the adapter `edit`.
+ *
+ * Generic over `TParams` (defaults to `ImageEditInput`) mirroring
+ * `generateImage`: the request shape is bound to the selected model's family
+ * params, so a future edit-family `TParams` narrows
+ * `providerOptions.<namespace>` at compile time. Models selected by dynamic
+ * string id keep the pre-change request shape.
  */
-export async function editImage(
-  request: ImageEditRequest
+export async function editImage<
+  TParams extends ImageEditInput = ImageEditInput,
+>(
+  request: ImageEditRequest<TParams>
 ): Promise<GenerationResult<ImageContent[]>> {
   const { model, prompt, images, providerOptions } = request;
 
@@ -233,8 +241,12 @@ export async function editImage(
  * validated against `capabilities.supportedSizes`/`maxResolution`/`maxN`
  * when the model declares them; models without these metadata fields pass
  * `size`/`n` through unchanged for backwards compatibility.
+ *
+ * Shared by `generateImage` and `submitImageTask` so the sync and async
+ * image paths enforce the same capability-driven pre-flight contract.
+ * Internal: not exported from the package root.
  */
-function validatePublicParams(
+export function validatePublicParams(
   input: ImageGenerationInput,
   capabilities: ModelCapability
 ): void {

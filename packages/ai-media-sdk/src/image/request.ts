@@ -59,13 +59,17 @@ export interface ImageEditInput {
  *
  * Carries 1-3 input images (`images`); the model's `maxEditImages` bounds the
  * maximum. The Phase 0 singular `image: ImageContent` shape is retired.
+ *
+ * `TParams` carries the family-specific edit request shape (defaults to
+ * `ImageEditInput`). Mirrors `ImageGenerationRequest<TParams>`: the request is
+ * `TParams` intersected with `{ model }`, so a future edit-family param type
+ * narrows `providerOptions.<namespace>` at compile time; the default keeps the
+ * pre-change request shape for dynamic model ids.
  */
-export interface ImageEditRequest {
-  readonly model: ImageModelInstance;
-  readonly prompt: string;
-  readonly images: readonly ImageContent[];
-  readonly providerOptions?: Readonly<Record<string, unknown>>;
-}
+export type ImageEditRequest<TParams extends ImageEditInput = ImageEditInput> =
+  TParams & {
+    readonly model: ImageModelInstance<TParams>;
+  };
 
 /**
  * Type guard narrowing an `unknown` adapter input to `ImageGenerationInput`.

@@ -13,6 +13,8 @@ import {
   type ProviderAdapter,
   pixelSize,
   SdkError,
+  submitImageTask,
+  type TaskHandle,
   tierSize,
 } from "@ai-media/sdk";
 
@@ -80,6 +82,60 @@ function createModel(
     },
   };
   return { model, ...fake };
+}
+
+function createAsyncModel(
+  capabilities: Pick<
+    ModelCapability,
+    "supportedSizes" | "maxResolution" | "maxN"
+  >
+): { model: ImageModelInstance; submitCount: () => number } {
+  let count = 0;
+  const handle: TaskHandle<ImageContent[]> = {
+    taskId: "task-1",
+    status: "pending",
+    wait: () =>
+      Promise.resolve({
+        content: [{ url: "https://example.com/image.png" }],
+        provider: "fake",
+        model: "async-test-model",
+        requestId: "req-1",
+      }),
+  };
+  const adapter: ProviderAdapter<ImageContent[]> = {
+    providerId: "fake",
+    async generate(): Promise<GenerationResult<ImageContent[]>> {
+      throw new SdkError({
+        code: "NOT_IMPLEMENTED",
+        message: "generate not used in async size-validation tests",
+      });
+    },
+    async edit(): Promise<GenerationResult<ImageContent[]>> {
+      throw new SdkError({
+        code: "NOT_IMPLEMENTED",
+        message: "edit not used in async size-validation tests",
+      });
+    },
+    async submit(): Promise<TaskHandle<ImageContent[]>> {
+      count += 1;
+      return handle;
+    },
+  };
+  const model: ImageModelInstance = {
+    providerId: "fake",
+    modelId: "async-test-model",
+    adapter,
+    capabilities: {
+      modality: "image",
+      generate: true,
+      edit: false,
+      async: true,
+      supportedSizes: capabilities.supportedSizes,
+      maxResolution: capabilities.maxResolution,
+      maxN: capabilities.maxN,
+    },
+  };
+  return { model, submitCount: () => count };
 }
 
 describe("generateImage size validation", () => {
@@ -240,6 +296,52 @@ describe("generateImage n validation", () => {
       generateImage({ model, prompt: "p", n: 2.5 })
     ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
     expect(getCount()).toBe(0);
+  });
+});
+
+describe("submitImageTask size validation", () => {
+  test("async entry point enforces the same supportedSizes pre-flight", async () => {
+    const { model, submitCount } = createAsyncModel({
+      supportedSizes: ["1K", "2K"],
+    });
+
+    await submitImageTask({ model, prompt: "p", size: "2K" });
+    expect(submitCount()).toBe(1);
+
+    await expect(
+      submitImageTask({ model, prompt: "p", size: "8K" })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(submitCount()).toBe(1);
+  });
+
+  test("async entry point enforces maxResolution for pixel sizes", async () => {
+    const { model, submitCount } = createAsyncModel({
+      maxResolution: { width: 1440, height: 1440 },
+    });
+
+    await submitImageTask({ model, prompt: "p", size: "1280*1280" });
+    expect(submitCount()).toBe(1);
+
+    // Tier value on a pixel-only model is rejected before dispatch.
+    await expect(
+      submitImageTask({ model, prompt: "p", size: "2K" })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    await expect(
+      submitImageTask({ model, prompt: "p", size: "2048x2048" })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(submitCount()).toBe(1);
+  });
+
+  test("async entry point enforces maxN", async () => {
+    const { model, submitCount } = createAsyncModel({ maxN: 4 });
+
+    await submitImageTask({ model, prompt: "p", n: 4 });
+    expect(submitCount()).toBe(1);
+
+    await expect(
+      submitImageTask({ model, prompt: "p", n: 5 })
+    ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+    expect(submitCount()).toBe(1);
   });
 });
 
