@@ -60,7 +60,7 @@ export function ThemeSwitcher({
         if (next) setTheme(next);
       }}
       className={
-        "rounded-full border border-border bg-muted p-1" +
+        "h-9 rounded-full border border-border bg-muted p-0.5" +
         (className ? ` ${className}` : "")
       }
     >
@@ -70,7 +70,7 @@ export function ThemeSwitcher({
           value={option.value}
           aria-label={labelFor(option.value)}
           title={labelFor(option.value)}
-          className="size-8 rounded-full text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
+          className="size-7 rounded-full text-muted-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm"
         >
           <option.icon className="size-4" />
         </ToggleGroupItem>

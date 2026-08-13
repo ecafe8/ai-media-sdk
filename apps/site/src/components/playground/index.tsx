@@ -71,7 +71,7 @@ export function Playground({ models }: PlaygroundProps) {
             />
             <button
               type="button"
-              className="rounded-lg border border-border bg-card px-3 py-1.5 text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
+              className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
               onClick={() => setSettingsOpen(true)}
             >
               {t("playground.apiSettings")}

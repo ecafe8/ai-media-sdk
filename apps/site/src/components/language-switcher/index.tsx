@@ -23,14 +23,14 @@ export function LanguageSwitcher() {
     <div
       role="group"
       aria-label={t("langSwitcher.aria")}
-      className="flex items-center gap-0.5 rounded-full border border-border bg-muted p-0.5"
+      className="flex h-9 items-center gap-0.5 rounded-full border border-border bg-muted p-0.5"
     >
       {SUPPORTED_LANGS.map((item) =>
         item === params.lang ? (
           <span
             key={item}
             aria-current="true"
-            className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground text-xs shadow-sm"
+            className="flex h-7 items-center rounded-full bg-card px-2.5 font-medium text-foreground text-xs shadow-sm"
           >
             {LANG_LABELS[item]}
           </span>
@@ -38,7 +38,7 @@ export function LanguageSwitcher() {
           <Link
             key={item}
             to={targetFor(item)}
-            className="rounded-full px-2.5 py-1 text-muted-foreground text-xs transition hover:text-foreground"
+            className="flex h-7 items-center rounded-full px-2.5 text-muted-foreground text-xs transition hover:text-foreground"
           >
             {LANG_LABELS[item]}
           </Link>

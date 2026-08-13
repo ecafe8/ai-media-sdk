@@ -1,7 +1,8 @@
 import { ThemeSwitcher } from "@workspace/ui/components/custom/theme-switcher";
 import { Badge } from "@workspace/ui/components/shadcn/badge";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { FaGithub } from "react-icons/fa";
 import { Link } from "react-router-dom";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -41,14 +42,15 @@ export function LandingPage() {
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 text-muted-foreground text-sm transition hover:text-foreground"
+              aria-label={t("common.github")}
+              title={t("common.github")}
+              className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition hover:text-foreground"
             >
-              <ExternalLink className="size-4" />
-              {t("common.github")}
+              <FaGithub className="size-4" />
             </a>
             <Link
               to="playground"
-              className="rounded-lg bg-emerald-600 px-3.5 py-1.5 font-medium text-sm text-white shadow-sm transition hover:bg-emerald-700"
+              className="inline-flex h-9 items-center rounded-lg bg-emerald-600 px-3.5 font-medium text-sm text-white shadow-sm transition hover:bg-emerald-700"
             >
               {t("landing.enterPlayground")}
             </Link>
