@@ -7,7 +7,7 @@ import {
   RELEASE_PACKAGE_DIRECTORIES,
   ROOT,
   readManifest,
-} from "./release-packages.ts";
+} from "./release-packages";
 
 function writeManifest(directory: string, manifest: PackageManifest): void {
   writeFileSync(
