@@ -1,5 +1,9 @@
 # @ai-media/uploader
 
+[![npm version](https://img.shields.io/npm/v/@ai-media/uploader.svg)](https://www.npmjs.com/package/@ai-media/uploader)
+[![npm downloads](https://img.shields.io/npm/dm/@ai-media/uploader.svg)](https://www.npmjs.com/package/@ai-media/uploader)
+[![License](https://img.shields.io/npm/l/@ai-media/uploader.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/uploader/LICENSE)
+
 AI Provider 输入文件的临时上传辅助。将本地文件或字节流上传为 Provider 可接受的临时 URL，供图像/视频生成调用引用。
 
 > **定位**：开发/测试便利工具。各平台临时 URL 均有有效期与配额限制，生产环境请使用自有持久存储。

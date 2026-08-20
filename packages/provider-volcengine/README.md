@@ -1,5 +1,9 @@
 # @ai-media/provider-volcengine
 
+[![npm version](https://img.shields.io/npm/v/@ai-media/provider-volcengine.svg)](https://www.npmjs.com/package/@ai-media/provider-volcengine)
+[![npm downloads](https://img.shields.io/npm/dm/@ai-media/provider-volcengine.svg)](https://www.npmjs.com/package/@ai-media/provider-volcengine)
+[![License](https://img.shields.io/npm/l/@ai-media/provider-volcengine.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/provider-volcengine/LICENSE)
+
 [AI Media SDK](../ai-media-sdk/README.md) 的火山引擎方舟（Volcengine Ark）图像生成 Provider。基于原生 `fetch` 调用方舟 OpenAI 兼容图像 API（同步），不依赖平台 SDK。当前覆盖 Doubao-Seedream 图像模型。
 
 > **注意**：本项目处于快速迭代期间，API 可能随时变更，生产使用请锁定版本。

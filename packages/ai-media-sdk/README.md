@@ -1,5 +1,9 @@
 # @ai-media/sdk
 
+[![npm version](https://img.shields.io/npm/v/@ai-media/sdk.svg)](https://www.npmjs.com/package/@ai-media/sdk)
+[![npm downloads](https://img.shields.io/npm/dm/@ai-media/sdk.svg)](https://www.npmjs.com/package/@ai-media/sdk)
+[![License](https://img.shields.io/npm/l/@ai-media/sdk.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/ai-media-sdk/LICENSE)
+
 Provider 无关的核心契约与任务抽象，面向 AI 图像与视频生成。
 
 本包定义统一的调用模型（Provider 工厂 → 模型实例 → 生成函数）、同步/异步任务生命周期、结果结构与错误分类，**本身不访问任何 Provider API**，需要与具体的 Provider 包搭配使用：

@@ -1,5 +1,9 @@
 # @ai-media/provider-aliyun-bailian
 
+[![npm version](https://img.shields.io/npm/v/@ai-media/provider-aliyun-bailian.svg)](https://www.npmjs.com/package/@ai-media/provider-aliyun-bailian)
+[![npm downloads](https://img.shields.io/npm/dm/@ai-media/provider-aliyun-bailian.svg)](https://www.npmjs.com/package/@ai-media/provider-aliyun-bailian)
+[![License](https://img.shields.io/npm/l/@ai-media/provider-aliyun-bailian.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/provider-aliyun-bailian/LICENSE)
+
 [AI Media SDK](../ai-media-sdk/README.md) 的阿里云百炼（DashScope）Provider，支持图像生成/编辑与视频生成。基于原生 `fetch` 直接调用 DashScope REST API，不依赖平台 SDK。
 
 > **注意**：本项目处于快速迭代期间，API 可能随时变更，生产使用请锁定版本。

@@ -1,5 +1,9 @@
 # @ai-media/provider-minimax
 
+[![npm version](https://img.shields.io/npm/v/@ai-media/provider-minimax.svg)](https://www.npmjs.com/package/@ai-media/provider-minimax)
+[![npm downloads](https://img.shields.io/npm/dm/@ai-media/provider-minimax.svg)](https://www.npmjs.com/package/@ai-media/provider-minimax)
+[![License](https://img.shields.io/npm/l/@ai-media/provider-minimax.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/provider-minimax/LICENSE)
+
 [AI Media SDK](../ai-media-sdk/README.md) 的 MiniMax（海螺）Provider，当前支持 MiniMax-H3 视频生成。基于原生 `fetch` 直接调用 MiniMax V2 REST API，不依赖平台 SDK。
 
 > **注意**：本项目处于快速迭代期间，API 可能随时变更，生产使用请锁定版本。

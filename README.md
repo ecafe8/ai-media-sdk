@@ -12,16 +12,16 @@
 
 ## 包一览
 
-以下 5 个包发布到 npm（`@ai-media` scope）：
+以下 6 个包发布到 npm（`@ai-media` scope）：
 
 | 包名                                | 说明                                               |
 | ----------------------------------- | -------------------------------------------------- |
-| `@ai-media/sdk`                     | Provider 无关的核心契约与图像/视频任务抽象         |
-| `@ai-media/provider-azure-openai`   | Azure OpenAI 图像生成 Provider（同步 API）         |
-| `@ai-media/provider-aliyun-bailian` | 阿里云百炼（DashScope）图像 + 视频 Provider        |
-| `@ai-media/provider-volcengine`     | 火山引擎方舟（Doubao-Seedream）图像生成 Provider   |
-| `@ai-media/provider-minimax`        | MiniMax（海螺）视频生成 Provider（异步 V2 API）    |
-| `@ai-media/uploader`                | Provider 输入文件的临时上传辅助（Aliyun / Google） |
+| [`@ai-media/sdk`](https://www.npmjs.com/package/@ai-media/sdk)                                     | Provider 无关的核心契约与图像/视频任务抽象         |
+| [`@ai-media/provider-azure-openai`](https://www.npmjs.com/package/@ai-media/provider-azure-openai)   | Azure OpenAI 图像生成 Provider（同步 API）         |
+| [`@ai-media/provider-aliyun-bailian`](https://www.npmjs.com/package/@ai-media/provider-aliyun-bailian) | 阿里云百炼（DashScope）图像 + 视频 Provider        |
+| [`@ai-media/provider-volcengine`](https://www.npmjs.com/package/@ai-media/provider-volcengine)       | 火山引擎方舟（Doubao-Seedream）图像生成 Provider   |
+| [`@ai-media/provider-minimax`](https://www.npmjs.com/package/@ai-media/provider-minimax)             | MiniMax（海螺）视频生成 Provider（异步 V2 API）    |
+| [`@ai-media/uploader`](https://www.npmjs.com/package/@ai-media/uploader)                             | Provider 输入文件的临时上传辅助（Aliyun / Google） |
 
 各包的使用说明见对应包目录下的 `README.md`。
 
