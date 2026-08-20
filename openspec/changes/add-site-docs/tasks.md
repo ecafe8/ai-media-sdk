@@ -14,13 +14,13 @@
 
 - [ ] 3.1 `src/content/docs/manifest.ts`：单一结构事实源——分组（入门/指南/Providers/Uploader/FAQ/API 参考）+ 全部 15 个 slug，分组与顺序仅在此维护（frontmatter 不存顺序），不含语言文案（design D2，spec"文档信息架构完整性"）
 - [ ] 3.2 `src/lib/docs/content-loader/`：`import.meta.glob` eager 收集 zh/en 文档模块，slug 由路径派生，导出按 `(lang, slug)` 查表 API；zod schema 解析模块 frontmatter（title/description 必填、draft 可选布尔），校验失败指明文档路径（design D3，spec"frontmatter 元数据自动化"）
-- [ ] 3.3 `src/lib/docs/navigation/`：侧边栏树（分组标题经 i18n `docs.groups.*` 解析）、当前页、上一篇/下一篇、面包屑派生（design D2/D6）
+- [ ] 3.3 `src/lib/docs/navigation/`：侧边栏树（分组标题经 i18n `docs.groups.*` 解析）、当前页、上一篇/下一篇、面包屑派生；导航按语言过滤未翻译（文件缺失）与 draft 页面（design D2/D6）
 - [ ] 3.4 `src/lib/docs/page-metadata/`：`usePageMetadata({ title, description })`——`document.title` 加站点后缀、创建/更新 `meta[name=description]`（design D4）
 
 ## 4. 路由与文档布局
 
 - [ ] 4.1 `app.tsx`：`/:lang` 子路由增加 `docs`（Navigate 到首篇）与 `docs/*`（DocsPage）；顶层增加 `/docs`、`/docs/*` 历史兼容重定向（访客语言）；未知 slug 渲染文档区 NotFound（spec"文档区路由与导航"）
-- [ ] 4.2 `pages/docs/` 与 `components/docs/docs-layout/`：DocsPage 以路由参数 `:lang`（校验后）为权威语言来源加载文档集合；shadcn Sidebar 分组导航（当前页高亮、Collapsible 分组、移动端 Sheet）+ 文章区 + TOC（mount 后收集 `article h2/h3`，rehype-slug 锚点，ScrollArea，窄屏隐藏）+ 上一篇/下一篇（Button）+ 面包屑（Breadcrumb）；滚动行为：slug 变化回到文章顶部、hash 导航定位标题；draft 页渲染"翻译进行中"占位；DocsPage 以 frontmatter 调用 `usePageMetadata`；布局遵守 `PageContainer` 宽度规则（design D4/D5/D6，spec"frontmatter 元数据自动化"/"双语文档与结构一致性"）
+- [ ] 4.2 `pages/docs/` 与 `components/docs/docs-layout/`：DocsPage 以路由参数 `:lang`（校验后）为权威语言来源加载文档集合；shadcn Sidebar 分组导航（当前页高亮、Collapsible 分组、移动端 Sheet）+ 文章区 + TOC（mount 后收集 `article h2/h3`，rehype-slug 锚点，ScrollArea，窄屏隐藏）+ 上一篇/下一篇（Button）+ 面包屑（Breadcrumb）；滚动行为：slug 变化回到文章顶部、hash 导航定位标题；未翻译（英文文件缺失）与 draft 页渲染"翻译进行中"占位；DocsPage 以 frontmatter 调用 `usePageMetadata`；布局遵守 `PageContainer` 宽度规则（design D4/D5/D6，spec"frontmatter 元数据自动化"/"双语文档与结构一致性"）
 - [ ] 4.3 `components/docs/mdx-components/`：MDX 元素映射——`table`→shadcn Table 组合、blockquote/提示→Alert、徽章→Badge、链接→`DocLink`（站内链接经 `buildDocPath(lang, slug)` 携带语言段，正文禁止硬编码 `/docs/...`；外链 `target="_blank"` + `rel="noreferrer"`）；`components/docs/code-block/`：语言标识 + 复制按钮 + 横向滚动（design D6/D8，spec"文档区路由与导航"/"文档呈现质量"）
 - [ ] 4.4 文档排版样式：`article` prose 手写 Tailwind 样式（标题/段落/表格/列表/链接），深浅色可读；shiki 双主题 CSS 变量随 `.dark` 切换（仅代码块作用域）；落地页与 Playground 各补一行 `usePageMetadata`（title/description 取 i18n 文案）（design D4/D8）
 
@@ -59,7 +59,7 @@
 - [ ] 9.1 `en/` 镜像翻译：入门 ×2 + 指南 ×6（由 6.x 中文源文档人工翻译审校，frontmatter 同步英文 title/description）
 - [ ] 9.2 `en/providers/` ×4（由 7.x 翻译；代码示例与数据驱动组件不翻译）
 - [ ] 9.3 `en/uploader.mdx`、`en/faq.mdx`、`en/api-reference.mdx`（由 8.x 翻译）
-- [ ] 9.4 为每篇中文文档创建对应英文文件（结构完整性强制）；无法及时完成翻译的页面保留文件并置 `draft: true`，直接访问渲染"翻译进行中"占位页；记录 draft 清单（spec"双语文档与结构一致性"）
+- [ ] 9.4 无法及时完成翻译的页面不创建英文文件（缺失即未翻译，英文导航自动排除，直接访问渲染占位页）；记录未翻译清单（spec"双语文档与结构一致性"）
 
 ## 10. 落地页导航联动与 i18n
 
@@ -68,9 +68,9 @@
 
 ## 11. 测试与验证
 
-- [ ] 11.1 `apps/site/tests/docs-content.test.ts`：manifest ↔ 文件双向一致性（每语言，draft 文件同样计入）、zh/en 文件集合一致性（draft 不豁免结构）、全部 frontmatter zod 校验（title/description 必填）、`@ai-media/sdk` 导出名集合与 api-reference 清单一致且清单符号与正文小节对应、关键页结构断言（Provider 七段标题、quick-start 章节）（design D11，spec"构建期清单一致性检查"/"双语文档与结构一致性"/"手写 API 参考"/"Provider 页统一内容模板"）
+- [ ] 11.1 `apps/site/tests/docs-content.test.ts`：manifest ↔ zh 文件双向一致性、en ⊆ zh 且无游离英文文件、已存在文档 frontmatter zod 校验（title/description 必填）、`@ai-media/sdk` 导出名集合与 api-reference 清单一致且清单符号与正文小节对应、关键页结构断言（Provider 七段标题、quick-start 章节）（design D11，spec"构建期清单一致性检查"/"双语文档与结构一致性"/"手写 API 参考"/"Provider 页统一内容模板"）
 - [ ] 11.2 `bun run lint && bun run typecheck && bun run build && bun run test` 全绿
-- [ ] 11.3 `bun run site:preview`：验证 `<base>/zh/docs` 与 `<base>/en/docs` 重定向、各分组深链、`/docs` 历史重定向、404 回退、深浅色主题、代码块复制、移动端抽屉导航、模型表数据与落地页一致、title/description 注入、文档内链保持语言段、draft 页占位渲染、切换文档/语言的滚动行为（spec"部署深链兼容"/"文档呈现质量"/"文档区路由与导航"）
+- [ ] 11.3 `bun run site:preview`：验证 `<base>/zh/docs` 与 `<base>/en/docs` 重定向、各分组深链、`/docs` 历史重定向、404 回退、深浅色主题、代码块复制、移动端抽屉导航、模型表数据与落地页一致、title/description 注入、文档内链保持语言段、未翻译英文页占位渲染、切换文档/语言的滚动行为（spec"部署深链兼容"/"文档呈现质量"/"文档区路由与导航"）
 
 ## 12. 收尾
 

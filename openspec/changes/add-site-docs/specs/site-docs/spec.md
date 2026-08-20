@@ -49,17 +49,17 @@
 
 ### Requirement: 双语文档与结构一致性
 
-文档内容 SHALL 以中文与英文双语维护，分别位于按语言划分的目录（zh 为源语言）。两种语言 SHALL 具有相同的文档集合与分组结构：每个中文文档 slug 必须存在对应英文文档文件，反之亦然；构建期 SHALL 有自动化检查保证双语文件集合一致。未完成的英文页 SHALL 保留文件并以 `draft: true` 标记：draft 文件仍参与双语结构一致性检查，但排除出侧边栏与翻页导航，直接访问 SHALL 渲染"翻译进行中"占位页；SHALL NOT 以机翻占位内容作为正式文档上线，也 SHALL NOT 以缺失文件的方式跳过英文文档。
+文档内容 SHALL 以中文与英文双语维护，分别位于按语言划分的目录，中文（zh）为源语言：manifest 中每个 slug SHALL 存在对应中文文档文件，中文文件集合与 manifest SHALL 双向一致。英文文件允许缺失，缺失即表示未翻译：未翻译页面 SHALL 排除出英文侧边栏与翻页导航，直接访问其 URL SHALL 渲染"翻译进行中"占位页；已存在的英文文件 SHALL 对应 manifest 中的 slug（不得有游离英文文件）。SHALL NOT 以机翻占位内容作为正式英文文档上线。
 
 #### Scenario: 双语结构一致性检查
 
 - **WHEN** 执行站点测试或构建
-- **THEN** 检查发现中英文档文件集合一致（draft 文件同样计入）；存在任一边文件缺失时检查失败并指明缺失项
+- **THEN** 检查发现中文文件集合与 manifest 双向一致、英文文件集合是中文的子集且无游离英文文件；中文缺失或英文游离时检查失败并指明问题项
 
-#### Scenario: 直接访问 draft 英文页
+#### Scenario: 直接访问未翻译英文页
 
-- **WHEN** 用户直接访问一篇标记 `draft: true` 的英文文档 URL
-- **THEN** 页面渲染"翻译进行中"占位内容，不渲染空白页，该页也不出现在侧边栏与翻页导航中
+- **WHEN** 用户直接访问一篇尚无英文文件的文档 URL（`/en/docs/<slug>`）
+- **THEN** 页面渲染"翻译进行中"占位内容，不渲染空白页，该页不出现在英文侧边栏与翻页导航中
 
 #### Scenario: 英文访客阅读文档
 
@@ -68,7 +68,7 @@
 
 ### Requirement: frontmatter 元数据自动化
 
-每篇文档 SHALL 以 MDX frontmatter 声明 `title`、`description`（必填）与可选 `draft`；frontmatter SHALL 在构建期解析为模块导出并在加载时经 schema 校验（缺失必填字段时构建/测试失败）。文档分组与顺序 SHALL 由单一语言无关的文档清单（manifest）维护，SHALL NOT 在 frontmatter 中重复维护。文档页 SHALL 将 frontmatter 的 `title` 与 `description` 自动注入浏览器标题（`document.title`，格式 `<title> · AI Media SDK`）与 `<meta name="description">`。侧边栏、面包屑、翻页导航的标题 SHALL 读取 frontmatter，manifest SHALL NOT 重复维护标题文案。
+每篇文档 SHALL 以 MDX frontmatter 声明 `title`、`description`（必填）与可选 `draft`；frontmatter SHALL 在构建期解析为模块导出并在加载时经 schema 校验（缺失必填字段时构建/测试失败）。英文翻译状态以英文文件是否存在为准，不依赖 frontmatter；`draft` 仅用于标记已存在但开发中的页面（排除出导航，直接访问渲染占位页）。文档分组与顺序 SHALL 由单一语言无关的文档清单（manifest）维护，SHALL NOT 在 frontmatter 中重复维护。文档页 SHALL 将 frontmatter 的 `title` 与 `description` 自动注入浏览器标题（`document.title`，格式 `<title> · AI Media SDK`）与 `<meta name="description">`。侧边栏、面包屑、翻页导航的标题 SHALL 读取 frontmatter，manifest SHALL NOT 重复维护标题文案。
 
 #### Scenario: 浏览器标题与描述跟随文档页
 

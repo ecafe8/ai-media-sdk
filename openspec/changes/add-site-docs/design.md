@@ -45,7 +45,7 @@ apps/site/src/content/docs/
 - manifest 只有一份（语言无关的分组 + slug + 顺序），分组标题经 i18n（`locales/*.json` 的 `docs.groups.*`）解析——双语结构一致性由构造保证，测试只需校验文件层面。
 - **备选**：每语言独立 manifest——需额外测试对齐两份结构，且无实际收益（文档结构不应按语言分化），否决。
 - slug 由文件路径派生（相对语言目录去扩展名），frontmatter 不声明 slug，杜绝路径/slug 不一致。
-- **draft 机制（文件级）**：未完成的英文页保留文件并置 `draft: true`——结构一致性由文件存在性保证（测试对 zh/en 文件集合做双向比对，draft 文件同样计入），draft 页排除出侧边栏与翻页导航，直接访问渲染"翻译进行中"占位页（文案走 i18n）。不采用"manifest 记录 draftLanguages"方案：那会让结构事实源与文件状态两处维护。
+- **双语完整性规则（zh 强制、en 渐进）**：zh 为源语言，文件必须齐全——manifest ↔ zh 文件双向一致，缺失即测试失败。en 允许文件缺失，缺失即未翻译：英文导航（侧边栏/翻页）只列出已翻译页面，直接访问未翻译 slug 渲染"翻译进行中"占位页（文案走 i18n）。测试断言 en ⊆ zh 且无游离英文文件。frontmatter 的 `draft` 只用于"文件已存在但开发中"的页面（任意语言，排除导航 + 占位页），不承担英文翻译状态职责。不采用"manifest 记录 draftLanguages"或"英文文件强制存在 + draft 标记"方案：前者让结构事实源与文件状态两处维护，后者要求翻译启动即创建文件，增加无内容文件的维护噪音。
 
 ### D3: frontmatter schema 与校验
 
@@ -104,7 +104,7 @@ description: 使用 AI Media SDK 完成首次图像生成
 
 - `SdkError` 错误码表只在 `error-handling.mdx` 维护；`UploaderError` 错误码表只在 `uploader.mdx` 维护；其余页面链接引用。
 - file-upload（指南视角：工作流 + 与 `editImage` 集成示例）与 uploader（包参考视角：子路径导出/配置表/`UploadedFile`/错误码/配额）互链。
-- 手写内容从 README 改写扩展；分歧以源码行为为准。英文文档由中文源文档人工翻译审校，不机翻占位；未完成的英文页保留文件并置 `draft: true`（文件级 draft，见 D2），排除出导航，直接访问渲染占位页。
+- 手写内容从 README 改写扩展；分歧以源码行为为准。英文文档由中文源文档人工翻译审校，不机翻占位；未完成的英文页不创建文件（缺失即未翻译，见 D2），英文导航自动排除，直接访问渲染占位页。
 
 ### D10: 手写 API 参考与漂移缓解
 
@@ -114,9 +114,9 @@ api-reference 页按模块分节（image/video/async/result/error/helpers），�
 
 新增 `apps/site/tests/docs-content.test.ts`（bun test）：
 
-1. manifest ↔ 文件双向一致性（每语言，draft 文件同样计入）；
-2. zh/en 文件集合一致性（draft 不豁免结构检查）；
-3. 全部 frontmatter 经 zod 校验（title/description 必填、draft 可选布尔）；
+1. manifest ↔ zh 文件双向一致性（中文为源语言，强制齐全）；
+2. en ⊆ zh 且无游离英文文件；已存在的英文文件同样通过 frontmatter 校验；
+3. 全部已存在文档的 frontmatter 经 zod 校验（title/description 必填、draft 可选布尔）；
 4. `@ai-media/sdk` 导出名集合与 api-reference 清单常量一致，且清单符号与正文小节标题对应（D10）；
 5. 关键页结构断言：Provider 页含七段标题、quick-start 含安装/示例标题（防内容模板跑偏）。
 
@@ -126,7 +126,7 @@ api-reference 页按模块分节（image/video/async/result/error/helpers），�
 
 - [MDX 插件链与 React 19 / Vite 7 兼容问题] → 管线搭建放第一个任务，以最小文档页跑通 dev/build 再写内容。
 - [shadcn Sidebar 面向应用壳设计，与页面级文档布局整合成本超预期] → D6 回退判据：降级为 ScrollArea+Collapsible+Button 组合。
-- [双语内容工作量大、英文滞后] → 中文先行，英文允许 draft 文件（结构完整性仍强制，仅导航豁免 + 占位页），保证不出现死链也不出现空文件。
+- [双语内容工作量大、英文滞后] → 中文先行（zh 完整性强制），英文允许文件缺失（缺失即未翻译：导航排除 + 占位页），保证不出现死链、空白页或无内容文件。
 - [`LangLayout` 与文档页标题竞争] → D4 明确 effect 职责划分，并为落地页/Playground 补统一 metadata 调用。
 - [shiki 主题 CSS 与 Tailwind v4 冲突] → 主题仅以 CSS 变量注入代码块作用域。
 - [手写 API 参考与源码漂移] → D10 导出名集合测试 + 未来自动生成 change。
