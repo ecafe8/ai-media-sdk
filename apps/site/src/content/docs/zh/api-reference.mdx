@@ -1,0 +1,163 @@
+---
+title: API 参考
+description: AI Media SDK 核心公共导出：生成函数、任务抽象、结果类型与错误类型。
+---
+
+export const API_REFERENCE_EXPORTS = [
+  "generateImage",
+  "editImage",
+  "submitImageTask",
+  "submitVideoTask",
+  "createTaskHandle",
+  "pixelSize",
+  "tierSize",
+  "toImageUrl",
+  "GenerationResult",
+  "TaskHandle",
+  "ImageContent",
+  "VideoContent",
+  "SdkError",
+];
+
+# API 参考
+
+本页手写覆盖 `@ai-media/sdk` 的核心公共导出。完整导出以源码 `packages/ai-media-sdk/src/index.ts` 为准；更细的契约类型（能力声明、模型注册表聚合等）参见源码 TSDoc。
+
+## generateImage
+
+```ts
+function generateImage(request: ImageGenerationRequest): Promise<GenerationResult<ImageContent[]>>
+```
+
+文生图（同步）。
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | `ImageModelInstance` | 是 | `provider.image(id)` 返回的模型实例 |
+| `prompt` | `string` | 是 | 非空提示词 |
+| `n` | `number` | 否 | 输出数量，受模型 `maxN` 约束 |
+| `size` | `string` | 否 | 像素形式 `WxH` 或档位形式（`1K`/`2K`） |
+| `providerOptions` | `object` | 否 | `providerOptions.<provider>` 命名空间字段 |
+
+返回 `GenerationResult<ImageContent[]>`。非法参数在**任何网络请求之前**抛出 `SdkError`（`INVALID_REQUEST`）。
+
+## editImage
+
+```ts
+function editImage(request: ImageEditRequest): Promise<GenerationResult<ImageContent[]>>
+```
+
+基于 1 至多张参考图编辑图像，要求模型具备 `edit` 能力。
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | `ImageModelInstance` | 是 | 具备 `edit` 能力的模型实例 |
+| `prompt` | `string` | 是 | 编辑指令 |
+| `images` | `ImageContent[]` | 是 | 参考图（URL 或 base64），上限为模型 `maxEditImages`（未声明时 3） |
+| `providerOptions` | `object` | 否 | 同 `generateImage` |
+
+模型不支持编辑时抛出 `NOT_IMPLEMENTED` / `INVALID_REQUEST`。
+
+## submitImageTask
+
+```ts
+function submitImageTask(request: ImageGenerationRequest): Promise<TaskHandle<ImageContent[]>>
+```
+
+异步图像任务提交。仅适用于能力声明含 `async` 的模型，否则拒绝。返回的 `TaskHandle` 通过 `wait()` 轮询至终态。
+
+## submitVideoTask
+
+```ts
+function submitVideoTask(request: VideoGenerationRequest): Promise<TaskHandle<VideoContent[]>>
+```
+
+视频任务提交（视频模型均为异步）。
+
+| 参数 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | `VideoModelInstance` | 是 | `provider.video(id)` 返回的模型实例 |
+| `prompt` | `string` | 视场景 | 非空提示词 |
+| `firstFrame` / `lastFrame` | `ImageContent` | 视场景 | i2v 首帧 / 首尾帧 |
+| `referenceImages` / `referenceVideos` / `referenceAudios` | 数组 | 视场景 | r2v 有序参考媒体 |
+| `inputVideo` | `{ url: string }` | 视场景 | 视频编辑源视频（公网 URL） |
+| `providerOptions` | `object` | 视 Provider | 如 MiniMax 必填 `minimax.resolution`/`duration` |
+
+## createTaskHandle
+
+```ts
+function createTaskHandle<TContent>(
+  options: CreateTaskHandleOptions<TContent>
+): TaskHandle<TContent>
+```
+
+以已有任务 id 构造 `TaskHandle`，用于恢复查询（如页面刷新后继续轮询）。
+
+## TaskHandle
+
+```ts
+interface TaskHandle<TContent> {
+  readonly taskId: string;
+  readonly status: TaskStatus; // pending / running / succeeded / failed / cancelled
+  readonly result?: GenerationResult<TContent>;
+  readonly error?: SdkError;
+  wait(options?: TaskWaitOptions): Promise<GenerationResult<TContent>>;
+}
+```
+
+`wait()` 轮询至终态：成功返回结果；`failed`/`cancelled` 抛出终态 `SdkError`；超时抛出 `TIMEOUT`。选项：`pollIntervalMs`（默认 15s）、`timeoutMs`（默认 600s）、`signal`（轮询间隙中止）。
+
+## GenerationResult
+
+```ts
+interface GenerationResult<TContent> {
+  readonly content: TContent; // 图像 ImageContent[]，视频 VideoContent[]
+  readonly provider: ProviderId;
+  readonly model: ModelId;
+  readonly requestId?: string;
+  readonly createdAt?: string;
+  readonly raw?: unknown;
+}
+```
+
+## ImageContent / VideoContent
+
+```ts
+interface ImageContent {
+  url?: string;
+  base64?: string;
+  mimeType?: string;
+  width?: number;
+  height?: number;
+}
+
+interface VideoContent {
+  url?: string; // 默认 MP4
+  base64?: string;
+  mimeType?: string;
+  duration?: number; // 秒
+  width?: number;
+  height?: number;
+}
+```
+
+结果 URL 通常是临时的，请及时持久化，见[结果结构](/docs/results)。
+
+## SdkError
+
+```ts
+class SdkError extends Error {
+  readonly code: SdkErrorCode;
+  readonly retryable: boolean;
+}
+```
+
+全部错误码与重试策略见[错误处理](/docs/error-handling)。
+
+## 辅助函数
+
+| 函数 | 签名 | 说明 |
+| --- | --- | --- |
+| `pixelSize` | `(width: number, height: number) => string` | 构造像素形式 `size`，如 `"1024x1536"` |
+| `tierSize` | `(tier: string) => string` | 构造档位形式 `size`，如 `"2K"` |
+| `toImageUrl` | `(image: ImageContent) => string` | 归一化为可渲染 URL（base64 转 data URL） |

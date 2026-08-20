@@ -1,0 +1,71 @@
+---
+title: MiniMax
+description: MiniMax（海螺视频）Provider：H3 视频模型、三场景输入与必填的 providerOptions.minimax。
+---
+
+import { ProviderModelTable } from "@/components/docs/provider-model-table";
+
+# MiniMax（海螺视频）
+
+## 概览
+
+`@ai-media/provider-minimax` 基于原生 `fetch` 直调 MiniMax V2 视频 API，当前提供单一模型 `MiniMax-H3`：一个模型覆盖**文生视频、首尾帧图生视频、参考生视频**三种场景，全部为异步任务。
+
+## 安装
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-minimax
+```
+
+## 配置
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | 是 | MiniMax API key，作为 `Authorization: Bearer` 凭据发送 |
+| `baseUrl` | `string` | 否 | MiniMax API base，默认 `https://api.minimax.io` |
+
+## 快速开始
+
+```ts
+import { createMiniMaxProvider } from "@ai-media/provider-minimax";
+import { submitVideoTask } from "@ai-media/sdk";
+
+const provider = createMiniMaxProvider({ apiKey: "<your-minimax-api-key>" });
+
+const task = await submitVideoTask({
+  model: provider.video("MiniMax-H3"),
+  prompt: "霓虹城市的雨夜街景，电影感",
+  providerOptions: {
+    minimax: { resolution: "768P", duration: 6, ratio: "16:9" },
+  },
+});
+
+const result = await task.wait();
+console.log(result.content[0]?.url);
+```
+
+## 模型列表
+
+<ProviderModelTable provider="minimax" />
+
+场景由输入自动推导：仅 `prompt` 为文生视频；`firstFrame`（可配 `lastFrame`）为首尾帧图生视频；`referenceImages` / `referenceVideos` / `referenceAudios` 为参考生视频。文生视频要求具体 `ratio`（不接受 `adaptive`），图生视频固定按首帧宽高比（`adaptive`）。
+
+## providerOptions.minimax
+
+MiniMax 视频请求**必须**携带 `providerOptions.minimax`，其中 `resolution` 与 `duration` 为必填（V2 API 强制）：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `resolution` | `"768P" \| "2K"` | 是 | 输出分辨率 |
+| `duration` | `4`-`15` | 是 | 时长（秒） |
+| `ratio` | `"adaptive" \| "21:9" \| "16:9" \| "4:3" \| "1:1" \| "3:4" \| "9:16"` | 否 | 长宽比，按场景有约束（见上） |
+| `callbackUrl` | `string` | 否 | 回调地址（如提供则转发） |
+
+缺失 `resolution`/`duration` 会在请求前抛出错误。参考媒体上限：参考图 9 张、参考视频 3 条、参考音频 3 条。
+
+## 限制与差异
+
+- 仅视频能力，无图像模型；全部请求走异步任务（`submitVideoTask` + `TaskHandle.wait()`）。
+- 参考视频/音频仅支持公网 http/https URL，单条 2-15 秒。
+- 浏览器直连需端点支持 CORS。
+- 错误处理统一为 `SdkError`，见[错误处理](/docs/error-handling)。

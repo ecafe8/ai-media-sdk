@@ -29,11 +29,57 @@
   "langSwitcher": {
     "aria": "切换语言"
   },
+  "docs": {
+    "navAria": "文档导航",
+    "navToggle": "打开文档导航",
+    "toc": "本页目录",
+    "prev": "上一篇",
+    "next": "下一篇",
+    "breadcrumb": "文档",
+    "notFound": {
+      "title": "未找到该文档",
+      "description": "链接可能已失效，请返回文档首页。",
+      "back": "返回文档首页"
+    },
+    "untranslated": {
+      "title": "翻译进行中",
+      "description": "该文档的英文版本正在翻译中，可先阅读中文版本。",
+      "readZh": "阅读中文版"
+    },
+    "draft": {
+      "title": "编写进行中",
+      "description": "该文档仍在编写中，敬请期待。"
+    },
+    "code": {
+      "copy": "复制代码",
+      "copied": "已复制"
+    },
+    "modelTable": {
+      "model": "模型",
+      "capabilities": "能力",
+      "size": "尺寸",
+      "maxN": "n 上限",
+      "maxEditImages": "编辑参考图上限",
+      "resolution": "分辨率",
+      "ratio": "长宽比",
+      "referenceMedia": "参考媒体上限",
+      "empty": "—"
+    },
+    "groups": {
+      "gettingStarted": "入门",
+      "guides": "指南",
+      "providers": "Providers",
+      "uploader": "Uploader",
+      "faq": "FAQ",
+      "api": "API 参考"
+    }
+  },
   "landing": {
     "badge": "纯前端体验 · 自带 Key · 无服务端中转",
     "heroTitle": "一个契约，驱动多家多模态生成",
     "heroDescription": "AI Media SDK 统一图像与视频生成的调用契约，支持 Azure OpenAI、Alibaba Bailian（DashScope）、Volcengine Ark（Seedream）与 MiniMax（海螺视频）。在本站点填写你自己的 API Key，即可直接在浏览器体验生成与编辑。",
     "enterPlayground": "进入 Playground",
+    "navDocs": "文档",
     "tryNow": "立即体验",
     "viewDocs": "查看文档",
     "features": {

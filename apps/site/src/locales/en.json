@@ -29,11 +29,57 @@
   "langSwitcher": {
     "aria": "Switch language"
   },
+  "docs": {
+    "navAria": "Docs navigation",
+    "navToggle": "Open docs navigation",
+    "toc": "On this page",
+    "prev": "Previous",
+    "next": "Next",
+    "breadcrumb": "Docs",
+    "notFound": {
+      "title": "Doc not found",
+      "description": "The link may be outdated. Return to the docs home.",
+      "back": "Back to docs home"
+    },
+    "untranslated": {
+      "title": "Translation in progress",
+      "description": "The English version of this doc is being translated. You can read the Chinese version first.",
+      "readZh": "Read in Chinese"
+    },
+    "draft": {
+      "title": "Work in progress",
+      "description": "This doc is still being written. Stay tuned."
+    },
+    "code": {
+      "copy": "Copy code",
+      "copied": "Copied"
+    },
+    "modelTable": {
+      "model": "Model",
+      "capabilities": "Capabilities",
+      "size": "Size",
+      "maxN": "Max n",
+      "maxEditImages": "Edit reference images",
+      "resolution": "Resolution",
+      "ratio": "Aspect ratio",
+      "referenceMedia": "Reference media caps",
+      "empty": "—"
+    },
+    "groups": {
+      "gettingStarted": "Getting Started",
+      "guides": "Guides",
+      "providers": "Providers",
+      "uploader": "Uploader",
+      "faq": "FAQ",
+      "api": "API Reference"
+    }
+  },
   "landing": {
     "badge": "Pure frontend · Bring your own key · No server relay",
     "heroTitle": "One contract, driving multi-provider multimodal generation",
     "heroDescription": "AI Media SDK unifies the calling contract for image and video generation across Azure OpenAI, Alibaba Bailian (DashScope), Volcengine Ark (Seedream) and MiniMax (Hailuo Video). Enter your own API keys on this site and experience generation and editing directly in your browser.",
     "enterPlayground": "Open Playground",
+    "navDocs": "Docs",
     "tryNow": "Try it now",
     "viewDocs": "View docs",
     "features": {

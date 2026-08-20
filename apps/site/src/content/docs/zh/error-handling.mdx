@@ -1,0 +1,54 @@
+---
+title: 错误处理
+description: SdkError 全部错误码、可重试性与推荐的捕获/退避模式。错误码表的唯一维护点。
+---
+
+# 错误处理
+
+SDK 的所有失败统一抛出 `SdkError`，携带稳定的 `code` 与 `retryable` 标记。本页是错误码表的**唯一维护点**，Provider 页与 FAQ 均链接至此。
+
+## 错误码表
+
+| code | 含义 | 默认可重试 |
+| --- | --- | --- |
+| `NOT_IMPLEMENTED` | 能力尚未实现 | 否 |
+| `AUTH_ERROR` | 认证失败（HTTP 401/403） | 否 |
+| `RATE_LIMITED` | 触发限流（HTTP 429） | 是 |
+| `INVALID_REQUEST` | 请求非法（预检失败或 HTTP 400/413/422） | 否 |
+| `UNKNOWN_MODEL` | 模型 id 不在 Provider 注册表 | 否 |
+| `PROVIDER_ERROR` | Provider 服务端错误（HTTP 5xx） | 否 |
+| `TIMEOUT` | 请求超时 | 是 |
+| `NETWORK_ERROR` | 网络错误 | 是 |
+| `UNKNOWN` | 未分类错误 | 否 |
+
+`INVALID_REQUEST` 有两类来源：**预检失败**（参数不合法，请求未发出）与 Provider 拒绝（400/413/422）。预检失败只需修正参数；Provider 拒绝需结合 `message` 判断。
+
+## 捕获模式
+
+```ts
+import { SdkError } from "@ai-media/sdk";
+
+try {
+  await generateImage({ model, prompt });
+} catch (error) {
+  if (error instanceof SdkError) {
+    if (error.retryable) {
+      // 按退避策略重试（如指数退避 + 抖动）
+    } else {
+      // 按 code 分类处理：修正参数 / 提示用户 / 上报告警
+    }
+  } else {
+    throw error; // 非 SDK 错误，交由上层处理
+  }
+}
+```
+
+## 重试建议
+
+- 仅对 `retryable === true` 的错误重试（`RATE_LIMITED` / `TIMEOUT` / `NETWORK_ERROR`）。
+- 推荐指数退避 + 随机抖动，限制最大重试次数，避免限流风暴。
+- 异步任务的轮询由 `TaskHandle.wait()` 管理，轮询间隙的瞬时错误由 SDK 内部处理；`wait()` 最终抛出的是任务终态错误或超时。
+
+## 安全边界
+
+错误信息**不包含**凭据与 Provider 原始响应体，可安全记录日志或透传摘要给上层；`raw` 字段只出现在成功结果的调试位，不出现在错误中。

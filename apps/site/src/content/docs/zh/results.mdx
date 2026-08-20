@@ -1,0 +1,60 @@
+---
+title: 结果结构
+description: GenerationResult、ImageContent、VideoContent 结构与 toImageUrl，以及临时 URL 的持久化建议。
+---
+
+# 结果结构
+
+所有生成（同步与异步）最终都返回同一种结果形状：`GenerationResult<TContent>`。
+
+## GenerationResult
+
+```ts
+interface GenerationResult<TContent> {
+  content: TContent; // 图像为 ImageContent[]，视频为 VideoContent[]
+  provider: string; // 实际执行的 Provider id
+  model: string; // 实际执行的模型 id
+  requestId?: string; // Provider 侧请求标识（如提供）
+  createdAt?: string; // 结果时间（如提供）
+  raw?: unknown; // Provider 原始响应（调试用，勿依赖其结构）
+}
+```
+
+## ImageContent / VideoContent
+
+```ts
+interface ImageContent {
+  url?: string;
+  base64?: string;
+  mimeType?: string;
+  width?: number;
+  height?: number;
+}
+
+interface VideoContent {
+  url?: string; // 下载链接，默认 MP4
+  base64?: string;
+  mimeType?: string;
+  duration?: number; // 秒
+  width?: number;
+  height?: number;
+}
+```
+
+`url` 与 `base64` 至少其一存在，取决于 Provider 的返回方式。
+
+## toImageUrl
+
+将 `ImageContent` 归一化为可直接渲染的 URL——base64 自动转 data URL：
+
+```ts
+import { toImageUrl } from "@ai-media/sdk";
+
+const src = toImageUrl(image); // url 原样返回；base64 转 data URL
+```
+
+## 临时 URL 警告
+
+> Provider 返回的结果 URL 通常是**临时的**（数小时至数天不等），过期后无法访问。请及时下载并自行持久化，不要将临时 URL 直接存入业务数据库作为最终资产。
+
+在站点 Playground 中，可以在生成结果面板选择本地目录自动保存（基于 File System Access API）。集成开发中建议在服务端拿到结果后立即转存到自有存储。

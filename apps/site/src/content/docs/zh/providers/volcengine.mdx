@@ -1,0 +1,78 @@
+---
+title: 火山方舟 Seedream
+description: 火山方舟 Doubao-Seedream 图像 Provider：配置、模型、providerOptions.volcengine 与 size 两形态。
+---
+
+import { ProviderModelTable } from "@/components/docs/provider-model-table";
+
+# 火山方舟（Seedream）
+
+## 概览
+
+`@ai-media/provider-volcengine` 基于原生 `fetch` 直调火山方舟 OpenAI 兼容图像 API，覆盖 Doubao-Seedream 系列模型的**同步图像生成与编辑**。
+
+## 安装
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-volcengine
+```
+
+## 配置
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | 是 | Ark API key，作为 `Authorization: Bearer` 凭据发送 |
+| `baseUrl` | `string` | 否 | Ark API base，默认 `https://ark.cn-beijing.volces.com/api/v3` |
+
+## 快速开始
+
+```ts
+import { createVolcengineProvider } from "@ai-media/provider-volcengine";
+import { generateImage } from "@ai-media/sdk";
+
+const provider = createVolcengineProvider({ apiKey: "<your-ark-api-key>" });
+
+const result = await generateImage({
+  model: provider.image("doubao-seedream-5-0-pro-260628"),
+  prompt: "江南小镇的清晨，水彩画风格",
+  size: "2K",
+});
+```
+
+## 模型列表
+
+<ProviderModelTable provider="volcengine" />
+
+Seedream 模型的 `size` 支持**两种形态**：档位形式（各模型的 `supportedSizes` 封闭集合，如 `1K`/`2K`/`4K`）与像素形式（不超过 `maxResolution` 上限的 `WxH`）。命中档位列表优先，否则按像素上限校验，见[公共参数](/docs/parameters)。
+
+## providerOptions.volcengine
+
+火山方舟专属字段放在 `providerOptions.volcengine` 命名空间下（字段名对齐 Ark `/images/generations` API）：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `watermark` | `boolean` | 是否加"AI生成"水印（默认 false） |
+| `output_format` | `"png" \| "jpeg"` | 输出格式（仅 5.0 系列支持自定义） |
+| `response_format` | `"url" \| "b64_json"` | 结果返回形式（默认 `url`） |
+| `optimize_prompt_options` | `{ mode?: "standard" \| "fast" }` | 提示词优化模式：质量优先或速度优先 |
+
+```ts
+const result = await generateImage({
+  model: provider.image("doubao-seedream-5-0-pro-260628"),
+  prompt: "江南小镇的清晨",
+  size: "2K",
+  providerOptions: {
+    volcengine: {
+      response_format: "url",
+      optimize_prompt_options: { mode: "standard" },
+    },
+  },
+});
+```
+
+## 限制与差异
+
+- 同步 API 每次调用固定返回 1 张图（`n` 上限为 1）。
+- 各模型输出格式支持不同（如 4.x 系列仅 jpeg），以模型表与 API 为准。
+- 编辑能力支持多参考图，上限因模型而异（5.0 pro 为 10 张，其余 14 张）。
+- 错误处理统一为 `SdkError`，见[错误处理](/docs/error-handling)。

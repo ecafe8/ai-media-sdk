@@ -1,0 +1,59 @@
+---
+title: Quick Start
+description: Install AI Media SDK and complete your first image generation in ten lines.
+---
+
+# Quick Start
+
+This page walks you through a minimal, working image generation.
+
+## Installation
+
+The SDK and provider packages are installed separately — the core contract package never calls any provider API itself:
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-azure-openai
+```
+
+Runtime requirements: **Node.js >= 20** (or Bun), ESM-only. All configuration is passed as plain option objects — no environment variables required.
+
+## Minimal example
+
+```ts
+import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { generateImage } from "@ai-media/sdk";
+
+const provider = createAzureOpenAIProvider({
+  apiKey: "<your-api-key>",
+  endpoint: "https://<resource>.cognitiveservices.azure.com",
+  apiVersion: "2024-02-01",
+});
+
+const result = await generateImage({
+  model: provider.image("gpt-image-2"),
+  prompt: "A quiet riverside town at sunrise",
+  n: 1,
+  size: "1024x1024",
+});
+
+for (const image of result.content) {
+  console.log(image.url ?? "(base64)");
+}
+```
+
+## Reading the result
+
+`result` is a `GenerationResult<ImageContent[]>`:
+
+- `content`: `ImageContent[]` — each entry carries `url` or `base64`, `mimeType`, and dimensions.
+- `provider` / `model`: the provider and model id that actually executed.
+- `requestId` / `createdAt`: provider-side request markers (when provided).
+
+> Result URLs from providers are usually **temporary** — download and persist them promptly. See [Result structure](/docs/results).
+
+## Next steps
+
+- Other providers: see the Providers group (Alibaba Bailian, Volcengine, MiniMax).
+- Image editing and parameter details: [Image generation & editing](/docs/image-generation).
+- Video and async tasks: [Video generation](/docs/video-generation).
+- Troubleshooting failures: [Error handling](/docs/error-handling).

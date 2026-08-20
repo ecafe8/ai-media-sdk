@@ -1,6 +1,8 @@
 # Proposal: add-site-docs（v2 改写：双语文档 + 手写 API 参考，移除 TypeDoc）
 
 > **版本说明**：本 change 于 2026-08-20 全量改写。原方案因 TypeDoc 不支持 TypeScript 7（tsgo）暂停；v2 移除 API 自动生成，改为手写核心 API 参考（自动生成拆为未来独立 change），并适配当前代码库现状（`/:lang` 国际化路由、4 个 Provider：azure-openai / aliyun-bailian / volcengine / minimax）。
+>
+> **实施记录（2026-08-20）**：中文 15 篇与文档区全部基建已实施完成；英文已交付入门 ×2（introduction、quick-start），其余英文页按"缺失即未翻译"规则暂缺（直接访问渲染占位页），对应 tasks 9.1-9.3 保持未完成。两项实施决策：(1) D6 回退生效——shadcn `Sidebar` 为 fixed 视口应用壳设计，与页面级布局整合成本过高，文档侧边栏改用 ScrollArea + Collapsible + Button 组合（sidebar.tsx/use-mobile.ts 未保留）；(2) 测试以文件系统级解析执行（bun test 不编译 MDX），frontmatter 构建期校验由 vite 管线在模块初始化时抛错实现。site:preview 深链与 base path 已冒烟通过；主题切换/移动端抽屉为代码走查，未做交互验证。
 
 ## Why
 

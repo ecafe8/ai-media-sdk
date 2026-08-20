@@ -1,0 +1,65 @@
+---
+title: 简介
+description: AI Media SDK 的架构总览：统一契约、Provider 工厂、模型实例与同步/异步两种生成模式。
+---
+
+# 简介
+
+AI Media SDK 统一图像与视频生成的调用契约：**一个入口，驱动多家 Provider**。你不需要为每家厂商学习一套私有 API——构造 Provider 工厂、取得模型实例、调用统一的生成函数，三步即可完成生成。
+
+## 架构总览
+
+调用模型固定为三层结构：
+
+```text
+统一契约（@ai-media/sdk）
+  └── Provider 工厂（createXxxProvider）
+        └── 模型实例（provider.image(...) / provider.video(...)）
+              └── 生成函数（generateImage / editImage / submitVideoTask ...）
+```
+
+```ts
+import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { generateImage } from "@ai-media/sdk";
+
+// 1. Provider 工厂：承载凭证与端点
+const provider = createAzureOpenAIProvider({
+  apiKey: "<your-api-key>",
+  endpoint: "https://<resource>.cognitiveservices.azure.com",
+  apiVersion: "2024-02-01",
+});
+
+// 2. 模型实例：绑定具体模型 id
+const model = provider.image("gpt-image-2");
+
+// 3. 生成函数：统一入口
+const result = await generateImage({ model, prompt: "江南小镇的清晨" });
+```
+
+核心包 `@ai-media/sdk` 只定义契约（请求/结果/任务/错误），**本身不访问任何 Provider API**，需要与具体 Provider 包搭配使用。
+
+## 同步与异步
+
+- **同步生成**：`generateImage` / `editImage` 直接返回结果，适合快速返回的图像 API（如 Azure OpenAI、Volcengine Seedream）。
+- **异步任务**：`submitImageTask` / `submitVideoTask` 提交后返回统一的 `TaskHandle`，在浏览器或 Node 中轮询至终态，适合耗时较长的生成（如阿里云视频、MiniMax 视频）。详见[视频生成](/docs/video-generation)。
+
+模型是否异步由其能力声明决定；对非异步模型调用 submit 会抛出错误。
+
+## 包家族
+
+| 包 | 职责 |
+| --- | --- |
+| `@ai-media/sdk` | Provider 无关的契约与任务抽象 |
+| `@ai-media/provider-azure-openai` | Azure OpenAI 图像生成 |
+| `@ai-media/provider-aliyun-bailian` | 阿里云百炼图像 + 视频 |
+| `@ai-media/provider-volcengine` | 火山方舟 Doubao-Seedream 图像 |
+| `@ai-media/provider-minimax` | MiniMax 海螺视频 |
+| `@ai-media/uploader` | Provider 输入文件的临时上传辅助 |
+
+各 Provider 的安装、配置与模型清单见 Providers 分组；上传辅助见 [uploader 参考](/docs/uploader)。
+
+## 与本站 Playground 的关系
+
+本站 [Playground](/playground) 直接使用本 SDK 在浏览器内调用各 Provider（API Key 保存在你的浏览器本地）。文档中的示例与 Playground 行为一致，可对照体验。
+
+> 本项目处于快速迭代期，API 可能变更，生产使用请锁定版本。

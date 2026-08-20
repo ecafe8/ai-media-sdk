@@ -1,0 +1,65 @@
+---
+title: Introduction
+description: Architecture overview of AI Media SDK — one contract, provider factories, model instances, and sync/async generation.
+---
+
+# Introduction
+
+AI Media SDK unifies the calling contract for image and video generation: **one entry point, driving multiple providers**. You don't learn a private API per vendor — build a provider factory, obtain a model instance, call a unified generation function. Three steps, done.
+
+## Architecture overview
+
+Every call follows the same three layers:
+
+```text
+Unified contract (@ai-media/sdk)
+  └── Provider factory (createXxxProvider)
+        └── Model instance (provider.image(...) / provider.video(...))
+              └── Generation function (generateImage / editImage / submitVideoTask ...)
+```
+
+```ts
+import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { generateImage } from "@ai-media/sdk";
+
+// 1. Provider factory: credentials and endpoint
+const provider = createAzureOpenAIProvider({
+  apiKey: "<your-api-key>",
+  endpoint: "https://<resource>.cognitiveservices.azure.com",
+  apiVersion: "2024-02-01",
+});
+
+// 2. Model instance: bound to a concrete model id
+const model = provider.image("gpt-image-2");
+
+// 3. Generation function: unified entry point
+const result = await generateImage({ model, prompt: "A quiet riverside town at sunrise" });
+```
+
+The core package `@ai-media/sdk` only defines contracts (request/result/task/error) and **never calls any provider API itself** — pair it with a concrete provider package.
+
+## Sync vs async
+
+- **Sync generation**: `generateImage` / `editImage` return results directly — for fast image APIs (Azure OpenAI, Volcengine Seedream).
+- **Async tasks**: `submitImageTask` / `submitVideoTask` return a unified `TaskHandle` that is polled to a terminal state — for long-running generation (Aliyun video, MiniMax video). See [Video generation](/docs/video-generation).
+
+Whether a model is async is declared by its capabilities; submitting to a non-async model throws.
+
+## Package family
+
+| Package | Responsibility |
+| --- | --- |
+| `@ai-media/sdk` | Provider-independent contracts and task abstractions |
+| `@ai-media/provider-azure-openai` | Azure OpenAI image generation |
+| `@ai-media/provider-aliyun-bailian` | Alibaba Bailian image + video |
+| `@ai-media/provider-volcengine` | Volcengine Ark Doubao-Seedream image |
+| `@ai-media/provider-minimax` | MiniMax Hailuo video |
+| `@ai-media/uploader` | Temporary upload helper for provider input files |
+
+Installation, configuration, and model lists live under the Providers group; the upload helper is covered in the [uploader reference](/docs/uploader).
+
+## Relation to the Playground on this site
+
+The site [Playground](/playground) calls each provider directly from your browser using this SDK (API keys stay in your browser's local storage). Examples in the docs match Playground behavior, so you can try them side by side.
+
+> This project iterates quickly and APIs may change — pin versions in production.

@@ -1,0 +1,66 @@
+---
+title: 图像生成与编辑
+description: generateImage 文生图、editImage 参考图编辑、参数预检行为与模型能力约束。
+---
+
+# 图像生成与编辑
+
+图像能力由两个统一入口提供：`generateImage`（文生图）与 `editImage`（基于参考图编辑）。
+
+## generateImage：文生图
+
+公共参数只有 `prompt`、`n`、`size`，其余一律走 `providerOptions`（见[公共参数](/docs/parameters)）：
+
+```ts
+import { generateImage } from "@ai-media/sdk";
+
+const result = await generateImage({
+  model: provider.image("<model-id>"),
+  prompt: "江南小镇的清晨，水彩画风格",
+  n: 1,
+  size: "1024x1024",
+  providerOptions: {
+    // provider 专属字段，键名为 provider 命名空间
+  },
+});
+```
+
+## editImage：参考图编辑
+
+基于 1 至多张参考图（URL 或 base64）做编辑，要求模型具备 `edit` 能力：
+
+```ts
+import { editImage } from "@ai-media/sdk";
+
+const result = await editImage({
+  model: provider.image("<model-id>"),
+  prompt: "把画面改成雪天",
+  images: [{ url: "https://example.com/input.png" }],
+});
+```
+
+参考图数量上限由模型能力的 `maxEditImages` 决定（未声明时默认 3）。对不支持编辑的模型调用会抛出 `NOT_IMPLEMENTED` 或 `INVALID_REQUEST`。
+
+## 参数预检
+
+请求参数会先按模型能力做**预检**，不合法时在任何网络请求之前抛出 `INVALID_REQUEST`：
+
+- `size` 是否在模型声明的支持列表 / 分辨率上限内；
+- `n` 是否超过模型的 `maxN`；
+- 是否传入了未知的公共字段（公共契约只认 `prompt`/`n`/`size`）。
+
+预检失败意味着请求根本没有发出，修正参数即可，无需处理 Provider 侧状态。
+
+## 编译期收窄
+
+选择**字面量模型 id** 时（如 `provider.image("gpt-image-2")`），请求参数会在编译期收窄为该模型接受的 `size`/`n`/`providerOptions` 形状；动态 id 走宽松重载，在运行时预检。
+
+## 输入文件从哪来
+
+本地文件需要先上传为 Provider 可接受的临时 URL，再作为 `images` 传入。见[文件上传](/docs/file-upload)。
+
+## 相关文档
+
+- [公共参数与 providerOptions](/docs/parameters)
+- [结果结构](/docs/results)
+- [错误处理](/docs/error-handling)

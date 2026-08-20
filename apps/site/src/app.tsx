@@ -17,6 +17,7 @@ import {
   isSupportedLang,
   storeLang,
 } from "@/lib/locale";
+import { DocsIndexPage, DocsPage, LegacyDocsRedirect } from "@/pages/docs";
 import { LandingPage } from "@/pages/landing";
 import { PlaygroundPage } from "@/pages/playground";
 
@@ -83,12 +84,16 @@ const router = createBrowserRouter(
   [
     { path: "/", element: <RootRedirect /> },
     { path: "/playground", element: <LegacyPlaygroundRedirect /> },
+    { path: "/docs", element: <LegacyDocsRedirect /> },
+    { path: "/docs/*", element: <LegacyDocsRedirect /> },
     {
       path: "/:lang",
       element: <LangLayout />,
       children: [
         { index: true, element: <LandingPage /> },
         { path: "playground", element: <PlaygroundPage /> },
+        { path: "docs", element: <DocsIndexPage /> },
+        { path: "docs/*", element: <DocsPage /> },
       ],
     },
     { path: "*", element: <RootRedirect /> },

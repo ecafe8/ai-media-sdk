@@ -1,0 +1,71 @@
+---
+title: 视频生成与异步任务
+description: submitVideoTask / submitImageTask 提交异步任务，TaskHandle 轮询至终态，视频输入模式说明。
+---
+
+# 视频生成与异步任务
+
+异步模型（能力声明含 `async`）使用 `submitImageTask` / `submitVideoTask` 提交，返回统一的 `TaskHandle`；视频生成目前全部为异步任务。
+
+## 提交与等待
+
+```ts
+import { submitImageTask, submitVideoTask } from "@ai-media/sdk";
+
+// 异步图像任务
+const imageTask = await submitImageTask({
+  model: provider.image("<async-image-model>"),
+  prompt: "江南小镇的清晨，水彩画风格",
+  n: 1,
+  size: "1K",
+});
+const imageResult = await imageTask.wait();
+
+// 视频任务
+const videoTask = await submitVideoTask({
+  model: provider.video("<video-model>"),
+  prompt: "镜头缓缓推进",
+  providerOptions: {
+    // provider 专属视频参数，见各 Provider 页
+  },
+});
+const videoResult = await videoTask.wait({
+  pollIntervalMs: 15_000, // 默认 15s
+  timeoutMs: 600_000, // 默认 600s
+  signal: abortController.signal, // 可选，轮询间隙响应中止
+});
+```
+
+对非异步模型调用 submit 会被拒绝。
+
+## TaskHandle
+
+| 字段/方法 | 说明 |
+| --- | --- |
+| `taskId` | Provider 侧任务 ID |
+| `status` | `pending` / `running` / `succeeded` / `failed` / `cancelled` |
+| `result` / `error` | 到达终态后分别携带最终结果或错误 |
+| `wait(options?)` | 轮询至终态：成功返回 `GenerationResult`，失败/取消抛出 `SdkError` |
+
+`wait()` 的选项（`TaskWaitOptions`）：
+
+- `pollIntervalMs`：轮询间隔，覆盖 handle 默认值。
+- `timeoutMs`：总超时，超时抛出 `SdkError`（`TIMEOUT`）。
+- `signal`：`AbortSignal`，在轮询间隙响应中止。
+
+## 视频输入模式
+
+视频请求按模式携带媒体字段，具体允许哪些输入由模型与 Provider 决定：
+
+| 模式 | 输入 | 说明 |
+| --- | --- | --- |
+| 文生视频（t2v） | 仅 `prompt` | 无需媒体输入 |
+| 首帧图生视频（i2v） | `firstFrame` | 首帧图片；MiniMax 另支持 `lastFrame` 尾帧组合 |
+| 参考生视频（r2v） | `referenceImages` / `referenceVideos` / `referenceAudios` | 有序参考媒体，图像在 prompt 中以 `[Image N]` 指代（MiniMax 支持图/视频/音频参考） |
+| 视频编辑 | `inputVideo` | 源视频公网 URL，可附参考图 |
+
+各模型支持的场景、参考图上限与参数差异见对应 Provider 页（[阿里云百炼](/docs/providers/aliyun-bailian)、[MiniMax](/docs/providers/minimax)）。
+
+## 结果
+
+视频结果为 `GenerationResult<VideoContent[]>`：`url`（下载链接，默认 MP4）、可选 `base64`、`duration`（秒）与宽高。结果 URL 通常是临时的，请及时持久化，见[结果结构](/docs/results)。

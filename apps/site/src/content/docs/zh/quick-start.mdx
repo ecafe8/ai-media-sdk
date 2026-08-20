@@ -1,0 +1,59 @@
+---
+title: 快速开始
+description: 安装 AI Media SDK，十行代码完成第一次图像生成。
+---
+
+# 快速开始
+
+本页带你用最小代码跑通一次图像生成。
+
+## 安装
+
+SDK 与 Provider 包分开安装——核心契约包本身不访问任何 Provider API：
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-azure-openai
+```
+
+运行时要求：**Node.js >= 20**（或 Bun），ESM-only。所有配置均以参数对象传入，无环境变量依赖。
+
+## 最小示例
+
+```ts
+import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { generateImage } from "@ai-media/sdk";
+
+const provider = createAzureOpenAIProvider({
+  apiKey: "<your-api-key>",
+  endpoint: "https://<resource>.cognitiveservices.azure.com",
+  apiVersion: "2024-02-01",
+});
+
+const result = await generateImage({
+  model: provider.image("gpt-image-2"),
+  prompt: "A quiet riverside town at sunrise",
+  n: 1,
+  size: "1024x1024",
+});
+
+for (const image of result.content) {
+  console.log(image.url ?? "(base64)");
+}
+```
+
+## 读取结果
+
+`result` 是 `GenerationResult<ImageContent[]>`：
+
+- `content`：`ImageContent[]`，每项含 `url` 或 `base64`、`mimeType`、宽高。
+- `provider` / `model`：实际执行的 Provider 与模型 id。
+- `requestId` / `createdAt`：Provider 侧请求标识与时间（如提供）。
+
+> Provider 返回的结果 URL 通常是**临时的**，请及时下载持久化。详见[结果结构](/docs/results)。
+
+## 下一步
+
+- 换用其他 Provider：见 Providers 分组（阿里云百炼、火山方舟、MiniMax）。
+- 图像编辑与参数细节：[图像生成与编辑](/docs/image-generation)。
+- 视频与异步任务：[视频生成](/docs/video-generation)。
+- 失败排查：[错误处理](/docs/error-handling)。

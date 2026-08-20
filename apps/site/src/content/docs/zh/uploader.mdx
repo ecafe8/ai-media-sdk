@@ -1,0 +1,112 @@
+---
+title: Uploader 参考
+description: '@ai-media/uploader 包参考：子路径导出、两个上传工厂的完整配置、UploadedFile 与 UploaderError。'
+---
+
+# Uploader 参考
+
+`@ai-media/uploader` 将本地文件或字节流上传为 Provider 可接受的临时 URL，供图像/视频生成调用引用。上传工作流与集成示例见[文件上传](/docs/file-upload)。
+
+> **定位**：开发/测试便利工具。各平台临时 URL 均有有效期与配额限制，生产环境请使用自有持久存储。
+
+## 安装与运行时
+
+```bash
+npm install @ai-media/uploader
+```
+
+Node.js >= 20（或 Bun），ESM-only。上传实现依赖 Node 内置模块读取本地文件，适用于服务端环境。
+
+## 子路径导出
+
+| 导入路径 | 内容 |
+| --- | --- |
+| `@ai-media/uploader` | 通用类型与错误（同 `./core`） |
+| `@ai-media/uploader/core` | `UploadedFile`、`UploaderOptions`、`UploaderError`、`UPLOADER_ERROR_CODES` |
+| `@ai-media/uploader/aliyun` | `createAliyunUploader` — DashScope 临时文件上传 |
+| `@ai-media/uploader/google` | `createGoogleUploader` — Gemini Files API 上传与生命周期 |
+
+## createAliyunUploader（DashScope）
+
+三步流程：获取上传凭证 → OSS 直传 → 返回 `oss://` URL。
+
+| 配置字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | 是 | DashScope API key |
+| `baseUrl` | `string` | 否 | 默认 `https://dashscope.aliyuncs.com` |
+| `timeoutMs` | `number` | 否 | 默认 30_000 |
+
+`upload()` 参数：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `model` | `string` | 是 | DashScope 将文件绑定到模型，必须与下游生成调用的模型一致 |
+| `filePath` | `string` | 二选一 | 本地文件路径 |
+| `fileBytes` + `fileName` | `Uint8Array` + `string` | 二选一 | 内存字节 |
+
+限制：凭证接口每账号 + 模型 100 QPS；临时 URL **48 小时过期**。返回的 `requiresHeaders` 声明了下游调用需要的 `X-DashScope-OssResourceResolve: enable` 请求头（`@ai-media/provider-aliyun-bailian` 会自动注入）。
+
+## createGoogleUploader（Gemini Files API）
+
+可续传协议上传，返回标准 `https://` URL，并提供文件生命周期管理。
+
+| 配置字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | 是 | Gemini API key |
+| `baseUrl` | `string` | 否 | 默认 `https://generativelanguage.googleapis.com` |
+
+`upload()` 参数：`filePath`，或 `fileBytes` + `fileName` + `mimeType`（fileBytes 时 `mimeType` 必填）；可选 `displayName`。
+
+生命周期方法：
+
+```ts
+const meta = await uploader.get(uploaded.name); // 查询
+for await (const file of uploader.list()) {
+  console.log(file.name, file.state); // PROCESSING / ACTIVE / FAILED
+}
+await uploader.delete(uploaded.name); // 删除
+```
+
+限制：单文件最大 2GB，单项目存储上限 20GB，文件 48 小时自动过期。
+
+## UploadedFile
+
+所有上传结果的通用形状：
+
+```ts
+interface UploadedFile {
+  url: string; // 传给模型的临时 URL
+  mimeType?: string;
+  sizeBytes?: number;
+  expiresAt?: Date; // 平台声明的过期时间
+  requiresHeaders?: Record<string, string>; // 下游调用需携带的请求头
+}
+```
+
+## UploaderError
+
+失败统一抛出 `UploaderError`，携带稳定 `code` 与上游 `statusCode`（如适用）：
+
+| code | 含义 |
+| --- | --- |
+| `INVALID_REQUEST` | 请求参数非法 |
+| `POLICY_ERROR` | 平台策略拒绝（大小/类型/配额） |
+| `UPLOAD_ERROR` | 上传过程失败 |
+| `RATE_LIMITED` | 触发限流 |
+| `NOT_FOUND` | 资源不存在（get/delete） |
+| `INVALID_RESPONSE` | 平台响应无法解析 |
+| `UNKNOWN` | 未分类错误 |
+
+```ts
+import { UploaderError } from "@ai-media/uploader";
+
+try {
+  await uploader.upload({ model: "qwen-image-2.0-pro", filePath: "./input.png" });
+} catch (error) {
+  if (error instanceof UploaderError) {
+    console.error(error.code, error.message);
+  }
+}
+```
+
+生成调用本身的错误（`SdkError`）见[错误处理](/docs/error-handling)。

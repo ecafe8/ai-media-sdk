@@ -1,0 +1,78 @@
+---
+title: 阿里云百炼
+description: 阿里云百炼（DashScope）Provider：图像与视频模型、providerOptions.aliyun、oss:// 输入与异步任务。
+---
+
+import { ProviderModelTable } from "@/components/docs/provider-model-table";
+
+# 阿里云百炼
+
+## 概览
+
+`@ai-media/provider-aliyun-bailian` 基于原生 `fetch` 直调 DashScope REST API，覆盖**图像（同步 + 异步）与视频（异步）**两类能力。
+
+## 安装
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-aliyun-bailian
+```
+
+## 配置
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | 是 | DashScope API key，作为 `Authorization: Bearer` 凭据发送 |
+| `baseUrl` | `string` | 是 | DashScope API base。工作空间端点形如 `https://<WorkspaceId>.cn-beijing.maas.aliyuncs.com/api/v1`；浏览器直连受 CORS 限制时可改用标准端点 `https://dashscope.aliyuncs.com/api/v1` |
+
+## 快速开始
+
+```ts
+import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
+import { generateImage } from "@ai-media/sdk";
+
+const provider = createAliyunBailianProvider({
+  apiKey: "<your-dashscope-api-key>",
+  baseUrl: "https://dashscope.aliyuncs.com/api/v1",
+});
+
+const result = await generateImage({
+  model: provider.image("qwen-image-2.0-pro"),
+  prompt: "江南小镇的清晨，水彩画风格",
+  n: 1,
+  size: "1328*1328",
+});
+```
+
+## 模型列表
+
+<ProviderModelTable provider="aliyun-bailian" />
+
+图像模型覆盖 Qwen Image（生成 + 编辑）与 Wan 系列（生成）；视频模型覆盖 HappyHorse（文生/首帧图生/参考生/视频编辑）与 Wan 2.6 文生视频。异步模型通过 `submitImageTask` / `submitVideoTask` 提交，见[视频生成与异步任务](/docs/video-generation)。
+
+## providerOptions.aliyun
+
+阿里云专属字段放在 `providerOptions.aliyun` 命名空间下。图像字段是否转发由模型的参数支持声明决定（Qwen 家族与 Wan 2.7 各有允许清单）：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `negative_prompt` | `string` | 负向提示词 |
+| `prompt_extend` | `boolean` | 提示词智能扩写（API 默认开启） |
+| `prompt_extend_mode` | `"direct" \| "agent"` | 扩写策略，`agent` 仅文生图 |
+| `watermark` | `boolean` | 是否加水印（默认 false） |
+| `seed` | `number` | 随机种子 `[0, 2147483647]` |
+| `thinking_mode` | `boolean` | Wan 2.7 推理模式（组图关闭且无图输入时） |
+| `color_palette` | `AliyunColorPaletteEntry[]` | Wan 2.7 自定义色调（3-10 条） |
+| `enable_sequential` | `boolean` | Wan 2.7 组图（多图）模式 |
+| `bbox_list` | `AliyunBbox[][]` | Wan 2.7 交互编辑包围盒 |
+
+视频参数（resolution/ratio/duration/audio_setting 等）按模型与模式有允许清单限制，详见各视频模型说明。
+
+## oss:// 输入与本地文件
+
+配合 `@ai-media/uploader` 的 Aliyun 链路，本地文件可上传为 `oss://` 临时 URL 作为编辑/视频输入。适配器检测到 `oss://` URL 会**自动注入** `X-DashScope-OssResourceResolve: enable` 请求头，无需手动处理。上传流程见[文件上传](/docs/file-upload)。
+
+## 限制与差异
+
+- 视频生成全部为异步任务，需在浏览器/服务端轮询 `TaskHandle`。
+- 生成结果 URL 为临时链接，请及时持久化，见[结果结构](/docs/results)。
+- 错误处理统一为 `SdkError`，见[错误处理](/docs/error-handling)。

@@ -1,0 +1,106 @@
+---
+title: Azure OpenAI
+description: Azure OpenAI 图像生成 Provider：配置、模型、providerOptions.azure 与自定义 deployment 注册。
+---
+
+import { ProviderModelTable } from "@/components/docs/provider-model-table";
+
+# Azure OpenAI
+
+## 概览
+
+`@ai-media/provider-azure-openai` 基于原生 `fetch` 调用 Azure OpenAI 图像 API（**同步**），不依赖 OpenAI 官方 SDK。支持生成，不支持编辑与异步任务。
+
+## 安装
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-azure-openai
+```
+
+## 配置
+
+通过 `createAzureOpenAIProvider(config)` 传入配置对象：
+
+| 字段 | 类型 | 必填 | 说明 |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | 是 | API key，作为 `Authorization: Bearer` 凭据发送 |
+| `endpoint` | `string` | 是 | Azure 资源 endpoint，如 `https://<resource>.cognitiveservices.azure.com` |
+| `apiVersion` | `string` | 是 | Azure OpenAI API 版本，如 `2024-02-01` |
+
+## 快速开始
+
+```ts
+import { createAzureOpenAIProvider } from "@ai-media/provider-azure-openai";
+import { generateImage } from "@ai-media/sdk";
+
+const provider = createAzureOpenAIProvider({
+  apiKey: "<your-api-key>",
+  endpoint: "https://<resource>.cognitiveservices.azure.com",
+  apiVersion: "2024-02-01",
+});
+
+const result = await generateImage({
+  model: provider.image("gpt-image-2"),
+  prompt: "A quiet riverside town at sunrise",
+  n: 1,
+  size: "1024x1024",
+});
+```
+
+## 模型列表
+
+<ProviderModelTable provider="azure-openai" />
+
+Azure 的 deployment 名称在 Azure Portal 中由用户自定义，无法全局枚举。注册表只内置已实测确认的 `gpt-image-2`（Serverless Global Standard）；其他 deployment 需要运行时注册：
+
+```ts
+import { createAzureModel } from "@ai-media/provider-azure-openai";
+
+// 方式一：包级函数
+const model = createAzureModel(provider, "my-custom-deployment", {
+  modality: "image",
+  generate: true,
+  edit: false,
+});
+
+// 方式二：实例方法（等价）
+const model2 = provider.createModel("my-custom-deployment");
+
+const result = await generateImage({ model, prompt: "..." });
+```
+
+未提供能力元数据的自定义 deployment 不声明 size/n 约束，参数原样透传。未注册 deployment 调用 `provider.image()` 抛出 `UNKNOWN_MODEL`。列出注册表中的模型：
+
+```ts
+for (const model of provider.listModels()) {
+  console.log(model.id, model.capabilities);
+}
+```
+
+## providerOptions.azure
+
+Azure 专属字段放在 `providerOptions.azure` 命名空间下（类型 `AzureImageProviderOptions`）：
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `quality` | `string` | 质量提示，如 `low` / `high` |
+| `output_format` | `string` | 输出格式，如 `png` / `jpeg` |
+| `output_compression` | `number` | 压缩级别 0-100（格式支持时） |
+
+```ts
+const result = await generateImage({
+  model: provider.image("gpt-image-2"),
+  prompt: "A quiet riverside town at sunrise",
+  size: "1024x1024",
+  providerOptions: {
+    azure: { quality: "high", output_format: "png" },
+  },
+});
+```
+
+## 限制与差异
+
+- 仅支持同步图像生成；`editImage` 抛出 `NOT_IMPLEMENTED`。
+- 不支持异步任务（`submitImageTask` 对该 Provider 不可用）。
+- `gpt-image-2` 每次调用固定返回 1 张图（`n` 上限为 1）。
+- 错误处理统一为 `SdkError`，见[错误处理](/docs/error-handling)。

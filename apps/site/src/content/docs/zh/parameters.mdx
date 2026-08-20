@@ -1,0 +1,60 @@
+---
+title: 公共参数与 providerOptions
+description: prompt/n/size 三个公共参数、size 的两种形态，以及 providerOptions 命名空间规则。
+---
+
+# 公共参数与 providerOptions
+
+所有生成请求共享同一套公共契约，Provider 专属能力通过命名空间隔离。
+
+## 公共参数
+
+公共契约只包含三个参数：
+
+| 参数 | 说明 |
+| --- | --- |
+| `prompt` | 必填，非空 |
+| `n` | 输出数量，正整数，受模型 `maxN` 约束 |
+| `size` | 输出尺寸，两种形态（见下） |
+
+传入未知公共字段会被预检拒绝（`INVALID_REQUEST`）——公共契约不认识的字段一律不合法。
+
+## size 的两种形态
+
+- **像素形式**：`"WxH"`，如 `"1024x1024"`；也接受 `X`/`*` 分隔（如 `"1024X1024"`、`"1024*1024"`）。
+- **档位形式**：如 `"1K"`、`"2K"`、`"4K"`，以各模型声明为准。
+
+模型如何约束 `size` 由能力声明决定：
+
+- `supportedSizes`：封闭集合，只接受列表内的值（如 Azure `gpt-image-2` 的 `1024x1024` / `1024x1536` / `1536x1024` / `auto`）。
+- `maxResolution`：像素上限，像素形式的 `size` 不得超过（如阿里云 Qwen 的 2048x2048）。
+- 两者都声明时（如 Seedream、Wan），命中列表优先，否则按像素形式 + 上限校验。
+
+辅助构造函数：
+
+```ts
+import { pixelSize, tierSize } from "@ai-media/sdk";
+
+pixelSize(1024, 1536); // "1024x1536"
+tierSize("2K"); // "2K"
+```
+
+## providerOptions 命名空间
+
+其他一切 Provider 专属字段必须放在 `providerOptions.<provider>` 命名空间下，由各 Provider 包定义类型：
+
+```ts
+const result = await generateImage({
+  model: provider.image("<model-id>"),
+  prompt: "...",
+  providerOptions: {
+    azure: { quality: "high" }, // 或 aliyun / volcengine / minimax
+  },
+});
+```
+
+各命名空间的完整字段表见对应 Provider 页。字段是否生效由模型的参数支持声明决定——未声明支持的字段不会被转发（或按 Provider 规则拒绝）。
+
+## 编译期收窄
+
+字面量模型 id（`provider.image("gpt-image-2")`）会让 TypeScript 将 `size`/`n`/`providerOptions` 收窄为该模型的精确形状；动态 id 走宽松重载，由运行时预检兜底。

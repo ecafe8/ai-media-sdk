@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { PageContainer } from "@/components/layout/page-container";
+import { usePageMetadata } from "@/lib/docs/page-metadata";
 import { PROVIDER_LABELS } from "@/lib/key-store";
 import { useModelText } from "@/lib/model-text";
 import { SITE_MODELS } from "@/lib/playground/registry";
@@ -20,6 +21,12 @@ const REPO_URL = "https://github.com/ecafe8/ai-media-sdk";
  */
 export function LandingPage() {
   const { t } = useTranslation();
+
+  usePageMetadata({
+    title: t("meta.title"),
+    description: t("landing.heroDescription"),
+    suffixSiteName: false,
+  });
 
   return (
     <main className="min-h-svh bg-muted/40 text-foreground">
@@ -38,6 +45,12 @@ export function LandingPage() {
                 dark: t("theme.dark"),
               }}
             />
+            <Link
+              to="docs"
+              className="hidden items-center rounded-lg border border-border bg-card px-3.5 py-2 font-medium text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 sm:inline-flex dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
+            >
+              {t("landing.navDocs")}
+            </Link>
             <a
               href={REPO_URL}
               target="_blank"
@@ -77,14 +90,12 @@ export function LandingPage() {
               {t("landing.tryNow")}
               <ArrowRight className="size-4" />
             </Link>
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              to="docs"
               className="rounded-lg border border-border bg-card px-5 py-2.5 font-medium text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
             >
               {t("landing.viewDocs")}
-            </a>
+            </Link>
           </div>
         </PageContainer>
       </section>

@@ -1,6 +1,12 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import mdx from "@mdx-js/rollup";
 import react from "@vitejs/plugin-react";
+import rehypePrettyCode from "rehype-pretty-code";
+import rehypeSlug from "rehype-slug";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import { defineConfig } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,7 +46,31 @@ export default defineConfig(({ command, mode }) => {
 
   return {
     base,
-    plugins: [react()],
+    plugins: [
+      {
+        enforce: "pre",
+        ...mdx({
+          include: /src\/content\/docs\/.*\.(md|mdx)$/,
+          remarkPlugins: [
+            remarkGfm,
+            remarkFrontmatter,
+            [remarkMdxFrontmatter, { name: "frontmatter" }],
+          ],
+          rehypePlugins: [
+            rehypeSlug,
+            [
+              rehypePrettyCode,
+              {
+                theme: { light: "github-light", dark: "github-dark" },
+                langs: ["ts", "tsx", "bash", "json", "yaml"],
+                grid: false,
+              },
+            ],
+          ],
+        }),
+      },
+      react({ include: /\.(jsx|js|mdx|md|tsx|ts)$/ }),
+    ],
     resolve: {
       alias: [
         { find: "@", replacement: srcDir },
