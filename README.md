@@ -1,5 +1,9 @@
 # AI Media SDK
 
+[![npm version](https://img.shields.io/npm/v/@ai-media/sdk.svg)](https://www.npmjs.com/package/@ai-media/sdk)
+[![npm downloads](https://img.shields.io/npm/dm/@ai-media/sdk.svg)](https://www.npmjs.com/package/@ai-media/sdk)
+[![License](https://img.shields.io/npm/l/@ai-media/sdk.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/ai-media-sdk/LICENSE)
+
 多 Provider 多模态生成 SDK（图像 + 视频）。统一的 Provider 工厂、模型实例与任务抽象，屏蔽各平台在认证、同步/异步流程、输入输出格式和错误语义上的差异。基于 Bun + Turborepo monorepo 开发。
 
 > **项目状态**
