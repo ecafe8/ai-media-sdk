@@ -9,11 +9,11 @@
 ## What Changes
 
 - 在 `apps/site` 新增双语文档区：路由 `/:lang/docs/*`，MDX 渲染管线（`@mdx-js/rollup` + remark/rehype 插件），兼容现有 GitHub Pages base path 与 `404.html` SPA 深链回退。
-- **frontmatter 自动化**：MDX frontmatter（title/description/order/draft）经构建期插件解析为模块导出，自动注入 `document.title` 与 `<meta name="description">`；manifest 只维护导航结构，不重复维护标题。
-- **双语文档**：`content/docs/{zh,en}/` 双目录，每语言独立 manifest；构建期校验双语 slug 一致性。
+- **frontmatter 自动化**：MDX frontmatter（title/description/draft）经构建期插件解析为模块导出，自动注入 `document.title` 与 `<meta name="description">`；分组与顺序由单一语言无关 manifest 维护，manifest 不重复维护标题。
+- **双语文档**：`content/docs/{zh,en}/` 双目录，共享一份 manifest；未完成的英文页保留文件并标记 `draft: true`（结构完整性由文件存在性保证），构建期校验双语文件完整性。
 - 文档内容每语言 15 篇：入门（introduction、quick-start）、指南（image-generation、video-generation、parameters、results、error-handling、file-upload）、Provider 参考（azure-openai、aliyun-bailian、volcengine、minimax，统一七段式模板）、uploader、FAQ、API 参考。
 - **手写 API 参考**（每语言各 1 篇 `api-reference`）：覆盖核心公共导出（generateImage/editImage/submitImageTask/submitVideoTask/TaskHandle/GenerationResult/SdkError 等），TypeDoc/API Extractor 自动生成拆为未来独立 change。
-- Provider 页模型表与能力徽章为数据驱动：MDX 组件直接 import 各 Provider 包的模型注册表常量（`AZURE_MODEL_REGISTRY` 等），与落地页 `SITE_MODELS` 同源。
+- Provider 页模型表与能力徽章为数据驱动：从各 Provider 包的模型注册表导出（如 `AZURE_MODEL_REGISTRY`，各包 entry 结构异构）经文档模型投影层归一化后渲染，与落地页 `SITE_MODELS` 同源。
 - 文档布局使用 shadcn 组件（Sidebar/Sheet/ScrollArea/Separator/Alert/Badge/Table/Button），缺失组件经 shadcn CLI 安装到 `packages/ui`。
 - 错误码表单一事实源：`SdkError` 在 error-handling 页、`UploaderError` 在 uploader 页。
 - 落地页导航联动：header 增加"文档"入口，hero"查看文档"按钮由 GitHub 链接改为指向 `/:lang/docs`。

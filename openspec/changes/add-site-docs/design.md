@@ -24,7 +24,7 @@
 
 ### D1: MDX 渲染管线
 
-`@mdx-js/rollup` 以 `enforce: "pre"` 挂接（先于 `@vitejs/plugin-react`，MDX 官方 Vite 集成要求），插件链：`remark-frontmatter` + `remark-mdx-frontmatter`（frontmatter → 模块导出）+ `remark-gfm`（表格/删除线）+ `rehype-slug`（标题锚点）+ `rehype-pretty-code`（shiki 高亮，见 D8）。`include` 仅匹配 `src/content/docs/**/*.{md,mdx}`。devDependencies 新增 `@types/mdx`；`vite-env.d.ts` 声明 `*.mdx` 模块为 `{ default: ComponentType; frontmatter: DocFrontmatter }`。
+`@mdx-js/rollup` 以 `enforce: "pre"` 挂接（先于 `@vitejs/plugin-react`，MDX 官方 Vite 集成要求），插件链：`remark-frontmatter` + `remark-mdx-frontmatter`（frontmatter → 模块导出）+ `remark-gfm`（表格/删除线）+ `rehype-slug`（标题锚点）+ `rehype-pretty-code`（shiki 高亮，见 D8）。`include` 仅匹配 `src/content/docs/**/*.{md,mdx}`。devDependencies 新增 `@types/mdx`；`vite-env.d.ts` 声明 `*.mdx` 模块为 `{ default: ComponentType; frontmatter?: unknown }`——frontmatter 的运行时形状不信任编译期声明，由内容加载器用 zod 解析为 `DocFrontmatter`（见 D3）。
 
 - **备选**：运行时 `gray-matter` 解析——违背构建期编译原则且增加运行时成本，否决。
 
@@ -45,10 +45,20 @@ apps/site/src/content/docs/
 - manifest 只有一份（语言无关的分组 + slug + 顺序），分组标题经 i18n（`locales/*.json` 的 `docs.groups.*`）解析——双语结构一致性由构造保证，测试只需校验文件层面。
 - **备选**：每语言独立 manifest——需额外测试对齐两份结构，且无实际收益（文档结构不应按语言分化），否决。
 - slug 由文件路径派生（相对语言目录去扩展名），frontmatter 不声明 slug，杜绝路径/slug 不一致。
+- **draft 机制（文件级）**：未完成的英文页保留文件并置 `draft: true`——结构一致性由文件存在性保证（测试对 zh/en 文件集合做双向比对，draft 文件同样计入），draft 页排除出侧边栏与翻页导航，直接访问渲染"翻译进行中"占位页（文案走 i18n）。不采用"manifest 记录 draftLanguages"方案：那会让结构事实源与文件状态两处维护。
 
 ### D3: frontmatter schema 与校验
 
-frontmatter 字段：`title`（必填）、`description`（必填）、`order`（必填，数字）、`draft`（可选，布尔）。`remark-mdx-frontmatter` 将其编译为 `export const frontmatter`；内容加载器（`lib/docs/content-loader/`）以 `import.meta.glob` eager 收集各语言文档模块，加载时用 zod schema 校验全部 frontmatter（测试中执行，构建产物亦在模块初始化时校验）。校验失败指明文档路径与缺失字段。
+frontmatter 字段：`title`（必填，字符串）、`description`（必填，字符串）、`draft`（可选，布尔）。**分组与顺序不在 frontmatter 维护**——由 manifest 单一持有（D2），避免两处排序来源漂移。示例：
+
+```yaml
+---
+title: 快速开始
+description: 使用 AI Media SDK 完成首次图像生成
+---
+```
+
+`remark-mdx-frontmatter` 将其编译为 `export const frontmatter`；内容加载器（`lib/docs/content-loader/`）以 `import.meta.glob` eager 收集各语言文档模块，加载时用 zod schema 解析模块的 `frontmatter`（`unknown` → `DocFrontmatter`）。校验失败指明文档路径与缺失字段；测试中显式执行全量校验。
 
 ### D4: 元数据注入与标题协调
 
@@ -64,20 +74,25 @@ frontmatter 字段：`title`（必填）、`description`（必填）、`order`�
 /docs、/docs/*         → 历史兼容重定向到访客语言对应路径（同 LegacyPlaygroundRedirect 模式）
 ```
 
-`DocsPage` 用 `useSiteLang()` 决定加载 zh/en 文档集合；语言切换即切换文档内容（无跨语言 slug 迁移问题，slug 双语一致）。
+`DocsPage` 以路由参数 `:lang`（经 `LangLayout` 同款校验）为权威语言来源加载 zh/en 文档集合，不使用 `useSiteLang()`——后者读 i18n 实例状态，而 `LangLayout` 的 `i18n.changeLanguage()` 是 effect，URL 与 i18n 状态之间存在不同步窗口；`useSiteLang()` 仅保留给无路由上下文的场景。语言切换即切换文档内容（slug 双语一致，切换保持当前 slug）。
 
 ### D6: 布局与 shadcn 组件
 
 经 shadcn CLI 从 `packages/ui`（或任一配置了 components.json 的工作区）安装缺失组件：`sidebar`、`collapsible`、`breadcrumb`（`sheet` 随 sidebar 依赖带入）。文档布局为应用内组件（`apps/site/src/components/docs/`，不进 `packages/ui`）：
 
-- `docs-layout/`：shadcn `Sidebar`（SidebarProvider 作用域限定在文档区）承载分组导航（`SidebarGroup`/`SidebarMenu` + `Collapsible`），移动端用其内建 Sheet 行为；文章区 `article` 语义标签 + 手写 prose 排版样式（不引入 `@tailwindcss/typography`）；右侧 TOC（`ScrollArea`）窄屏隐藏；底部上一篇/下一篇（`Button`）；面包屑（`Breadcrumb`）。
-- MDX 元素映射（`mdx-components/`）：`table`→shadcn `Table` 组合、提示块→`Alert`、徽章→`Badge`、代码块→自定义 `code-block/`（见 D8）、链接→区分站内/外链（外链加图标与 `target`）。
-- 文档区 NotFound 用 shadcn `Empty`（若 CLI 无此组件则用 `Card` + `Button` 组合，不新建自定义共享组件）。
+- `docs-layout/`：shadcn `Sidebar`（SidebarProvider 作用域限定在文档区）承载分组导航（`SidebarGroup`/`SidebarMenu` + `Collapsible`），移动端用其内建 Sheet 行为；文章区 `article` 语义标签 + 手写 prose 排版样式（不引入 `@tailwindcss/typography`）；右侧 TOC（`ScrollArea`）窄屏隐藏；底部上一篇/下一篇（`Button`）；面包屑（`Breadcrumb`）。滚动行为：slug 变化滚动到文章顶部，hash 导航定位标题（`DocsPage` 以 `useEffect` 依赖 `slug`/`hash` 实现）。
+- MDX 元素映射（`mdx-components/`）：`table`→shadcn `Table` 组合、提示块→`Alert`、徽章→`Badge`、代码块→自定义 `code-block/`（见 D8）、链接→`DocLink`：站内链接经 `buildDocPath(lang, slug)` 生成（携带当前语言段，禁止正文硬编码 `/docs/...`），外链 `target="_blank"` + `rel="noreferrer"` 并加图标。
+- 文档区 NotFound 用 shadcn `Empty`（若 CLI 无此组件则用 `Card` + `Button` 组合，不新建自定义共享组件）；draft 页"翻译进行中"占位同样复用 `Card`/`Alert` 组合。
 - **回退判据**：若 shadcn `Sidebar` 与 SPA 页面级布局整合成本过高（其设计面向应用壳），降级为 `ScrollArea` + `Collapsible` + `Button` 组合的自绘侧边栏（仍是 shadcn 组件组合），并在 tasks 中记录决策。
 
-### D7: 数据驱动组件
+### D7: 数据驱动组件（模型投影层）
 
-`components/docs/provider-model-table/`：props 接收注册表常量（`AZURE_MODEL_REGISTRY` 等），渲染模型表（id/label/能力徽章/size/maxN/maxEditImages/maxResolution）；`capability-badges/`：能力徽章（生成/编辑/视频/异步），语义与落地页 `capabilityBadges` 对齐。文档组件直接 import 注册表常量（vite alias 已指向各包源码），与 `SITE_MODELS` 同源。`callout/` 不单独新建——MDX 映射直接用 `Alert`。
+各 Provider 注册表导出与 entry 结构**异构**：`AZURE_MODEL_REGISTRY`/`ALIYUN_MODEL_REGISTRY`/`VOLCENGINE_MODEL_REGISTRY`/`MINIMAX_MODEL_REGISTRY` 为 `Record<ModelId, <Provider>ModelEntry>`（各包另有 camelCase 的 `ModelRegistry` 投影导出），entry 字段各不相同（如 MiniMax 有 `supportedResolutions`/`maxReferenceImages` 而无 `supportedSizes`；Volcengine 有 `outputFormats`）。因此：
+
+- `lib/docs/model-projection/`：适配层，将各 Provider entry 映射为统一 `DocModel` 形状（id/label/能力/size 约束/maxN/maxEditImages/maxResolution 等通用字段，通用字段缺失则为空）；人类可读 label 复用落地页 `MODEL_LABELS` 语义来源。
+- `components/docs/provider-model-table/`：基于投影结果渲染通用列；Provider 专属字段经各 Provider 的专属渲染器（同组件目录下的 per-provider 扩展）在对应 Provider 页展示。
+- `components/docs/capability-badges/`：能力徽章（生成/编辑/视频/异步），语义与落地页 `capabilityBadges` 对齐。
+- `callout/` 不单独新建——MDX 映射直接用 `Alert`。
 
 ### D8: 代码高亮与代码块
 
@@ -89,7 +104,7 @@ frontmatter 字段：`title`（必填）、`description`（必填）、`order`�
 
 - `SdkError` 错误码表只在 `error-handling.mdx` 维护；`UploaderError` 错误码表只在 `uploader.mdx` 维护；其余页面链接引用。
 - file-upload（指南视角：工作流 + 与 `editImage` 集成示例）与 uploader（包参考视角：子路径导出/配置表/`UploadedFile`/错误码/配额）互链。
-- 手写内容从 README 改写扩展；分歧以源码行为为准。英文文档由中文源文档人工翻译审校，不机翻占位；未完成的英文页以 `draft: true` 排除出导航。
+- 手写内容从 README 改写扩展；分歧以源码行为为准。英文文档由中文源文档人工翻译审校，不机翻占位；未完成的英文页保留文件并置 `draft: true`（文件级 draft，见 D2），排除出导航，直接访问渲染占位页。
 
 ### D10: 手写 API 参考与漂移缓解
 
@@ -99,10 +114,11 @@ api-reference 页按模块分节（image/video/async/result/error/helpers），�
 
 新增 `apps/site/tests/docs-content.test.ts`（bun test）：
 
-1. manifest ↔ 文件双向一致性（每语言，draft 除外）；
-2. zh/en slug 集合与分组一致性；
-3. 全部 frontmatter 经 zod 校验（title/description/order 必填）；
-4. `@ai-media/sdk` 导出名集合与 api-reference 清单一致（D10）。
+1. manifest ↔ 文件双向一致性（每语言，draft 文件同样计入）；
+2. zh/en 文件集合一致性（draft 不豁免结构检查）；
+3. 全部 frontmatter 经 zod 校验（title/description 必填、draft 可选布尔）；
+4. `@ai-media/sdk` 导出名集合与 api-reference 清单常量一致，且清单符号与正文小节标题对应（D10）；
+5. 关键页结构断言：Provider 页含七段标题、quick-start 含安装/示例标题（防内容模板跑偏）。
 
 既有 `postbuild.ts` 资源 base 校验继续覆盖构建产物；`site:preview` 人工核对深链。不引入 React 渲染层测试框架。
 
@@ -110,7 +126,7 @@ api-reference 页按模块分节（image/video/async/result/error/helpers），�
 
 - [MDX 插件链与 React 19 / Vite 7 兼容问题] → 管线搭建放第一个任务，以最小文档页跑通 dev/build 再写内容。
 - [shadcn Sidebar 面向应用壳设计，与页面级文档布局整合成本超预期] → D6 回退判据：降级为 ScrollArea+Collapsible+Button 组合。
-- [双语内容工作量大、英文滞后] → 中文先行，英文允许 draft；一致性测试对 draft 豁免，保证导航不出现死链。
+- [双语内容工作量大、英文滞后] → 中文先行，英文允许 draft 文件（结构完整性仍强制，仅导航豁免 + 占位页），保证不出现死链也不出现空文件。
 - [`LangLayout` 与文档页标题竞争] → D4 明确 effect 职责划分，并为落地页/Playground 补统一 metadata 调用。
 - [shiki 主题 CSS 与 Tailwind v4 冲突] → 主题仅以 CSS 变量注入代码块作用域。
 - [手写 API 参考与源码漂移] → D10 导出名集合测试 + 未来自动生成 change。

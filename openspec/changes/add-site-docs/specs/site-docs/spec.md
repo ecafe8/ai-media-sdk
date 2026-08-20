@@ -6,7 +6,7 @@
 
 ### Requirement: 文档区路由与导航
 
-站点 SHALL 在现有 `/:lang` 语言路由下提供 `/docs` 文档区：访问 `/:lang/docs` 时 SHALL 重定向到该语言文档清单第一篇；`/:lang/docs/<slug>` SHALL 渲染对应语言的文档页，未知 slug SHALL 渲染文档区 NotFound（含返回文档首页链接），不得渲染空白页。每个文档页 SHALL 提供侧边栏（列出该语言全部文档并按固定分组与顺序排列）、当前页标题锚点目录（TOC）以及上一篇/下一篇导航。历史路径 `/docs`（无语言段）SHALL 重定向到访客语言的文档区。
+站点 SHALL 在现有 `/:lang` 语言路由下提供 `/docs` 文档区：访问 `/:lang/docs` 时 SHALL 重定向到该语言文档清单第一篇；`/:lang/docs/<slug>` SHALL 渲染对应语言的文档页，未知 slug SHALL 渲染文档区 NotFound（含返回文档首页链接），不得渲染空白页。每个文档页 SHALL 提供侧边栏（列出该语言全部文档并按固定分组与顺序排列）、当前页标题锚点目录（TOC）以及上一篇/下一篇导航。历史路径 `/docs`（无语言段）SHALL 重定向到访客语言的文档区。文档正文中的站内链接 SHALL 携带当前语言段（指向 `/:lang/docs/<slug>`），SHALL NOT 硬编码无语言段路径。切换文档时页面 SHALL 滚动到文章顶部；带锚点（hash）的导航 SHALL 滚动到对应标题；语言切换 SHALL 保持当前文档 slug。
 
 #### Scenario: 用户从落地页进入文档区
 
@@ -28,6 +28,16 @@
 - **WHEN** 用户访问无语言段的 `/docs` 或其子路径
 - **THEN** 站点重定向到访客语言对应的文档区路径
 
+#### Scenario: 文档内链保持语言
+
+- **WHEN** 用户在英文文档页点击指向另一篇文档的站内链接
+- **THEN** 导航目标仍在 `/en/docs` 下，不丢失或切换语言段
+
+#### Scenario: 切换文档与语言时的滚动行为
+
+- **WHEN** 用户从一篇文档导航到另一篇文档
+- **THEN** 页面滚动到文章顶部；带锚点的导航定位到对应标题；切换语言时停留在同一 slug 的对应语言文档
+
 ### Requirement: 部署深链兼容
 
 文档区所有深链 SHALL 在 GitHub Pages 部署形态下可用：资源引用 SHALL 与站点统一 base path 一致，客户端路由 SHALL 经由现有 SPA 404 回退文档接管，直接访问 `<origin>/<base>/:lang/docs/<slug>` 与本地开发访问行为一致。
@@ -39,12 +49,17 @@
 
 ### Requirement: 双语文档与结构一致性
 
-文档内容 SHALL 以中文与英文双语维护，分别位于按语言划分的目录（zh 为源语言）。两种语言 SHALL 具有相同的文档集合与分组结构：每个中文文档 slug 必须存在对应英文文档，反之亦然；构建期 SHALL 有自动化检查保证双语 slug 集合一致、分组结构一致。缺失的英文文档在补齐前 SHALL 以 draft 标记排除出导航与检查，不得以机翻占位内容上线。
+文档内容 SHALL 以中文与英文双语维护，分别位于按语言划分的目录（zh 为源语言）。两种语言 SHALL 具有相同的文档集合与分组结构：每个中文文档 slug 必须存在对应英文文档文件，反之亦然；构建期 SHALL 有自动化检查保证双语文件集合一致。未完成的英文页 SHALL 保留文件并以 `draft: true` 标记：draft 文件仍参与双语结构一致性检查，但排除出侧边栏与翻页导航，直接访问 SHALL 渲染"翻译进行中"占位页；SHALL NOT 以机翻占位内容作为正式文档上线，也 SHALL NOT 以缺失文件的方式跳过英文文档。
 
 #### Scenario: 双语结构一致性检查
 
 - **WHEN** 执行站点测试或构建
-- **THEN** 检查发现中英 slug 集合与分组结构一致；存在单边缺失（且未标记 draft）时检查失败并指明缺失项
+- **THEN** 检查发现中英文档文件集合一致（draft 文件同样计入）；存在任一边文件缺失时检查失败并指明缺失项
+
+#### Scenario: 直接访问 draft 英文页
+
+- **WHEN** 用户直接访问一篇标记 `draft: true` 的英文文档 URL
+- **THEN** 页面渲染"翻译进行中"占位内容，不渲染空白页，该页也不出现在侧边栏与翻页导航中
 
 #### Scenario: 英文访客阅读文档
 
@@ -53,7 +68,7 @@
 
 ### Requirement: frontmatter 元数据自动化
 
-每篇文档 SHALL 以 MDX frontmatter 声明 `title`、`description`、`order`（必填）与可选 `draft`；frontmatter SHALL 在构建期解析为模块导出并在加载时经 schema 校验（缺失必填字段或 slug 冲突时构建/测试失败）。文档页 SHALL 将 frontmatter 的 `title` 与 `description` 自动注入浏览器标题（`document.title`，格式 `<title> · AI Media SDK`）与 `<meta name="description">`。侧边栏、面包屑、翻页导航的标题 SHALL 读取 frontmatter，文档清单（manifest）SHALL NOT 重复维护标题文案。
+每篇文档 SHALL 以 MDX frontmatter 声明 `title`、`description`（必填）与可选 `draft`；frontmatter SHALL 在构建期解析为模块导出并在加载时经 schema 校验（缺失必填字段时构建/测试失败）。文档分组与顺序 SHALL 由单一语言无关的文档清单（manifest）维护，SHALL NOT 在 frontmatter 中重复维护。文档页 SHALL 将 frontmatter 的 `title` 与 `description` 自动注入浏览器标题（`document.title`，格式 `<title> · AI Media SDK`）与 `<meta name="description">`。侧边栏、面包屑、翻页导航的标题 SHALL 读取 frontmatter，manifest SHALL NOT 重复维护标题文案。
 
 #### Scenario: 浏览器标题与描述跟随文档页
 
@@ -104,7 +119,7 @@ quick-start 页 SHALL 包含安装命令、运行时要求（Node.js >= 20 或 B
 
 ### Requirement: 模型与能力数据单一来源
 
-文档中的模型列表、能力徽章（生成/编辑/视频/异步）、size 约束、n 上限、maxEditImages、maxResolution 等元数据 SHALL 由各 Provider 包导出的模型注册表常量在构建/渲染期派生，SHALL NOT 以手写副本形式维护在文档正文中。
+文档中的模型列表、能力徽章（生成/编辑/视频/异步）、size 约束、n 上限、maxEditImages、maxResolution 等元数据 SHALL 由各 Provider 包导出的模型注册表在构建/渲染期派生，SHALL NOT 以手写副本形式维护在文档正文中。各 Provider 注册表 entry 结构异构（字段集合各不相同），文档层 SHALL 提供统一的文档模型投影（适配层），通用模型表 SHALL 基于投影结果渲染；Provider 专属字段（如 MiniMax 的 `supportedResolutions`/`maxReferenceImages`）SHALL 在对应 Provider 页以专属渲染器展示，SHALL NOT 假定所有 Provider 具有统一字段。
 
 #### Scenario: 注册表新增模型后文档自动跟随
 
@@ -122,7 +137,7 @@ error-handling 页 SHALL 是 `SdkError` 全部错误码（含含义与默认可�
 
 ### Requirement: 手写 API 参考
 
-api-reference 页 SHALL 手写覆盖 SDK 核心公共导出：`generateImage`、`editImage`、`submitImageTask`、`submitVideoTask`、`createTaskHandle`、`pixelSize`、`tierSize`、`toImageUrl`、`GenerationResult`、`TaskHandle`、`ImageContent`、`VideoContent`、`SdkError`。每个条目 SHALL 包含签名、参数表（参数/类型/必填/说明）、返回值与抛出错误说明、使用示例；条目内容 SHALL 与源码当前签名一致，构建期无法自动校验的漂移风险 SHALL 由"API 参考与源码一致性"测试用例（至少覆盖导出名集合）缓解。自动 API 文档生成（TypeDoc/API Extractor）不在本变更范围，作为未来独立 change。
+api-reference 页 SHALL 手写覆盖 SDK 核心公共导出：`generateImage`、`editImage`、`submitImageTask`、`submitVideoTask`、`createTaskHandle`、`pixelSize`、`tierSize`、`toImageUrl`、`GenerationResult`、`TaskHandle`、`ImageContent`、`VideoContent`、`SdkError`。每个条目 SHALL 包含签名、参数表（参数/类型/必填/说明）、返回值与抛出错误说明、使用示例。api-reference 页 SHALL 在同文件维护机器可读的导出清单常量（供一致性测试引用），且清单中每个符号 SHALL 在正文中有对应条目小节。条目内容 SHALL 与源码当前签名一致，构建期无法自动校验的漂移风险 SHALL 由"API 参考与源码一致性"测试用例（至少覆盖导出名集合）缓解。自动 API 文档生成（TypeDoc/API Extractor）不在本变更范围，作为未来独立 change。
 
 #### Scenario: 开发者查阅某个 API
 
