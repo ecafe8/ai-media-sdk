@@ -1,25 +1,28 @@
-# Proposal: add-site-docs
+# Proposal: add-site-docs（v2 改写：双语文档 + 手写 API 参考，移除 TypeDoc）
 
-> **状态：已暂停（2026-08-12）**。阻塞原因：TypeDoc 尚不支持 TypeScript 7（tsgo），API 参考生成（design D5）无法进行。待 TypeDoc 支持 TS7（或本仓库回退 TypeScript 主版本）后重启本 change；届时先执行 tasks 8.1 前置验证，并按验证结果决定主方案/回退方案。手写文档部分（tasks 1-7、9-10）不受阻塞，如需提前交付可拆分实施。
+> **版本说明**：本 change 于 2026-08-20 全量改写。原方案因 TypeDoc 不支持 TypeScript 7（tsgo）暂停；v2 移除 API 自动生成，改为手写核心 API 参考（自动生成拆为未来独立 change），并适配当前代码库现状（`/:lang` 国际化路由、4 个 Provider：azure-openai / aliyun-bailian / volcengine / minimax）。
 
 ## Why
 
-公开站点 `apps/site` 目前只有落地页和 Playground，落地页"查看文档"按钮只能跳转到 GitHub 仓库，开发者必须阅读分散在 5 份 README（约 780 行）与源码注释中的内容才能上手 SDK。站点作为产品门面，需要在站内提供结构化、可导航、与代码同步的文档，降低试用与集成门槛。
+公开站点 `apps/site` 目前只有落地页和 Playground，开发者必须阅读分散在 6 份 README 与源码注释中的内容才能上手 SDK。站点已支持中英双语（`/:lang` 路由），文档区同样需要双语，否则英文访客进入文档会出现语言体验断裂。站点作为产品门面，需要在站内提供结构化、可导航、与代码同步的双语文档。
 
 ## What Changes
 
-- 在 `apps/site` 新增 `/docs` 文档区：MDX 渲染管线、侧边栏 + TOC 文档布局、嵌套路由（兼容现有 GitHub Pages base path 与 `404.html` SPA 深链回退）。
-- 文档内容采用 Diátaxis 分层，共 13 篇手写文档：入门（introduction、quick-start）、指南（image-generation、video-generation、parameters、results、error-handling、file-upload）、Provider 参考（azure-openai、aliyun-bailian、volcengine，统一七段式模板）、uploader、FAQ。
-- Provider 页模型表与能力徽章为数据驱动：MDX 组件直接 import 各 Provider 包的模型注册表（`SupportedModel[]`），与落地页 `SITE_MODELS` 同源，代码变更文档自动跟随。
-- 新增 TypeDoc API 参考：`typedoc` + `typedoc-plugin-markdown` 从 `@ai-media/sdk`、3 个 provider 包、`@ai-media/uploader` 的 TSDoc 生成 Markdown，纳入 site 构建前置步骤，产物不提交。
-- 错误码表（`SdkError` code 表）只在 error-handling 页维护一份，其余页面链接引用。
-- 落地页导航联动：header 增加"文档"入口，hero"查看文档"按钮由 GitHub 链接改为指向 `/docs`。
+- 在 `apps/site` 新增双语文档区：路由 `/:lang/docs/*`，MDX 渲染管线（`@mdx-js/rollup` + remark/rehype 插件），兼容现有 GitHub Pages base path 与 `404.html` SPA 深链回退。
+- **frontmatter 自动化**：MDX frontmatter（title/description/order/draft）经构建期插件解析为模块导出，自动注入 `document.title` 与 `<meta name="description">`；manifest 只维护导航结构，不重复维护标题。
+- **双语文档**：`content/docs/{zh,en}/` 双目录，每语言独立 manifest；构建期校验双语 slug 一致性。
+- 文档内容每语言 15 篇：入门（introduction、quick-start）、指南（image-generation、video-generation、parameters、results、error-handling、file-upload）、Provider 参考（azure-openai、aliyun-bailian、volcengine、minimax，统一七段式模板）、uploader、FAQ、API 参考。
+- **手写 API 参考**（每语言各 1 篇 `api-reference`）：覆盖核心公共导出（generateImage/editImage/submitImageTask/submitVideoTask/TaskHandle/GenerationResult/SdkError 等），TypeDoc/API Extractor 自动生成拆为未来独立 change。
+- Provider 页模型表与能力徽章为数据驱动：MDX 组件直接 import 各 Provider 包的模型注册表常量（`AZURE_MODEL_REGISTRY` 等），与落地页 `SITE_MODELS` 同源。
+- 文档布局使用 shadcn 组件（Sidebar/Sheet/ScrollArea/Separator/Alert/Badge/Table/Button），缺失组件经 shadcn CLI 安装到 `packages/ui`。
+- 错误码表单一事实源：`SdkError` 在 error-handling 页、`UploaderError` 在 uploader 页。
+- 落地页导航联动：header 增加"文档"入口，hero"查看文档"按钮由 GitHub 链接改为指向 `/:lang/docs`。
 
 ## Capabilities
 
 ### New Capabilities
 
-- `site-docs`: 公开站点站内文档能力——MDX 文档管线、文档信息架构与内容要求（入门/指南/Provider/uploader/FAQ/API 参考）、数据驱动模型表、文档布局与导航、GitHub Pages 深链兼容。
+- `site-docs`: 公开站点站内双语文档能力——MDX 文档管线与 frontmatter 元数据自动化、文档信息架构与内容要求（入门/指南/Provider/uploader/FAQ/手写 API 参考）、数据驱动模型表、shadcn 文档布局与导航、GitHub Pages 深链兼容。
 
 ### Modified Capabilities
 
@@ -27,7 +30,7 @@
 
 ## Impact
 
-- **代码**：`apps/site`（新增 `src/content/docs/`、`src/components/docs/`、`src/pages/docs/`，修改 `app.tsx` 路由、`vite.config.ts`、`vite-env.d.ts`、落地页导航）；根目录新增统一 typedoc 配置与 `docs:generate` 脚本；`turbo.json` 新增 `docs:generate` 任务。
-- **依赖**：`apps/site` 新增 `@mdx-js/rollup`、`remark-gfm`、`rehype-slug`、`rehype-highlight`、`highlight.js`（主题 CSS）；根 devDependencies 新增 `typedoc`、`typedoc-plugin-markdown`（及必要时为 typedoc 单独锁定的 typescript 5.x）。
-- **构建**：site build 前置 TypeDoc 生成步骤；CI/部署流程（GitHub Pages）需先执行生成。
+- **代码**：`apps/site`（新增 `src/content/docs/{zh,en}/`、`src/components/docs/`、`src/pages/docs/`、`src/lib/docs/`，修改 `app.tsx` 路由、`vite.config.ts`、`vite-env.d.ts`、落地页导航、`locales/*.json`）；`packages/ui` 经 shadcn CLI 新增缺失组件（sidebar、sheet 等）。
+- **依赖**：`apps/site` 新增 `@mdx-js/rollup`、`remark-frontmatter`、`remark-mdx-frontmatter`、`remark-gfm`、`rehype-slug`、`rehype-pretty-code`、`shiki`、`zod`（frontmatter 校验）；devDependencies 新增 `@types/mdx`。
+- **构建**：MDX 插件以 `enforce: "pre"` 挂接（先于 React 插件）；无 API 生成步骤。
 - **不影响**：`apps/web`、examples、SDK 运行时行为、现有 README。

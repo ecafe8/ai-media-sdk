@@ -1,68 +1,76 @@
 ## 1. MDX 管线搭建
 
-- [ ] 1.1 `apps/site` 新增依赖：`@mdx-js/rollup`、`remark-gfm`、`rehype-slug`、`rehype-highlight`、`highlight.js`（主题 CSS 来源，显式声明避免依赖传递解析）（`bun install`，更新 `bun.lock`）
-- [ ] 1.2 `vite.config.ts` 挂载 mdx 插件（`include` 仅 `src/content/docs/**/*.{md,mdx}`，配置 remark/rehype 插件）
-- [ ] 1.3 `vite-env.d.ts` 增加 `*.md`/`*.mdx` 模块声明
-- [ ] 1.4 创建 `src/content/docs/` 与最小占位文档（introduction），`bun run --cwd apps/site dev` 验证渲染、代码高亮、深链刷新；`build` 验证产物（design D1/D7，spec"文档呈现质量"）
+- [ ] 1.1 `apps/site` 新增依赖：`@mdx-js/rollup`、`remark-frontmatter`、`remark-mdx-frontmatter`、`remark-gfm`、`rehype-slug`、`rehype-pretty-code`、`shiki`、`zod`，devDependencies 新增 `@types/mdx`（`bun install`，更新 `bun.lock`）
+- [ ] 1.2 `vite.config.ts` 以 `enforce: "pre"` 挂接 mdx 插件（先于 react 插件；`include` 仅 `src/content/docs/**/*.{md,mdx}`；配置 D1 插件链与 shiki 双主题）
+- [ ] 1.3 `vite-env.d.ts` 增加 `*.md`/`*.mdx` 模块声明（`{ default: ComponentType; frontmatter: DocFrontmatter }`）
+- [ ] 1.4 创建 `src/content/docs/zh/` 与最小占位文档（introduction），`bun run --cwd apps/site dev` 验证渲染、高亮、frontmatter 导出；`build` 验证产物（design D1/D8，spec"文档呈现质量"）
 
-## 2. 清单、路由与布局
+## 2. shadcn 组件补齐
 
-- [ ] 2.1 `src/content/docs/manifest.ts`：定义分组（入门/指南/Providers/Uploader/API 参考/FAQ）与全部 13 篇手写页的 slug、标题、顺序；条目支持 `generated` 标记（API 参考条目为 true）（design D2）
-- [ ] 2.2 文档模块收集：`import.meta.glob` eager 收集，slug 归一化（去扩展名），导出按 slug 查表 API；`generated` 条目文件缺失时返回占位模块（引导运行 `bun run docs:generate`），不抛错（design D2 生成内容容错，spec"文档信息架构完整性"）
-- [ ] 2.3 `app.tsx` 增加 `/docs`（重定向首篇）与 `/docs/*` 嵌套路由；未知 slug 渲染文档区 NotFound（spec"文档区路由与导航"）
-- [ ] 2.4 `pages/docs/` 与 `components/docs/docs-layout/`：侧边栏（manifest 驱动、当前页高亮、分组标题）+ 文章区 + TOC（mount 后收集 `article h2/h3`，`rehype-slug` 锚点，点击 `scrollIntoView`，窄屏隐藏）+ 上一篇/下一篇（manifest 扁平顺序派生）+ 每页将标题写入 `document.title`；布局包在 `PageContainer` 内，遵守站点宽度规则（design D2/D4，spec"文档区路由与导航"/"文档呈现质量"）
-- [ ] 2.5 文章排版样式：`article` 语义标签 + 手写 Tailwind prose 样式（标题/段落/表格/代码块/列表/链接），深浅色主题均可读；代码块引入 highlight.js light/dark 主题 CSS（仅 `.hljs` 作用域）（design D2/D7，spec"文档呈现质量"）
+- [ ] 2.1 `bunx shadcn@latest add sidebar collapsible breadcrumb`（安装到 `packages/ui/src/components/shadcn/`；先 `--dry-run` 确认不升级现有组件，确认 sheet 随依赖带入）（design D6）
+- [ ] 2.2 验证新组件在站点可导入（`@workspace/ui/components/shadcn/<name>`）并通过 typecheck；若 Sidebar 整合成本过高，按 D6 回退判据降级为 ScrollArea+Collapsible+Button 组合并记录决策
 
-## 3. 数据驱动组件
+## 3. 内容基建
 
-- [ ] 3.1 `components/docs/provider-model-table/`：props 接收 provider 注册表常量，渲染模型表（id/label/能力徽章/size/maxN/maxEditImages/maxResolution）；`components/docs/capability-badges/`：与落地页语义对齐的能力徽章（design D3，spec"模型与能力数据单一来源"）
-- [ ] 3.2 文档区聚合模型表组件（可选被 introduction/FAQ 引用），数据源同 3.1
-- [ ] 3.3 `components/docs/callout/`：基于 shadcn `alert` 组合（不新建共享 UI 包组件）
+- [ ] 3.1 `src/content/docs/manifest.ts`：单一结构事实源——分组（入门/指南/Providers/Uploader/FAQ/API 参考）+ 全部 15 个 slug + order，不含语言文案（design D2，spec"文档信息架构完整性"）
+- [ ] 3.2 `src/lib/docs/content-loader/`：`import.meta.glob` eager 收集 zh/en 文档模块，slug 由路径派生，导出按 `(lang, slug)` 查表 API；frontmatter zod schema（title/description/order 必填、draft 可选），加载即校验（design D3，spec"frontmatter 元数据自动化"）
+- [ ] 3.3 `src/lib/docs/navigation/`：侧边栏树（分组标题经 i18n `docs.groups.*` 解析）、当前页、上一篇/下一篇、面包屑派生（design D2/D6）
+- [ ] 3.4 `src/lib/docs/page-metadata/`：`usePageMetadata({ title, description })`——`document.title` 加站点后缀、创建/更新 `meta[name=description]`（design D4）
 
-## 4. 内容：入门
+## 4. 路由与文档布局
 
-- [ ] 4.1 `introduction.mdx`：架构总览（契约→Provider 工厂→模型实例→生成函数）、同步 vs 异步、包家族一览、站点 Playground 与文档关系（spec"文档信息架构完整性"）
-- [ ] 4.2 `quick-start.mdx`：安装命令、运行时要求（Node>=20/Bun、ESM-only）、最小可运行示例、结果读取；示例与 `examples/*` 及 README 对齐（spec"入门与指南内容要求"）
+- [ ] 4.1 `app.tsx`：`/:lang` 子路由增加 `docs`（Navigate 到首篇）与 `docs/*`（DocsPage）；顶层增加 `/docs`、`/docs/*` 历史兼容重定向（访客语言）；未知 slug 渲染文档区 NotFound（spec"文档区路由与导航"）
+- [ ] 4.2 `pages/docs/` 与 `components/docs/docs-layout/`：shadcn Sidebar 分组导航（当前页高亮、Collapsible 分组、移动端 Sheet）+ 文章区 + TOC（mount 后收集 `article h2/h3`，rehype-slug 锚点，ScrollArea，窄屏隐藏）+ 上一篇/下一篇（Button）+ 面包屑（Breadcrumb）；DocsPage 以 frontmatter 调用 `usePageMetadata`；布局遵守 `PageContainer` 宽度规则（design D4/D5/D6，spec"frontmatter 元数据自动化"）
+- [ ] 4.3 `components/docs/mdx-components/`：MDX 元素映射——`table`→shadcn Table 组合、blockquote/提示→Alert、徽章→Badge、链接区分站内/外链；`components/docs/code-block/`：语言标识 + 复制按钮 + 横向滚动（design D6/D8，spec"文档呈现质量"）
+- [ ] 4.4 文档排版样式：`article` prose 手写 Tailwind 样式（标题/段落/表格/列表/链接），深浅色可读；shiki 双主题 CSS 变量随 `.dark` 切换（仅代码块作用域）；落地页与 Playground 各补一行 `usePageMetadata`（title/description 取 i18n 文案）（design D4/D8）
 
-## 5. 内容：指南
+## 5. 数据驱动组件
 
-- [ ] 5.1 `image-generation.mdx`：`generateImage`/`editImage`、预检行为（网络请求前抛 `INVALID_REQUEST`）、参考图上限、字面量模型 id 编译期收窄（spec"入门与指南内容要求"）
-- [ ] 5.2 `video-generation.mdx`：`submitImageTask`/`submitVideoTask`、`TaskHandle` 字段表、`wait()` 的 pollIntervalMs/timeoutMs/signal、输入模式（firstFrame/referenceImages/inputVideo）适用条件
-- [ ] 5.3 `parameters.mdx`：公共参数 prompt/n/size（像素形式 `WxH` 与档位形式）、`pixelSize`/`tierSize`、`providerOptions.<provider>` 命名空间规则、未知公共字段被预检拒绝
-- [ ] 5.4 `results.mdx`：`GenerationResult`/`ImageContent`/`VideoContent`、`toImageUrl`、临时 URL 过期警告与持久化建议（可引用站点自动保存功能作 Playground 提示）
-- [ ] 5.5 `error-handling.mdx`：`SdkError` 全错误码表（code/含义/默认可重试）——唯一事实源、捕获模式、`retryable` 与退避建议、错误信息不含凭据说明（spec"错误处理文档单一事实源"）
-- [ ] 5.6 `file-upload.mdx`（指南视角）：uploader 定位（开发/测试）、Aliyun/Google 两条上传链路工作流、与 `editImage` 的集成示例、生产用自有存储提示；`UploadedFile`/`UploaderError` 细节与错误码表不在本页维护，链接到 uploader 页；与 uploader 页互链（design D6，spec"入门与指南内容要求"）
+- [ ] 5.1 `components/docs/provider-model-table/`：props 接收注册表常量（`AZURE_MODEL_REGISTRY`/`ALIYUN_MODEL_REGISTRY`/`VOLCENGINE_MODEL_REGISTRY`/`MINIMAX_MODEL_REGISTRY`），渲染模型表（id/label/能力徽章/size/maxN/maxEditImages/maxResolution）；`components/docs/capability-badges/`：与落地页语义对齐（design D7，spec"模型与能力数据单一来源"）
 
-## 6. 内容：Provider 参考（七段式模板）
+## 6. 中文内容：入门与指南
 
-- [ ] 6.1 `providers/azure-openai.mdx`：概览/安装/配置字段表（apiKey/endpoint/apiVersion）/快速开始/模型表（`ProviderModelTable`，数据驱动）/`providerOptions.azure` 字段表（quality/output_format/output_compression）/限制（仅同步、n=1、不支持编辑与异步）+ 自定义 deployment 注册（`createAzureModel`/`provider.createModel`、`UNKNOWN_MODEL`、`listModels`）（spec"Provider 页统一内容模板"）
-- [ ] 6.2 `providers/aliyun-bailian.mdx`：同七段式；覆盖 DashScope 配置（apiKey、Workspace baseUrl）、图像 + 视频模型表（数据驱动）、`providerOptions.aliyun`、`oss://` URL 自动注入 `X-DashScope-OssResourceResolve`、异步任务说明、临时 URL 提示
-- [ ] 6.3 `providers/volcengine.mdx`：同七段式；覆盖 ARK 配置、模型表（数据驱动）、`providerOptions.volcengine`、size 两形态（supportedSizes + maxResolution）说明
-- [ ] 6.4 三页错误处理段均链接 `/docs/error-handling`，不复制错误码表
+- [ ] 6.1 `zh/introduction.mdx`：架构总览（契约→Provider 工厂→模型实例→生成函数）、同步 vs 异步、包家族一览（含 uploader）、Playground 与文档关系
+- [ ] 6.2 `zh/quick-start.mdx`：安装命令、运行时要求（Node>=20/Bun、ESM-only）、最小可运行示例、结果读取；示例与 `examples/*` 及 README 对齐（spec"入门与指南内容要求"）
+- [ ] 6.3 `zh/image-generation.mdx`：`generateImage`/`editImage`、预检行为（网络请求前抛 `INVALID_REQUEST`）、参考图上限、字面量模型 id 编译期收窄
+- [ ] 6.4 `zh/video-generation.mdx`：`submitImageTask`/`submitVideoTask`、`TaskHandle` 字段表、`wait()` 的 pollIntervalMs/timeoutMs/signal、输入模式（firstFrame/referenceImages/inputVideo）适用条件
+- [ ] 6.5 `zh/parameters.mdx`：公共参数 prompt/n/size（像素形式 `WxH` 与档位形式）、`pixelSize`/`tierSize`、`providerOptions.<provider>` 命名空间规则、未知公共字段被预检拒绝
+- [ ] 6.6 `zh/results.mdx`：`GenerationResult`/`ImageContent`/`VideoContent`、`toImageUrl`、临时 URL 过期警告与持久化建议
+- [ ] 6.7 `zh/error-handling.mdx`：`SdkError` 全错误码表（code/含义/默认可重试）——唯一事实源、捕获模式、`retryable` 与退避建议、错误信息不含凭据说明（spec"错误处理文档单一事实源"）
+- [ ] 6.8 `zh/file-upload.mdx`（指南视角）：uploader 定位、Aliyun/Google 上传链路工作流、与 `editImage` 集成示例、生产用自有存储提示；错误码细节链接 uploader 页（design D9）
 
-## 7. 内容：uploader 与 FAQ
+## 7. 中文内容：Provider 参考（七段式模板）
 
-- [ ] 7.1 `uploader.mdx`（侧边栏 Uploader 分组，包参考视角）：子路径导出表、`createAliyunUploader`（三步流程、model 绑定、oss:// 自动注头、48h 过期、凭证接口 QPS）与 `createGoogleUploader`（可续传、生命周期 get/list/delete、2GB/20GB 限制）的完整配置表、`UploadedFile` 形状、`UploaderError` 错误码表（唯一维护点）、与 file-upload 页互链（design D6，spec"入门与指南内容要求"）
-- [ ] 7.2 `faq.mdx`：Key 获取与配置（Playground 浏览器本地 Key vs 集成的服务端 Key）、浏览器直连 CORS 限制与解决方向、临时 URL 过期处理、轮询超时与中止、`UNKNOWN_MODEL` 排查（spec"FAQ 覆盖常见失败场景"）
+- [ ] 7.1 `zh/providers/azure-openai.mdx`：七段式；配置字段表（apiKey/endpoint/apiVersion）、模型表（数据驱动）、`providerOptions.azure` 字段表、限制（仅同步、n=1、不支持编辑与异步）+ 自定义 deployment 注册（`createAzureModel`/`provider.createModel`、`UNKNOWN_MODEL`、`listModels`）（spec"Provider 页统一内容模板"）
+- [ ] 7.2 `zh/providers/aliyun-bailian.mdx`：七段式；DashScope 配置（apiKey、Workspace baseUrl）、图像+视频模型表（数据驱动）、`providerOptions.aliyun`、`oss://` URL 自动注入 `X-DashScope-OssResourceResolve`、异步任务说明、临时 URL 提示
+- [ ] 7.3 `zh/providers/volcengine.mdx`：七段式；ARK 配置、模型表（数据驱动）、`providerOptions.volcengine`（含 `optimize_prompt_options`）、size 两形态说明
+- [ ] 7.4 `zh/providers/minimax.mdx`：七段式；配置、模型表（数据驱动）、`providerOptions.minimax`、视频请求必填 resolution/duration/ratio 的约束说明
+- [ ] 7.5 四页错误处理段均链接 `/docs/error-handling`，不复制错误码表
 
-## 8. TypeDoc API 参考
+## 8. 中文内容：uploader、FAQ 与 API 参考
 
-- [ ] 8.1 前置验证 TypeDoc 可执行性：仓库 typescript@7（tsgo）下试跑 typedoc；不兼容则为 typedoc 锁定 typescript@5.x 运行环境（根 devDependency + 专用 tsconfig），仍不可行则切换 D5 回退方案并在本任务记录决策（design D5 前置验证）
-- [ ] 8.2 根 devDependencies 新增 `typedoc`、`typedoc-plugin-markdown`；根脚本 `docs:generate`，typedoc 配置（入口：`@ai-media/sdk`、3 个 provider、uploader 的 `src/index.ts`；输出 `apps/site/src/content/docs/api/`；`outputFileStrategy: members`）；`api/` 目录加入 `.gitignore`（design D5，spec"API 参考从源码生成"）
-- [ ] 8.3 remark 链接重写小插件：生成文档间相对 `.md` 链接重写为 `/docs/api/...` 站内链接；若复杂度超预算，切换回退方案（TypeDoc HTML → `dist/api-reference/`，侧边栏外链），并在本任务记录决策
-- [ ] 8.4 `turbo.json` 新增 `docs:generate` 任务（根包），site `build` 以 `dependsOn: ["//docs:generate"]` 依赖；核对 CI 工作流（`bunx turbo build --filter=site`）自动带入依赖、无需额外步骤
-- [ ] 8.5 manifest 登记 API 参考入口（每包一条，`generated: true`），生成产物可渲染、链接可跳转、深浅色可读；未生成时占位页正常显示
+- [ ] 8.1 `zh/uploader.mdx`（包参考视角）：子路径导出表、`createAliyunUploader`（三步流程、model 绑定、oss:// 自动注头、48h 过期、QPS）与 `createGoogleUploader`（可续传、生命周期 get/list/delete、2GB/20GB 限制）完整配置表、`UploadedFile` 形状、`UploaderError` 错误码表（唯一维护点）、与 file-upload 互链（design D9）
+- [ ] 8.2 `zh/faq.mdx`：Key 获取与配置（Playground 浏览器本地 Key vs 集成的服务端 Key）、浏览器直连 CORS 限制与解决方向、临时 URL 过期处理、轮询超时与中止、`UNKNOWN_MODEL` 排查（spec"FAQ 覆盖常见失败场景"）
+- [ ] 8.3 `zh/api-reference.mdx`：手写核心导出条目（签名/参数表/返回值/抛出错误/示例），覆盖 generateImage、editImage、submitImageTask、submitVideoTask、createTaskHandle、pixelSize、tierSize、toImageUrl、GenerationResult、TaskHandle、ImageContent、VideoContent、SdkError；同文件导出清单常量供 D10 测试引用（spec"手写 API 参考"）
 
-## 9. 落地页导航联动
+## 9. 英文内容
 
-- [ ] 9.1 落地页 header 增加"文档"入口（`/docs`），hero"查看文档"按钮由 GitHub 链接改为 `/docs`（spec"文档区路由与导航"）
+- [ ] 9.1 `en/` 镜像翻译：入门 ×2 + 指南 ×6（由 6.x 中文源文档人工翻译审校，frontmatter 同步英文 title/description）
+- [ ] 9.2 `en/providers/` ×4（由 7.x 翻译；代码示例与数据驱动组件不翻译）
+- [ ] 9.3 `en/uploader.mdx`、`en/faq.mdx`、`en/api-reference.mdx`（由 8.x 翻译）
+- [ ] 9.4 无法及时完成的英文页以 `draft: true` 标记并记录清单，确保导航无死链（spec"双语文档与结构一致性"）
 
-## 10. 测试与验证
+## 10. 落地页导航联动与 i18n
 
-- [ ] 10.1 `apps/site/tests/docs-manifest.test.ts`：非生成类文档与 manifest 双向一致性、`generated` 条目仅校验清单侧存在性、分组非空、非生成文档模块默认导出存在（spec"构建期清单一致性检查"）
-- [ ] 10.2 `bun run lint && bun run typecheck && bun run build && bun run test` 全绿
-- [ ] 10.3 `bun run site:preview`：验证 `/ai-media-sdk/docs` 重定向、各分组深链、404 回退、深浅色主题、模型表数据与落地页一致（spec"部署深链兼容"）
+- [ ] 10.1 `locales/zh.json`/`en.json` 新增 `docs.groups.*` 分组标题、文档区 NotFound、上下篇、TOC 等 UI 文案键（类型由 zh 结构约束）
+- [ ] 10.2 落地页 header 增加"文档"入口（`/:lang/docs`），hero"查看文档"按钮由 GitHub 链接改为文档区（spec"文档区路由与导航"）
 
-## 11. 收尾
+## 11. 测试与验证
 
-- [ ] 11.1 复查 diff 仅含本变更文件，`main` 上提交并记录 commit hash
+- [ ] 11.1 `apps/site/tests/docs-content.test.ts`：manifest ↔ 文件双向一致性（每语言）、zh/en slug 与分组一致性、全部 frontmatter zod 校验、`@ai-media/sdk` 导出名集合与 api-reference 清单一致（design D11，spec"构建期清单一致性检查"/"双语文档与结构一致性"/"手写 API 参考"）
+- [ ] 11.2 `bun run lint && bun run typecheck && bun run build && bun run test` 全绿
+- [ ] 11.3 `bun run site:preview`：验证 `<base>/zh/docs` 与 `<base>/en/docs` 重定向、各分组深链、`/docs` 历史重定向、404 回退、深浅色主题、代码块复制、移动端抽屉导航、模型表数据与落地页一致、title/description 注入（spec"部署深链兼容"/"文档呈现质量"）
+
+## 12. 收尾
+
+- [ ] 12.1 复查 diff 仅含本变更文件，提交并记录 commit hash；在 proposal 版本说明中更新实施结果（如 D6 回退决策、英文 draft 清单）
