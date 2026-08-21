@@ -10,12 +10,21 @@ import type { SiteLang } from "@/lib/locale";
 const REPO_URL = "https://github.com/ecafe8/ai-media-sdk";
 
 /** Site-wide navigation shared by the landing page and full-screen work areas. */
-export function SiteHeader({ lang }: { readonly lang: SiteLang }) {
+export function SiteHeader({
+  lang,
+  wide = false,
+}: {
+  readonly lang: SiteLang;
+  readonly wide?: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
     <header className="border-border border-b bg-card py-3">
-      <PageContainer className="flex min-h-10 items-center justify-between gap-4">
+      <PageContainer
+        wide={wide}
+        className="flex min-h-10 items-center justify-between gap-4"
+      >
         <Link
           to={`/${lang}`}
           className="shrink-0 font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]"

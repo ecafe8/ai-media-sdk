@@ -37,7 +37,7 @@ export function DocsLayout({
 
   return (
     <main className="min-h-svh bg-background text-foreground">
-      <SiteHeader lang={lang} />
+      <SiteHeader lang={lang} wide />
       <PageContainer wide>
         <div className="flex items-center gap-2 border-border border-b py-2.5 lg:hidden">
           <Sheet open={navOpen} onOpenChange={setNavOpen}>
