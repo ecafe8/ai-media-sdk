@@ -1,6 +1,7 @@
 import { ThemeSwitcher } from "@workspace/ui/components/custom/theme-switcher";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { PageContainer } from "@/components/layout/page-container";
@@ -69,6 +70,12 @@ export function Playground({ models }: PlaygroundProps) {
                 dark: t("theme.dark"),
               }}
             />
+            <Link
+              to="../docs"
+              className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
+            >
+              {t("landing.navDocs")}
+            </Link>
             <button
               type="button"
               className="inline-flex h-9 items-center rounded-lg border border-border bg-card px-3 text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
