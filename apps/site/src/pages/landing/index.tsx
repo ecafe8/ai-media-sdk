@@ -1,19 +1,16 @@
-import { ThemeSwitcher } from "@workspace/ui/components/custom/theme-switcher";
 import { Badge } from "@workspace/ui/components/shadcn/badge";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { FaGithub } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { PageContainer } from "@/components/layout/page-container";
+import { SiteHeader } from "@/components/site-header";
 import { usePageMetadata } from "@/lib/docs/page-metadata";
 import { PROVIDER_LABELS } from "@/lib/key-store";
+import { DEFAULT_LANG, isSupportedLang, type SiteLang } from "@/lib/locale";
 import { useModelText } from "@/lib/model-text";
 import { SITE_MODELS } from "@/lib/playground/registry";
 import type { SiteModel } from "@/lib/playground/types";
-
-const REPO_URL = "https://github.com/ecafe8/ai-media-sdk";
 
 /**
  * Landing page: hero, feature highlights, provider/model matrix derived
@@ -21,6 +18,8 @@ const REPO_URL = "https://github.com/ecafe8/ai-media-sdk";
  */
 export function LandingPage() {
   const { t } = useTranslation();
+  const { lang: routeLang } = useParams();
+  const lang: SiteLang = isSupportedLang(routeLang) ? routeLang : DEFAULT_LANG;
 
   usePageMetadata({
     title: t("meta.title"),
@@ -30,46 +29,7 @@ export function LandingPage() {
 
   return (
     <main className="min-h-svh bg-muted/40 text-foreground">
-      <header className="border-border border-b bg-card py-4">
-        <PageContainer className="flex items-center justify-between">
-          <p className="font-semibold text-emerald-600 text-xs uppercase tracking-[0.24em]">
-            {t("common.appName")}
-          </p>
-          <div className="flex items-center gap-3">
-            <LanguageSwitcher />
-            <ThemeSwitcher
-              ariaLabel={t("theme.aria")}
-              labels={{
-                light: t("theme.light"),
-                system: t("theme.system"),
-                dark: t("theme.dark"),
-              }}
-            />
-            <Link
-              to="docs"
-              className="hidden items-center rounded-lg border border-border bg-card px-3.5 py-2 font-medium text-foreground text-sm shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 sm:inline-flex dark:hover:border-emerald-500/50 dark:hover:text-emerald-400"
-            >
-              {t("landing.navDocs")}
-            </Link>
-            <a
-              href={REPO_URL}
-              target="_blank"
-              rel="noreferrer"
-              aria-label={t("common.github")}
-              title={t("common.github")}
-              className="flex size-9 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm transition hover:text-foreground"
-            >
-              <FaGithub className="size-4" />
-            </a>
-            <Link
-              to="playground"
-              className="inline-flex h-9 items-center rounded-lg bg-emerald-600 px-3.5 font-medium text-sm text-white shadow-sm transition hover:bg-emerald-700"
-            >
-              {t("landing.enterPlayground")}
-            </Link>
-          </div>
-        </PageContainer>
-      </header>
+      <SiteHeader lang={lang} />
 
       <section className="py-16">
         <PageContainer className="text-center">

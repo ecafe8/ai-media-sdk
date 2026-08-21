@@ -29,6 +29,9 @@
   "langSwitcher": {
     "aria": "切换语言"
   },
+  "siteNav": {
+    "aria": "站点导航"
+  },
   "docs": {
     "navAria": "文档导航",
     "navToggle": "打开文档导航",

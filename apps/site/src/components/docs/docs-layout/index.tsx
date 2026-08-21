@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { DocsSidebar } from "@/components/docs/docs-sidebar";
 import { DocsToc } from "@/components/docs/docs-toc";
 import { PageContainer } from "@/components/layout/page-container";
+import { SiteHeader } from "@/components/site-header";
 import type { SiteLang } from "@/lib/locale";
 
 import "@/styles/docs.css";
@@ -36,7 +37,8 @@ export function DocsLayout({
 
   return (
     <main className="min-h-svh bg-background text-foreground">
-      <PageContainer>
+      <SiteHeader lang={lang} />
+      <PageContainer wide>
         <div className="flex items-center gap-2 border-border border-b py-2.5 lg:hidden">
           <Sheet open={navOpen} onOpenChange={setNavOpen}>
             <SheetTrigger

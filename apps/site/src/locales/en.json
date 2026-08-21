@@ -29,6 +29,9 @@
   "langSwitcher": {
     "aria": "Switch language"
   },
+  "siteNav": {
+    "aria": "Site navigation"
+  },
   "docs": {
     "navAria": "Docs navigation",
     "navToggle": "Open docs navigation",
