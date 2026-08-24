@@ -2,6 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { createAliyunUploader } from "@ai-media/uploader/aliyun";
+import { createAliyunBrowserUploader } from "@ai-media/uploader/aliyun/browser";
 import { UPLOADER_ERROR_CODES, UploaderError } from "@ai-media/uploader/core";
 
 import { createFakeFetch } from "../helpers/fake-fetch.js";
@@ -196,5 +197,40 @@ describe("aliyun uploader", () => {
       caught = error;
     }
     expect(caught).toBeInstanceOf(UploaderError);
+  });
+
+  test("browser uploader validates audio before requesting policy", async () => {
+    let calls = 0;
+    const uploader = createAliyunBrowserUploader({
+      apiKey: API_KEY,
+      fetch: (async () => {
+        calls += 1;
+        return new Response();
+      }) as unknown as typeof globalThis.fetch,
+    });
+    await expect(
+      uploader.upload({
+        model: MODEL,
+        fileBytes: new Uint8Array([1]),
+        fileName: "x.png",
+      })
+    ).rejects.toMatchObject({ code: UPLOADER_ERROR_CODES.INVALID_REQUEST });
+    expect(calls).toBe(0);
+  });
+
+  test("browser uploader returns oss result for valid audio bytes", async () => {
+    const { fetch, requests } = createFakeFetch([
+      POLICY_RESPONSE,
+      OSS_SUCCESS_RESPONSE,
+    ]);
+    const uploader = createAliyunBrowserUploader({ apiKey: API_KEY, fetch });
+    const result = await uploader.upload({
+      model: MODEL,
+      fileBytes: new Uint8Array([1, 2]),
+      fileName: "speech.wav",
+      mimeType: "audio/wav",
+    });
+    expect(result.url).toContain("oss://");
+    expect(requests).toHaveLength(2);
   });
 });

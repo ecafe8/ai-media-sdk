@@ -50,6 +50,8 @@ export interface AudioContent extends Content {
   readonly id?: string;
   readonly expiresAt?: number;
   readonly sampleRate?: number;
+  readonly channels?: number;
+  readonly bitDepth?: number;
   readonly format?: string;
   readonly encoding?: string;
 }

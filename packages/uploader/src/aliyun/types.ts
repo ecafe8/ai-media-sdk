@@ -16,6 +16,7 @@ export interface AliyunUploadParams {
   readonly filePath?: string;
   readonly fileBytes?: Uint8Array;
   readonly fileName?: string;
+  readonly mimeType?: string;
 }
 
 /**

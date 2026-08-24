@@ -48,6 +48,7 @@ describe("Aliyun audio and voice APIs", () => {
       expiresAt: 123,
       format: "wav",
       mimeType: "audio/wav",
+      sampleRate: 24000,
     });
     expect(fake.requests[0]?.url).toBe(
       `${config.baseUrl}/services/audio/tts/SpeechSynthesizer`
@@ -105,6 +106,42 @@ describe("Aliyun audio and voice APIs", () => {
     });
     expect(result.content[0]?.url).toBe("https://example.com/demo.mp3");
     expect(result.usage).toMatchObject({ characters: 2 });
+  });
+
+  test("maps stream PCM metadata and terminal errors", async () => {
+    const fake = fakeTransport({});
+    const provider = createAliyunBailianProvider(config, {
+      transport: {
+        ...fake.transport,
+        async sendStream() {
+          return {
+            status: 200,
+            headers: {},
+            body: (async function* () {
+              yield `data: ${JSON.stringify({ output: { type: "sentence-synthesis", audio: { data: "pcm", sample_rate: 24000, channels: 1, bit_depth: 16 } } })}\n`;
+              yield `data: ${JSON.stringify({ output: { type: "error", code: "BAD_AUDIO", message: "failed" } })}\n`;
+            })(),
+          };
+        },
+      },
+    });
+    const events = [];
+    for await (const event of provider.audio("cosyvoice-v3.5-flash").adapter
+      .streamAudio!({
+      provider: "aliyun-bailian",
+      model: "cosyvoice-v3.5-flash",
+      modality: "audio",
+      input: { text: "hello", voice: "voice" },
+    }))
+      events.push(event);
+    expect(events[0]).toMatchObject({
+      audio: { sampleRate: 24000, channels: 1, bitDepth: 16 },
+    });
+    expect(events[1]).toEqual({
+      type: "error",
+      code: "BAD_AUDIO",
+      message: "failed",
+    });
   });
 
   test("normalizes designed voice preview audio", async () => {

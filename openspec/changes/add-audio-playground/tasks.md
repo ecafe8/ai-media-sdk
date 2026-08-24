@@ -1,10 +1,10 @@
 ## 1. Registry And Shared Contracts
 
-- [ ] 1.1 Extend Alibaba audio registry entries with Playground-facing metadata: family, SSML support, formats, sample rates, instruction field, region/endpoint, and voice-resource protocol/target compatibility.
+- [x] 1.1 Extend Alibaba audio registry entries with Playground-facing metadata: family, SSML support, formats, sample rates, instruction field, region/endpoint, and voice-resource protocol/target compatibility.
 - [ ] 1.2 Extend web and site Playground model/request/response types with `modality: "audio"`, explicit `text`/`voice`, family options, stream events, audio content, and voice-resource payloads.
 - [ ] 1.3 Fix web projection so Alibaba audio models remain audio, and stop site from dropping CosyVoice, Qwen-Audio, Qwen-TTS, and MiniMax TTS families.
-- [ ] 1.4 Add or extend stream event metadata so PCM chunks provide or inherit format, sample rate, channels, bit depth, and encoding, plus a terminal sanitized `error` event.
-- [ ] 1.5 Add registry and type tests proving audio modality projection, family option isolation, and unchanged image/video models.
+- [x] 1.4 Add or extend stream event metadata so PCM chunks provide or inherit format, sample rate, channels, bit depth, and encoding, plus a terminal sanitized `error` event.
+- [x] 1.5 Add registry and type tests proving audio modality projection, family option isolation, and unchanged image/video models.
 
 ## 2. Web Server Audio APIs
 
@@ -25,9 +25,9 @@
 
 ## 4. Browser-Safe Upload
 
-- [ ] 4.1 Split or add an Aliyun uploader entry that accepts `fileBytes`/`fileName`/`model` without importing `node:fs/promises`.
-- [ ] 4.2 Keep the existing Node `filePath` factory for examples and server use.
-- [ ] 4.3 Validate MIME/extension, filename, size, and required target model before requesting a DashScope policy.
+- [x] 4.1 Split or add an Aliyun uploader entry that accepts `fileBytes`/`fileName`/`model` without importing `node:fs/promises`.
+- [x] 4.2 Keep the existing Node `filePath` factory for examples and server use.
+- [x] 4.3 Validate MIME/extension, filename, size, and required target model before requesting a DashScope policy.
 - [ ] 4.4 Wire web upload through the server route and site upload through the browser-safe entry with the BYO key.
 - [ ] 4.5 Add uploader and Playground tests for `oss://` results, missing model, oversized files, and Node-vs-browser export isolation.
 

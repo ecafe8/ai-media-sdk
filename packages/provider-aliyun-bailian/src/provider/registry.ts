@@ -41,6 +41,20 @@ export interface AliyunParamSupport {
   readonly prompt_extend?: boolean;
 }
 
+/** Optional metadata used by Playground consumers; existing fields stay intact. */
+export interface AliyunAudioMetadata {
+  readonly supportsSsml?: boolean;
+  readonly supportedFormats?: readonly string[];
+  readonly supportedSampleRates?: readonly number[];
+  readonly instructionField?: "instruction" | "instructions";
+  readonly region?: string;
+  readonly endpoint?: string;
+  readonly voiceResource?: {
+    readonly protocols: readonly ("qwen-audio" | "qwen")[];
+    readonly targetModel?: boolean;
+  };
+}
+
 /**
  * A registry entry for a single model id.
  *
@@ -63,6 +77,7 @@ export interface AliyunModelEntry {
   readonly maxReferenceImages?: number;
   readonly supportedResolutions?: readonly string[];
   readonly supportedAspectRatios?: readonly string[];
+  readonly audio?: AliyunAudioMetadata;
 }
 
 const QWEN_T2I_I2I_CAPABILITY: ModelCapability = {
@@ -167,240 +182,299 @@ const AUDIO_GENERATE_CAPABILITY: ModelCapability = {
  * path now; Wan models use the async `image-generation` path through submit.
  * Their synchronous generate/edit paths remain `NOT_IMPLEMENTED`.
  */
+const ALIYUN_MODEL_REGISTRY_BASE: Readonly<Record<ModelId, AliyunModelEntry>> =
+  {
+    "qwen-image-3.0-pro": {
+      family: "qwen-multimodal",
+      capabilities: QWEN_T2I_I2I_CAPABILITY,
+      paramSupport: {
+        n: true,
+        size: true,
+        negative_prompt: true,
+        prompt_extend: true,
+      },
+    },
+    "qwen-image-3.0": {
+      family: "qwen-multimodal",
+      capabilities: QWEN_T2I_I2I_CAPABILITY,
+      paramSupport: {
+        n: true,
+        size: true,
+        negative_prompt: true,
+        prompt_extend: true,
+      },
+    },
+    "qwen-image-2.0-pro": {
+      family: "qwen-multimodal",
+      capabilities: QWEN_T2I_I2I_CAPABILITY,
+      paramSupport: {
+        n: true,
+        size: true,
+        negative_prompt: true,
+        prompt_extend: true,
+      },
+    },
+    "qwen-image-2.0-pro-2026-06-22": {
+      family: "qwen-multimodal",
+      capabilities: QWEN_T2I_I2I_CAPABILITY,
+      paramSupport: {
+        n: true,
+        size: true,
+        negative_prompt: true,
+        prompt_extend: true,
+      },
+    },
+    "qwen-image-2.0": {
+      family: "qwen-multimodal",
+      capabilities: QWEN_T2I_I2I_CAPABILITY,
+      paramSupport: {
+        n: true,
+        size: true,
+        negative_prompt: true,
+        prompt_extend: true,
+      },
+    },
+    "wan2.7-image-pro": {
+      family: "wan-image",
+      capabilities: WAN2_7_PRO_GENERATE_CAPABILITY,
+      paramSupport: { n: true, size: true },
+    },
+    "wan2.7-image": {
+      family: "wan-image",
+      capabilities: WAN2_7_IMAGE_GENERATE_CAPABILITY,
+      paramSupport: { n: true, size: true },
+    },
+    "wan2.6-t2i": {
+      family: "wan-image",
+      capabilities: WAN2_6_T2I_GENERATE_CAPABILITY,
+      paramSupport: {
+        n: true,
+        size: true,
+        negative_prompt: true,
+        prompt_extend: true,
+      },
+    },
+    "happyhorse-1.1-t2v": {
+      family: "happyhorse-video",
+      capabilities: {
+        modality: "video",
+        generate: true,
+        edit: false,
+        async: true,
+      },
+      paramSupport: {},
+      requiresFirstFrame: false,
+      supportedResolutions: HAPPYHORSE_RESOLUTIONS,
+      supportedAspectRatios: HAPPYHORSE_RATIOS,
+    },
+    "happyhorse-1.1-i2v": {
+      family: "happyhorse-video",
+      capabilities: {
+        modality: "video",
+        generate: true,
+        edit: false,
+        async: true,
+      },
+      paramSupport: {},
+      requiresFirstFrame: true,
+      supportedResolutions: HAPPYHORSE_RESOLUTIONS,
+      supportedAspectRatios: [],
+    },
+    "happyhorse-1.1-r2v": {
+      family: "happyhorse-video",
+      capabilities: {
+        modality: "video",
+        generate: true,
+        edit: false,
+        async: true,
+      },
+      paramSupport: {},
+      maxReferenceImages: 9,
+      supportedResolutions: HAPPYHORSE_RESOLUTIONS,
+      supportedAspectRatios: HAPPYHORSE_RATIOS,
+    },
+    "happyhorse-1.0-video-edit": {
+      family: "happyhorse-video",
+      capabilities: {
+        modality: "video",
+        generate: true,
+        edit: false,
+        async: true,
+      },
+      paramSupport: {},
+      requiresInputVideo: true,
+      maxReferenceImages: 5,
+      supportedResolutions: HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS,
+      supportedAspectRatios: [],
+    },
+    "wan3.0-video": {
+      family: "wan3-video",
+      capabilities: WAN3_0_VIDEO_GENERATE_CAPABILITY,
+      paramSupport: {},
+      supportedResolutions: WAN3_VIDEO_RESOLUTIONS,
+      supportedAspectRatios: WAN3_VIDEO_RATIOS,
+    },
+    "qwen-audio-3.0-tts-plus": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen-audio-3.0-tts-flash": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "cosyvoice-v3.5-plus": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "cosyvoice-v3.5-flash": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "cosyvoice-v3-plus": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "cosyvoice-v3-flash": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "cosyvoice-v2": {
+      family: "qwen-audio-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen3-tts-flash": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen3-tts-flash-2025-11-27": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen3-tts-flash-2025-09-18": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen3-tts-instruct-flash": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen3-tts-instruct-flash-2026-01-26": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen-tts": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen-tts-latest": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen-tts-2025-05-22": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "qwen-tts-2025-04-10": {
+      family: "qwen-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "MiniMax/speech-2.8-hd": {
+      family: "minimax-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "MiniMax/speech-02-hd": {
+      family: "minimax-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "MiniMax/speech-2.8-turbo": {
+      family: "minimax-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+    "MiniMax/speech-02-turbo": {
+      family: "minimax-tts",
+      capabilities: AUDIO_GENERATE_CAPABILITY,
+      paramSupport: {},
+    },
+  };
+
+function audioMetadata(
+  family: AliyunModelFamily
+): AliyunAudioMetadata | undefined {
+  if (family === "qwen-audio-tts") {
+    return {
+      supportsSsml: true,
+      supportedFormats: ["mp3", "pcm", "wav", "opus"],
+      supportedSampleRates: [8000, 16000, 22050, 24000, 44100, 48000],
+      instructionField: "instruction",
+      region: "cn-beijing",
+      endpoint: "/services/audio/tts/SpeechSynthesizer",
+    };
+  }
+  if (family === "qwen-tts") {
+    return {
+      supportedFormats: ["mp3", "wav"],
+      instructionField: "instructions",
+      region: "cn-beijing",
+      endpoint: "/services/aigc/multimodal-generation/generation",
+    };
+  }
+  if (family === "minimax-tts") {
+    return {
+      supportedFormats: ["mp3", "wav", "pcm"],
+      supportedSampleRates: [16000, 24000, 32000, 44100],
+      region: "cn-beijing",
+      endpoint: "/services/aigc/multimodal-generation/generation",
+    };
+  }
+  return undefined;
+}
+
 export const ALIYUN_MODEL_REGISTRY: Readonly<
   Record<ModelId, AliyunModelEntry>
-> = {
-  "qwen-image-3.0-pro": {
-    family: "qwen-multimodal",
-    capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: {
-      n: true,
-      size: true,
-      negative_prompt: true,
-      prompt_extend: true,
-    },
-  },
-  "qwen-image-3.0": {
-    family: "qwen-multimodal",
-    capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: {
-      n: true,
-      size: true,
-      negative_prompt: true,
-      prompt_extend: true,
-    },
-  },
-  "qwen-image-2.0-pro": {
-    family: "qwen-multimodal",
-    capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: {
-      n: true,
-      size: true,
-      negative_prompt: true,
-      prompt_extend: true,
-    },
-  },
-  "qwen-image-2.0-pro-2026-06-22": {
-    family: "qwen-multimodal",
-    capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: {
-      n: true,
-      size: true,
-      negative_prompt: true,
-      prompt_extend: true,
-    },
-  },
-  "qwen-image-2.0": {
-    family: "qwen-multimodal",
-    capabilities: QWEN_T2I_I2I_CAPABILITY,
-    paramSupport: {
-      n: true,
-      size: true,
-      negative_prompt: true,
-      prompt_extend: true,
-    },
-  },
-  "wan2.7-image-pro": {
-    family: "wan-image",
-    capabilities: WAN2_7_PRO_GENERATE_CAPABILITY,
-    paramSupport: { n: true, size: true },
-  },
-  "wan2.7-image": {
-    family: "wan-image",
-    capabilities: WAN2_7_IMAGE_GENERATE_CAPABILITY,
-    paramSupport: { n: true, size: true },
-  },
-  "wan2.6-t2i": {
-    family: "wan-image",
-    capabilities: WAN2_6_T2I_GENERATE_CAPABILITY,
-    paramSupport: {
-      n: true,
-      size: true,
-      negative_prompt: true,
-      prompt_extend: true,
-    },
-  },
-  "happyhorse-1.1-t2v": {
-    family: "happyhorse-video",
-    capabilities: {
-      modality: "video",
-      generate: true,
-      edit: false,
-      async: true,
-    },
-    paramSupport: {},
-    requiresFirstFrame: false,
-    supportedResolutions: HAPPYHORSE_RESOLUTIONS,
-    supportedAspectRatios: HAPPYHORSE_RATIOS,
-  },
-  "happyhorse-1.1-i2v": {
-    family: "happyhorse-video",
-    capabilities: {
-      modality: "video",
-      generate: true,
-      edit: false,
-      async: true,
-    },
-    paramSupport: {},
-    requiresFirstFrame: true,
-    supportedResolutions: HAPPYHORSE_RESOLUTIONS,
-    supportedAspectRatios: [],
-  },
-  "happyhorse-1.1-r2v": {
-    family: "happyhorse-video",
-    capabilities: {
-      modality: "video",
-      generate: true,
-      edit: false,
-      async: true,
-    },
-    paramSupport: {},
-    maxReferenceImages: 9,
-    supportedResolutions: HAPPYHORSE_RESOLUTIONS,
-    supportedAspectRatios: HAPPYHORSE_RATIOS,
-  },
-  "happyhorse-1.0-video-edit": {
-    family: "happyhorse-video",
-    capabilities: {
-      modality: "video",
-      generate: true,
-      edit: false,
-      async: true,
-    },
-    paramSupport: {},
-    requiresInputVideo: true,
-    maxReferenceImages: 5,
-    supportedResolutions: HAPPYHORSE_VIDEO_EDIT_RESOLUTIONS,
-    supportedAspectRatios: [],
-  },
-  "wan3.0-video": {
-    family: "wan3-video",
-    capabilities: WAN3_0_VIDEO_GENERATE_CAPABILITY,
-    paramSupport: {},
-    supportedResolutions: WAN3_VIDEO_RESOLUTIONS,
-    supportedAspectRatios: WAN3_VIDEO_RATIOS,
-  },
-  "qwen-audio-3.0-tts-plus": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen-audio-3.0-tts-flash": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "cosyvoice-v3.5-plus": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "cosyvoice-v3.5-flash": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "cosyvoice-v3-plus": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "cosyvoice-v3-flash": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "cosyvoice-v2": {
-    family: "qwen-audio-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen3-tts-flash": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen3-tts-flash-2025-11-27": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen3-tts-flash-2025-09-18": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen3-tts-instruct-flash": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen3-tts-instruct-flash-2026-01-26": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen-tts": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen-tts-latest": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen-tts-2025-05-22": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "qwen-tts-2025-04-10": {
-    family: "qwen-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "MiniMax/speech-2.8-hd": {
-    family: "minimax-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "MiniMax/speech-02-hd": {
-    family: "minimax-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "MiniMax/speech-2.8-turbo": {
-    family: "minimax-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-  "MiniMax/speech-02-turbo": {
-    family: "minimax-tts",
-    capabilities: AUDIO_GENERATE_CAPABILITY,
-    paramSupport: {},
-  },
-};
+> = Object.fromEntries(
+  Object.entries(ALIYUN_MODEL_REGISTRY_BASE).map(([id, entry]) => [
+    id,
+    entry.audio ||
+    entry.family === "qwen-audio-tts" ||
+    entry.family === "qwen-tts" ||
+    entry.family === "minimax-tts"
+      ? {
+          ...entry,
+          audio: {
+            ...audioMetadata(entry.family),
+            ...(entry.family === "qwen-audio-tts" &&
+            (id === "cosyvoice-v3.5-plus" || id === "cosyvoice-v3.5-flash")
+              ? {
+                  voiceResource: {
+                    protocols: ["qwen-audio"],
+                    targetModel: true,
+                  },
+                }
+              : {}),
+          },
+        }
+      : entry,
+  ])
+) as Readonly<Record<ModelId, AliyunModelEntry>>;
 
 const ALIYUN_PROVIDER_ID: ModelRegistry["providerId"] = "aliyun-bailian";
 

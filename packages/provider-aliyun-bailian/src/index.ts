@@ -29,6 +29,7 @@ export type {
   AliyunWan27ProImageParams,
 } from "./provider/params.ts";
 export type {
+  AliyunAudioMetadata,
   AliyunModelEntry,
   AliyunModelFamily,
   AliyunParamSupport,

@@ -25,4 +25,9 @@ export type AudioStreamEvent =
       readonly text?: string;
       readonly words?: readonly AudioWordTimestamp[];
     }
-  | { readonly type: "complete"; readonly audio?: AudioContent };
+  | { readonly type: "complete"; readonly audio?: AudioContent }
+  | {
+      readonly type: "error";
+      readonly code: string;
+      readonly message: string;
+    };

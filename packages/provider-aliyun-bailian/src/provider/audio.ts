@@ -149,6 +149,10 @@ export async function generateAliyunAudio(
     typeof output.demo_audio === "string" ? output.demo_audio : undefined;
   const format =
     typeof audio.format === "string" ? audio.format : options.format;
+  const sampleRate =
+    typeof audio.sample_rate === "number"
+      ? audio.sample_rate
+      : options.sampleRate;
   const content: AudioContent = {
     ...(typeof audio.url === "string"
       ? { url: audio.url }
@@ -163,6 +167,12 @@ export async function generateAliyunAudio(
       ? { expiresAt: audio.expires_at }
       : {}),
     ...(format ? { format, mimeType: mimeType(format) } : {}),
+    ...(sampleRate !== undefined ? { sampleRate } : {}),
+    ...(typeof audio.channels === "number" ? { channels: audio.channels } : {}),
+    ...(typeof audio.bit_depth === "number"
+      ? { bitDepth: audio.bit_depth }
+      : {}),
+    ...(typeof audio.encoding === "string" ? { encoding: audio.encoding } : {}),
   };
   if (!content.url && !content.base64)
     throw new SdkError({
@@ -356,6 +366,15 @@ function parseAudioStreamEvent(payload: string): AudioStreamEvent | undefined {
         encoding: "base64",
         format: "pcm",
         mimeType: "audio/pcm",
+        ...(typeof audio.sample_rate === "number"
+          ? { sampleRate: audio.sample_rate }
+          : {}),
+        ...(typeof audio.channels === "number"
+          ? { channels: audio.channels }
+          : {}),
+        ...(typeof audio.bit_depth === "number"
+          ? { bitDepth: audio.bit_depth }
+          : {}),
         ...(typeof audio.id === "string" ? { id: audio.id } : {}),
       },
     };
@@ -372,5 +391,19 @@ function parseAudioStreamEvent(payload: string): AudioStreamEvent | undefined {
             }
           : undefined,
     };
+  if (type === "error" || output.code || output.error) {
+    const source =
+      typeof output.error === "object" && output.error !== null
+        ? (output.error as Record<string, unknown>)
+        : output;
+    return {
+      type: "error",
+      code: typeof source.code === "string" ? source.code : "PROVIDER_ERROR",
+      message:
+        typeof source.message === "string"
+          ? source.message
+          : "Aliyun audio stream failed",
+    };
+  }
   return undefined;
 }
