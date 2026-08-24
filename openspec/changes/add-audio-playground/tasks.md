@@ -50,10 +50,10 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 Add Chinese and English `audio-generation` MDX pages covering `generateAudio()`, `streamAudio()`, all Alibaba audio families, SSML, LaTeX, PCM/WAV playback, waveforms, temporary URLs, and Playground credential differences.
-- [ ] 7.2 Update Chinese Alibaba provider docs and add the English counterpart with the audio model/option/voice-resource matrix and upload/`oss://` notes.
-- [ ] 7.3 Register `audio-generation` in the site docs manifest and verify both-language navigation.
-- [ ] 7.4 Keep SSML/LaTeX examples in fenced code blocks and add docs tests for frontmatter, navigation, escaped LaTeX, SSML limits, streaming-not-WebSocket, and web-versus-site credential guidance.
+- [x] 7.1 Add Chinese and English `audio-generation` MDX pages covering `generateAudio()`, `streamAudio()`, all Alibaba audio families, SSML, LaTeX, PCM/WAV playback, waveforms, temporary URLs, and Playground credential differences.
+- [x] 7.2 Update Chinese Alibaba provider docs and add the English counterpart with the audio model/option/voice-resource matrix and upload/`oss://` notes.
+- [x] 7.3 Register `audio-generation` in the site docs manifest and verify both-language navigation.
+- [x] 7.4 Keep SSML/LaTeX examples in fenced code blocks and add docs tests for frontmatter, navigation, escaped LaTeX, SSML limits, streaming-not-WebSocket, and web-versus-site credential guidance.
 
 ## 8. Verification
 

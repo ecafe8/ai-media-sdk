@@ -206,4 +206,46 @@ describe("content structure assertions", () => {
       expect(source).not.toContain("| `NOT_IMPLEMENTED` |");
     }
   });
+
+  test("audio docs cover safe text examples and transport boundaries", () => {
+    const zh = readDoc("zh", "audio-generation");
+    const en = readDoc("en", "audio-generation");
+    for (const source of [zh, en]) {
+      expect(source).toContain("generateAudio");
+      expect(source).toContain("streamAudio");
+      expect(source).toContain("CosyVoice");
+      expect(source).toContain("Qwen-TTS");
+      expect(source).toContain("MiniMax");
+      expect(source).toContain("SSML");
+      expect(source).toContain("LaTeX");
+      expect(source).toContain("PCM");
+      expect(source).toContain("WAV");
+      expect(source).toMatch(/波形|waveform/i);
+      expect(source).toMatch(/临时|temporary/i);
+      expect(source).toContain("WebSocket");
+      expect(source).toContain("CORS");
+      expect(source).toMatch(/```(?:xml|text)[\s\S]*?\\frac/);
+      expect(source).toMatch(/```xml[\s\S]*<speak[\s\S]*```/);
+    }
+  });
+
+  test("Alibaba provider docs include audio and voice-resource matrix", () => {
+    const zh = readDoc("zh", "providers/aliyun-bailian");
+    const en = readDoc("en", "providers/aliyun-bailian");
+    for (const source of [zh, en]) {
+      expect(source).toContain("ProviderModelTable");
+      expect(source).toContain("qwen-audio-3.0-tts");
+      expect(source).toContain("qwen3-tts");
+      expect(source).toContain("MiniMax/speech");
+      expect(source).toContain("voiceCloning");
+      expect(source).toContain("voiceDesign");
+      expect(source).toContain("oss://");
+    }
+  });
+
+  test("audio generation is present in the manifest and both language trees", () => {
+    expect(MANIFEST_SLUGS).toContain("audio-generation");
+    expect(ZH_SLUGS).toContain("audio-generation");
+    expect(EN_SLUGS).toContain("audio-generation");
+  });
 });

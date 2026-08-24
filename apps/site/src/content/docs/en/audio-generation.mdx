@@ -1,0 +1,145 @@
+---
+title: Audio generation and streaming speech
+description: Generate, stream, play, download, and visualize Alibaba Bailian TTS audio with generateAudio and streamAudio.
+---
+
+# Audio generation and streaming speech
+
+The SDK audio contract targets text-to-speech. The Alibaba Bailian adapter currently
+covers CosyVoice, Qwen-Audio, Qwen-TTS, and MiniMax TTS. Callers provide `text`,
+`voice`, a model, and `providerOptions.aliyun`; the SDK does not parse or rewrite text.
+
+## generateAudio
+
+Use `generateAudio` when the caller can wait for a complete result. Bind an audio model
+and read the returned `AudioContent`:
+
+```ts
+import { generateAudio } from "@ai-media/sdk";
+import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
+
+const provider = createAliyunBailianProvider({
+  apiKey: process.env.DASHSCOPE_API_KEY!,
+  baseUrl: "https://dashscope.aliyuncs.com/api/v1",
+});
+
+const result = await generateAudio({
+  model: provider.audio("cosyvoice-v3.5-flash"),
+  text: "Welcome to the AI Media SDK.",
+  voice: "longxiaochun",
+  providerOptions: { aliyun: { format: "mp3", sampleRate: 24000 } },
+});
+
+const audio = result.content[0];
+console.log(audio?.url ?? audio?.base64, audio?.mimeType);
+```
+
+`text` and `voice` must not be empty. Model capabilities, formats, and family-specific
+options are validated before dispatch. A provider may return a URL, Base64, or both,
+with metadata such as `format`, `mimeType`, `sampleRate`, `channels`, `bitDepth`, and
+`expiresAt`.
+
+## streamAudio and SSE
+
+`streamAudio` returns `AsyncIterable<AudioStreamEvent>`. Events normally contain
+`sentence-begin`, one or more `sentence-synthesis`, `sentence-end`, and finally
+`complete` or `error`. This is HTTP `POST` SSE, not WebSocket, and must not use
+`EventSource`. An `AbortController` can cancel the request:
+
+```ts
+import { streamAudio } from "@ai-media/sdk";
+
+const controller = new AbortController();
+for await (const event of streamAudio({
+  model: provider.audio("cosyvoice-v3.5-flash"),
+  text: "This sentence can be synthesized incrementally.",
+  voice: "longxiaochun",
+  providerOptions: { aliyun: { format: "pcm", sampleRate: 24000 } },
+  signal: controller.signal,
+})) {
+  if (event.type === "sentence-synthesis") {
+    console.log(event.audio.base64, event.audio.sampleRate);
+  }
+}
+```
+
+In a browser, the compatibility default is to accumulate PCM chunks, then wrap them in
+a WAV Blob using the sample rate, channels, bit depth, and encoding before assigning the
+result to `<audio controls>`. Never assign raw PCM directly to `audio.src`. Optional
+low-latency Web Audio scheduling must start after a user gesture. Disconnects and
+cancellation are not retried, and cancellation must remain distinct from a provider error.
+
+## Model and option matrix
+
+| Family | Model range | Formats | Sample rates | Instruction/SSML |
+| --- | --- | --- | --- | --- |
+| CosyVoice / Qwen-Audio | `cosyvoice-v3.5-*`, `cosyvoice-v3-*`, `cosyvoice-v2`, `qwen-audio-3.0-tts-*` | `mp3`, `pcm`, `wav`, `opus` | 8000, 16000, 22050, 24000, 44100, 48000 | `instruction`; SSML supported |
+| Qwen-TTS | `qwen3-tts-*`, `qwen-tts*` | `mp3`, `wav` | Model/API dependent | `instructions`, `languageType`, `optimizeInstructions` |
+| MiniMax | `MiniMax/speech-2.8-*`, `MiniMax/speech-02-*` | `mp3`, `wav`, `pcm` | 16000, 24000, 32000, 44100 | `voiceSetting` and `audioSetting` |
+
+Qwen-Audio/CosyVoice also expose `volume`, `rate`, `pitch`, `seed`, `languageHints`,
+and `wordTimestampEnabled`; MiniMax exposes `speed`, `vol`, `pitch`, `emotion`,
+`bitrate`, and `channel`. Keep these under `providerOptions.aliyun`, never at the
+public request top level. See the [Alibaba Bailian provider](/docs/providers/aliyun-bailian)
+for the registry-driven model table.
+
+## SSML and LaTeX
+
+SSML is enabled only for supporting models. The SDK forwards it as ordinary `text`: it
+does not parse XML or escape it. Submit markup as content:
+
+```xml
+<speak>
+  <prosody rate="fast">This sentence is spoken faster.</prosody>
+</speak>
+```
+
+LaTeX is likewise not rendered, validated, or rewritten. Only the normal JSON/TypeScript
+string escaping rules apply:
+
+```text
+Read this formula: $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$.
+```
+
+The site Playground applies a 10,000-character text limit. Do not concatenate or format
+the input in a way that changes the caller's original text.
+
+## Playback, waveforms, and result lifetime
+
+URL or Base64 `mp3`/`wav` content can become a MIME-aware data or Blob URL for an
+accessible `<audio controls>` player and download action. PCM is not a complete
+container: wrap it as WAV or offer download only. Completed audio can use a waveform
+renderer whose progress cursor follows the audio element's `timeupdate`; streamed PCM
+uses an incremental peak buffer and must not treat each chunk as a file. If decoding
+fails, keep playback/download available where possible and explain that waveform preview
+is unavailable.
+
+Provider result URLs and uploaded `oss://`/temporary URLs can expire. Persist the audio
+in your own object storage or database promptly and retain format/sample-rate metadata.
+Do not treat a temporary URL as a permanent resource or auto-refresh it.
+
+## Voice cloning and design
+
+The provider exposes two separate managers: `voiceCloning` supports create, list, get,
+update, and delete; `voiceDesign` supports create, list, get, and delete, with no update.
+Cloning accepts a public HTTP(S) audio URL or a local file; local files are uploaded to
+a model-bound temporary `oss://` URL first. Qwen-Audio uses `protocol: "qwen-audio"`
+and `prefix`, while Qwen-TTS uses `protocol: "qwen"` and `preferredName`. A created
+voice id can only be used with a TTS model sharing its `targetModel`. MiniMax voice
+cloning/design is outside the SDK resource managers.
+
+## Web and Site credentials
+
+`apps/web` is a server-proxied Playground: API keys and Authorization headers remain on
+the server and audio requests use server routes. `apps/site` is a BYO-key static site:
+credentials stay in the browser key store, DashScope is called directly, and a complete
+confirmed endpoint is required. Browser CORS can still block a request; the site does
+not persist credentials on a project server. Prefer a server proxy for production
+integrations, and never expose keys, headers, or internal stack traces in errors.
+
+## Related docs
+
+- [Alibaba Bailian provider](/docs/providers/aliyun-bailian)
+- [Results](/docs/results)
+- [File upload](/docs/file-upload)
+- [Error handling](/docs/error-handling)

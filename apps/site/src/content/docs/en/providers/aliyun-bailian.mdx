@@ -1,0 +1,100 @@
+---
+title: Alibaba Bailian
+description: Alibaba Bailian (DashScope) Provider: image, video, and audio models, audio options, voice resources, and oss:// inputs.
+---
+
+import { ProviderModelTable } from "@/components/docs/provider-model-table";
+
+# Alibaba Bailian
+
+## Overview
+
+`@ai-media/provider-aliyun-bailian` uses native `fetch` to call the DashScope REST
+API. It covers **image (synchronous and asynchronous), video (asynchronous), and
+audio (synchronous and SSE)** generation.
+
+## Installation
+
+```bash
+npm install @ai-media/sdk @ai-media/provider-aliyun-bailian
+```
+
+## Configuration
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `apiKey` | `string` | Yes | DashScope API key sent as a Bearer credential |
+| `baseUrl` | `string` | Yes | Workspace endpoint or `https://dashscope.aliyuncs.com/api/v1` |
+
+## Quick start
+
+```ts
+import { createAliyunBailianProvider } from "@ai-media/provider-aliyun-bailian";
+import { generateAudio } from "@ai-media/sdk";
+
+const provider = createAliyunBailianProvider({
+  apiKey: "<your-dashscope-api-key>",
+  baseUrl: "https://dashscope.aliyuncs.com/api/v1",
+});
+
+const result = await generateAudio({
+  model: provider.audio("cosyvoice-v3.5-flash"),
+  text: "Good morning.",
+  voice: "longxiaochun",
+  providerOptions: {
+    aliyun: { format: "mp3", sampleRate: 24000 },
+  },
+});
+```
+
+## Model list
+
+<ProviderModelTable provider="aliyun-bailian" />
+
+The audio model matrix is:
+
+| Family | Current models | Entry points | SSML | Voice-resource protocol |
+| --- | --- | --- | --- | --- |
+| CosyVoice / Qwen-Audio TTS | `cosyvoice-v3.5-*`, `cosyvoice-v3-*`, `cosyvoice-v2`, `qwen-audio-3.0-tts-*` | `generateAudio`, `streamAudio` | Supported for the Qwen-Audio family | `qwen-audio` for v3.5 voice resources |
+| Qwen-TTS | `qwen3-tts-*`, dated flash/instruct snapshots, and `qwen-tts*` | `generateAudio`, `streamAudio` | Not declared by this family | `qwen` when the target supports resources |
+| MiniMax TTS | `MiniMax/speech-2.8-*`, `MiniMax/speech-02-*` | `generateAudio`, `streamAudio` | Not supported | No SDK voice manager |
+
+Image and video models remain available in the registry table. Async image/video
+models use `submitImageTask` / `submitVideoTask` and `TaskHandle` polling.
+
+## providerOptions.aliyun
+
+Audio options stay under `providerOptions.aliyun` and must match the selected family:
+
+| Family | Fields | Formats | Sample rates | Instruction field |
+| --- | --- | --- | --- | --- |
+| Qwen-Audio / CosyVoice | `format`, `sampleRate`, `volume`, `rate`, `pitch`, `enableSsml`, `wordTimestampEnabled`, `seed`, `languageHints`, `instruction` | `mp3`, `pcm`, `wav`, `opus` | 8000/16000/22050/24000/44100/48000 | `instruction` |
+| Qwen-TTS | `languageType`, `instructions`, `optimizeInstructions` | `mp3`, `wav` | Model/API dependent | `instructions` |
+| MiniMax TTS | `voiceSetting.voiceId/speed/vol/pitch/emotion`, `audioSetting.sampleRate/bitrate/format/channel` | `mp3`, `wav`, `pcm` | 16000/24000/32000/44100 | Not applicable |
+
+Do not mix family fields. Full usage, SSML, streaming, PCM/WAV playback, and result
+lifetime guidance is in [Audio generation](/docs/audio-generation).
+
+## Voice resources
+
+`provider.voiceCloning` supports `create`, `list`, `get`, `update`, and `delete`.
+`provider.voiceDesign` supports `create`, `list`, `get`, and `delete`, but not update.
+Cloning accepts a public HTTP(S) audio URL or a local file. A local file is uploaded
+first and becomes a temporary `oss://` URL. Every created voice is bound to its
+`targetModel`; use its id only with a matching TTS model. MiniMax voice cloning/design
+is outside these managers.
+
+## `oss://` inputs and uploads
+
+With `@ai-media/uploader`, local image or audio files can be uploaded as temporary
+`oss://` inputs for editing, video, cloning, or design. When the adapter sees an
+`oss://` URL it automatically adds `X-DashScope-OssResourceResolve: enable`. Uploaded
+objects expire, so create the resource promptly and do not use them as permanent storage.
+See [File upload](/docs/file-upload) for the workflow.
+
+## Limitations and differences
+
+- Audio SSE is HTTP `POST`, not WebSocket. PCM chunks must be accumulated and wrapped in WAV before `<audio>` playback.
+- Provider result URLs and temporary upload URLs can expire; persist results promptly.
+- The site Playground uses browser-local BYO credentials and a confirmed endpoint, so CORS can block direct requests. The web Playground proxies requests server-side and never sends credentials to the browser.
+- Errors are normalized as `SdkError`; see [Error handling](/docs/error-handling).

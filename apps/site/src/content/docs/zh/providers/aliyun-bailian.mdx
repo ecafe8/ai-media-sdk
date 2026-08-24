@@ -1,6 +1,6 @@
 ---
 title: 阿里云百炼
-description: 阿里云百炼（DashScope）Provider：图像与视频模型、providerOptions.aliyun、oss:// 输入与异步任务。
+description: 阿里云百炼（DashScope）Provider：图像、视频与音频模型，音频参数、语音资源和 oss:// 输入。
 ---
 
 import { ProviderModelTable } from "@/components/docs/provider-model-table";
@@ -9,7 +9,7 @@ import { ProviderModelTable } from "@/components/docs/provider-model-table";
 
 ## 概览
 
-`@ai-media/provider-aliyun-bailian` 基于原生 `fetch` 直调 DashScope REST API，覆盖**图像（同步 + 异步）与视频（异步）**两类能力。
+`@ai-media/provider-aliyun-bailian` 基于原生 `fetch` 直调 DashScope REST API，覆盖**图像（同步 + 异步）、视频（异步）与音频（同步 + SSE）**。
 
 ## 安装
 
@@ -43,11 +43,22 @@ const result = await generateImage({
 });
 ```
 
+音频模型通过 `provider.audio(modelId)` 绑定；音频请求使用 `generateAudio` 或
+`streamAudio`，不提交 `family` 字段，适配器会依据注册表选择请求协议。
+
 ## 模型列表
 
-<ProviderModelTable provider="aliyun-bailian" />
+图像模型覆盖 Qwen Image（生成 + 编辑）与 Wan 系列（生成）；视频模型覆盖 HappyHorse（文生/首帧图生/参考生/视频编辑）与 Wan 2.6/3.0 文生视频。异步模型通过 `submitImageTask` / `submitVideoTask` 提交，见[视频生成与异步任务](/docs/video-generation)。
 
-图像模型覆盖 Qwen Image（生成 + 编辑）与 Wan 系列（生成）；视频模型覆盖 HappyHorse（文生/首帧图生/参考生/视频编辑）与 Wan 2.6 文生视频。异步模型通过 `submitImageTask` / `submitVideoTask` 提交，见[视频生成与异步任务](/docs/video-generation)。
+音频模型矩阵如下；完整的能力徽章、模型 id 和注册表元数据由下表组件读取：
+
+| 家族 | 当前模型 | 音频入口 | SSML | 语音资源协议 |
+| --- | --- | --- | --- | --- |
+| CosyVoice / Qwen-Audio TTS | `cosyvoice-v3.5-plus`、`cosyvoice-v3.5-flash`、`cosyvoice-v3-plus`、`cosyvoice-v3-flash`、`cosyvoice-v2`、`qwen-audio-3.0-tts-plus`、`qwen-audio-3.0-tts-flash` | `generateAudio`、`streamAudio` | 支持 | v3.5 使用 `qwen-audio` 语音资源；其他模型使用系统 voice |
+| Qwen-TTS | `qwen3-tts-flash`、日期版本、`qwen3-tts-instruct-flash`、`qwen-tts`、`qwen-tts-latest` 及日期版本 | `generateAudio`、`streamAudio` | 不由该家族元数据声明 | `qwen`（资源能力须由目标模型支持） |
+| MiniMax TTS | `MiniMax/speech-2.8-hd`、`MiniMax/speech-02-hd`、`MiniMax/speech-2.8-turbo`、`MiniMax/speech-02-turbo` | `generateAudio`、`streamAudio` | 不支持 | 不提供 SDK 语音克隆/设计管理器 |
+
+<ProviderModelTable provider="aliyun-bailian" />
 
 ## providerOptions.aliyun
 
@@ -67,12 +78,33 @@ const result = await generateImage({
 
 视频参数（resolution/ratio/duration/audio_setting 等）按模型与模式有允许清单限制，详见各视频模型说明。
 
+音频参数矩阵：
+
+| 家族 | `providerOptions.aliyun` 字段 | 格式 | 采样率 | 指令字段 |
+| --- | --- | --- | --- | --- |
+| Qwen-Audio / CosyVoice | `format`、`sampleRate`、`volume`、`rate`、`pitch`、`enableSsml`、`wordTimestampEnabled`、`seed`、`languageHints`、`instruction` | `mp3`、`pcm`、`wav`、`opus` | 8000/16000/22050/24000/44100/48000 | `instruction` |
+| Qwen-TTS | `languageType`、`instructions`、`optimizeInstructions` | `mp3`、`wav` | 由模型/API 决定 | `instructions` |
+| MiniMax TTS | `voiceSetting.voiceId/speed/vol/pitch/emotion`、`audioSetting.sampleRate/bitrate/format/channel` | `mp3`、`wav`、`pcm` | 16000/24000/32000/44100 | 不适用 |
+
+只发送所选家族支持的字段；例如不要把 `voiceSetting` 传给 Qwen，也不要把
+`enableSsml` 传给 MiniMax。详细的公共入口和流事件见[音频生成](/docs/audio-generation)。
+
+### 语音克隆与音色设计
+
+`provider.voiceCloning` 支持 `create`、`list`、`get`、`update`、`delete`；
+`provider.voiceDesign` 支持 `create`、`list`、`get`、`delete`，不提供 update。
+克隆支持公开 HTTP(S) 音频 URL，也支持上传后得到的 `oss://` URL。创建时必须
+绑定 `targetModel`，后续只能在相同目标模型的 TTS 请求中使用返回的 voice id。
+MiniMax 不在该语音资源管理范围内。
+
 ## oss:// 输入与本地文件
 
-配合 `@ai-media/uploader` 的 Aliyun 链路，本地文件可上传为 `oss://` 临时 URL 作为编辑/视频输入。适配器检测到 `oss://` URL 会**自动注入** `X-DashScope-OssResourceResolve: enable` 请求头，无需手动处理。上传流程见[文件上传](/docs/file-upload)。
+配合 `@ai-media/uploader` 的 Aliyun 链路，本地图像或音频文件可上传为 `oss://` 临时 URL 作为编辑、视频或语音资源输入。适配器检测到 `oss://` URL 会**自动注入** `X-DashScope-OssResourceResolve: enable` 请求头，无需手动处理。上传流程见[文件上传](/docs/file-upload)。临时 OSS URL 会过期，上传后应立即创建资源，不应作为永久存储。
 
 ## 限制与差异
 
 - 视频生成全部为异步任务，需在浏览器/服务端轮询 `TaskHandle`。
+- 音频 SSE 是 HTTP `POST` 流，不是 WebSocket；`streamAudio` 的 PCM 片段需要累积并封装为 WAV 后再交给 `<audio>` 播放。
 - 生成结果 URL 为临时链接，请及时持久化，见[结果结构](/docs/results)。
+- 站点 Playground 使用浏览器本地保存的 BYO API key 和已确认的 endpoint，直连时可能受 CORS 影响；Web Playground 由服务端代理，凭据不会发送到浏览器。
 - 错误处理统一为 `SdkError`，见[错误处理](/docs/error-handling)。

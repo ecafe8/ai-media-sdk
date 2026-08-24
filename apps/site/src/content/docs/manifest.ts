@@ -31,6 +31,7 @@ export const DOC_GROUPS: readonly DocGroup[] = [
       "results",
       "error-handling",
       "file-upload",
+      "audio-generation",
     ],
   },
   {
