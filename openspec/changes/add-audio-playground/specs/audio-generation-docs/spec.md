@@ -33,11 +33,11 @@ The documentation SHALL explain that CosyVoice accepts supported Chinese LaTeX f
 - **THEN** the page shows an escaped source-string example and states that Markdown math fences are not supported
 
 ### Requirement: Site documents streaming and playback constraints
-The documentation SHALL explain HTTP SSE versus WebSocket realtime boundaries, PCM chunk semantics, sample-rate metadata, default accumulate-to-WAV playback, optional Web Audio low-latency playback, and that individual chunks are not independently playable files. It SHALL state that the current Playgrounds support HTTP SSE only.
+The documentation SHALL explain HTTP SSE versus WebSocket realtime boundaries, PCM chunk semantics, required sample-rate metadata, default accumulate-to-WAV playback, optional Web Audio low-latency playback, synchronized completed-audio waveforms, incremental streaming waveforms, and that individual chunks are not independently playable files. It SHALL state that the current Playgrounds support HTTP SSE only and that `wavesurfer.js` is only a complete-file waveform renderer.
 
 #### Scenario: User reads streaming guidance
 - **WHEN** a user reads the streaming section
-- **THEN** the page tells the user to use `streamAudio()` or the Playground stream mode, not WebSocket realtime APIs, and not to assign raw PCM chunks to `<audio src>`
+- **THEN** the page tells the user to use `streamAudio()` or the Playground stream mode, not WebSocket realtime APIs, not to assign raw PCM chunks to `<audio src>`, and that waveforms stay synchronized with playback
 
 ### Requirement: Site documents voice resources and uploads
 The documentation SHALL explain cloning and design as separate managers, required protocol and target-model binding, public URL and local-upload inputs, `oss://` expiry, and that MiniMax voice cloning is out of scope. It SHALL distinguish the web server-proxied upload path from the site browser-direct BYO-key path.

@@ -3,18 +3,18 @@
 - [ ] 1.1 Extend Alibaba audio registry entries with Playground-facing metadata: family, SSML support, formats, sample rates, instruction field, region/endpoint, and voice-resource protocol/target compatibility.
 - [ ] 1.2 Extend web and site Playground model/request/response types with `modality: "audio"`, explicit `text`/`voice`, family options, stream events, audio content, and voice-resource payloads.
 - [ ] 1.3 Fix web projection so Alibaba audio models remain audio, and stop site from dropping CosyVoice, Qwen-Audio, Qwen-TTS, and MiniMax TTS families.
-- [ ] 1.4 Add or extend stream event metadata so PCM chunks can carry or inherit format, sample rate, channels, and bit depth without treating chunks as complete files.
+- [ ] 1.4 Add or extend stream event metadata so PCM chunks provide or inherit format, sample rate, channels, bit depth, and encoding, plus a terminal sanitized `error` event.
 - [ ] 1.5 Add registry and type tests proving audio modality projection, family option isolation, and unchanged image/video models.
 
 ## 2. Web Server Audio APIs
 
 - [ ] 2.1 Extend or add the web generate route to accept audio requests, require non-empty text/voice, reject unsupported providers/models/options, and call `generateAudio()`.
 - [ ] 2.2 Add `POST /api/playground/audio/stream` that forwards `streamAudio()` as SSE, honors client abort, and never uses `EventSource`.
-- [ ] 2.3 Add `POST /api/playground/audio/upload` that accepts a local audio file, binds it to the selected target model, and uploads through `createAliyunUploader().upload({ fileBytes, fileName, model })`.
-- [ ] 2.4 Add voice-resource routes for cloning create/list/get/update/delete and design create/list/get/delete; reject design update.
+- [ ] 2.3 Add `POST /api/playground/audio/upload` that accepts a local audio file, binds it to the selected target model, and uploads through the server-side Aliyun `fileBytes` API after the browser-safe/Node split exists.
+- [ ] 2.4 Add voice-resource routes `POST|GET /api/playground/voices/cloning`, `GET|PATCH|DELETE /api/playground/voices/cloning/:id`, `POST|GET /api/playground/voices/design`, and `GET|DELETE /api/playground/voices/design/:id`; reject design update.
 - [ ] 2.5 Enforce named 64 KiB JSON / equivalent multipart, 10,000-character text, configured timeout, and five-per-client-per-minute shared rate limits on all audio routes; disable audio when the shared limiter is unavailable; do not auto-retry generate/stream/create.
 - [ ] 2.6 Sanitize audio/upload/voice errors and logs so API keys and authorization headers never leave the server.
-- [ ] 2.7 Add route and server tests for valid generation, missing text/voice, SSML/LaTeX pass-through, unsupported options, stream abort, upload model binding, design-update rejection, limits, rate limiting, and credential redaction.
+- [ ] 2.7 Add route and server tests for valid generation, missing text/voice, SSML/LaTeX pass-through, unsupported options, stream abort, stream error events, upload model binding, voice list pagination, design-update rejection, limits, rate limiting, and credential redaction.
 
 ## 3. Site Browser Execution
 
@@ -37,7 +37,9 @@
 - [ ] 5.2 Enable the audio modality tab in both Playground shells and keep image/video workbenches isolated.
 - [ ] 5.3 Render URL and Base64 `mp3`/`wav` results with `<audio controls>`, download, MIME-aware Blob/data URLs, and temporary-URL guidance.
 - [ ] 5.4 Implement default accumulate-to-WAV streaming playback and optional Web Audio low-latency scheduling after a user gesture; never assign raw PCM to `<audio src>`.
-- [ ] 5.5 Add form and result tests for required fields, family option serialization, URL/Base64 playback, PCM conversion, stream progress/cancel, and failed responses.
+- [ ] 5.5 Render a synchronized waveform for completed URL/Blob audio, using `wavesurfer.js` only as a complete-file renderer.
+- [ ] 5.6 Render an incremental custom waveform from streamed PCM chunks and keep it synchronized with playback progress.
+- [ ] 5.7 Add form and result tests for required fields, family option serialization, URL/Base64 playback, PCM conversion, stream progress/cancel/error, waveform sync, waveform decode failure, and failed responses.
 
 ## 6. Voice Cloning And Design UI
 
@@ -48,7 +50,7 @@
 
 ## 7. Documentation
 
-- [ ] 7.1 Add Chinese and English `audio-generation` MDX pages covering `generateAudio()`, `streamAudio()`, all Alibaba audio families, SSML, LaTeX, PCM/WAV playback, temporary URLs, and Playground credential differences.
+- [ ] 7.1 Add Chinese and English `audio-generation` MDX pages covering `generateAudio()`, `streamAudio()`, all Alibaba audio families, SSML, LaTeX, PCM/WAV playback, waveforms, temporary URLs, and Playground credential differences.
 - [ ] 7.2 Update Chinese Alibaba provider docs and add the English counterpart with the audio model/option/voice-resource matrix and upload/`oss://` notes.
 - [ ] 7.3 Register `audio-generation` in the site docs manifest and verify both-language navigation.
 - [ ] 7.4 Keep SSML/LaTeX examples in fenced code blocks and add docs tests for frontmatter, navigation, escaped LaTeX, SSML limits, streaming-not-WebSocket, and web-versus-site credential guidance.
@@ -56,6 +58,6 @@
 ## 8. Verification
 
 - [ ] 8.1 Confirm WebSocket realtime TTS and MiniMax voice managers remain unimplemented and undocumented as available Playground features.
-- [ ] 8.2 Confirm SSML/LaTeX text is forwarded unchanged in web and site request paths.
+- [ ] 8.2 Confirm SSML/LaTeX text is forwarded unchanged in web and site request paths, and that clients never submit a `family` field.
 - [ ] 8.3 Run focused web, site, SDK, provider, and uploader tests, then `bun run lint`, `bun run typecheck`, `bun run build`, and `bun run test`.
 - [ ] 8.4 Run `openspec validate "add-audio-playground" --type change --strict` and review the implementation against both capability specs.

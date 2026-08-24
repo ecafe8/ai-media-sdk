@@ -8,6 +8,7 @@ The Alibaba audio SDK already exposes non-realtime TTS, HTTP SSE streaming, SSML
 - Project Alibaba audio models as `modality: "audio"` instead of image, covering CosyVoice, Qwen-Audio TTS, Qwen-TTS, and MiniMax TTS families.
 - Add non-realtime generation through existing `generateAudio()` / `provider.audio(model)` contracts, with family-specific option panels.
 - Add HTTP SSE streaming through existing `streamAudio()`, using native `fetch` + `ReadableStream` and Web Audio / WAV playback. WebSocket realtime TTS remains out of scope.
+- Render a synchronized waveform for completed audio and an incremental waveform during PCM streaming. `wavesurfer.js` may render complete URL/Blob waveforms; it MUST NOT own realtime PCM playback.
 - Pass SSML and LaTeX text unchanged. The Playground MUST NOT parse, rewrite, render, or auto-escape caller text.
 - Support voice cloning and voice design resource managers in both Playgrounds: create, list, get, delete, plus cloning update. Design update remains unavailable.
 - Accept public audio URLs and local file uploads for cloning/design. Local files reuse `@ai-media/uploader` Aliyun temporary OSS (`oss://`) and bind the upload to the selected target model.
@@ -19,7 +20,7 @@ The Alibaba audio SDK already exposes non-realtime TTS, HTTP SSE streaming, SSML
 
 ### New Capabilities
 
-- `audio-playground`: Dual-app audio Playground covering Alibaba TTS families, SSML/LaTeX pass-through, SSE streaming playback, local/URL upload, and voice cloning/design resource workflows.
+- `audio-playground`: Dual-app audio Playground covering Alibaba TTS families, SSML/LaTeX pass-through, SSE streaming playback, synchronized waveforms, local/URL upload, and voice cloning/design resource workflows.
 - `audio-generation-docs`: Site documentation for the SDK audio APIs, Alibaba model/option matrix, streaming and persistence constraints, and Playground credential differences.
 
 ### Modified Capabilities
@@ -32,6 +33,6 @@ The Alibaba audio SDK already exposes non-realtime TTS, HTTP SSE streaming, SSML
 - `apps/site` Playground types, registry, executor, provider-client, audio workbench, result feed, i18n, and BYO-key upload path.
 - Alibaba registry metadata used to drive family-specific forms, SSML/format/sample-rate capability checks, and voice-resource protocol selection.
 - `@ai-media/uploader` Aliyun path: web uses server-side `fileBytes`; site needs a browser-safe upload surface that does not import Node `fs`.
-- Existing `@ai-media/sdk` and `@ai-media/provider-aliyun-bailian` public contracts are reused. Streaming event metadata may be extended only if current `AudioContent` cannot carry sample rate, channels, or bit depth needed for PCM playback.
+- Existing `@ai-media/sdk` and `@ai-media/provider-aliyun-bailian` public contracts are reused. Stream events MUST provide or inherit `sampleRate`, `channels`, `bitDepth`, and `encoding`; missing metadata MUST fail closed instead of guessing a playable file. Family is derived from the model registry and MUST NOT be accepted from the client.
 - Site MDX docs, documentation manifest, and bilingual navigation.
 - No WebSocket realtime TTS, no MiniMax voice manager, no automatic persistence of temporary result URLs, and no KaTeX/MathJax documentation renderer.

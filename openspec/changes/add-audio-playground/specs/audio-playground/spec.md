@@ -77,8 +77,23 @@ Successful URL or Base64 `mp3`/`wav` results SHALL render in an accessible `<aud
 - **WHEN** the provider returns PCM audio
 - **THEN** the Playground does not assign the raw PCM to `<audio src>` and instead converts it to WAV or offers download-only
 
+### Requirement: Audio waveform is visible and synchronized
+Both Playgrounds SHALL render a waveform for every decodable completed audio result and SHALL synchronize waveform progress with the audio element. During streaming, the waveform SHALL update incrementally when PCM data is available. If decoding fails, playback and download SHALL remain available where possible and the UI SHALL show a non-blocking waveform-unavailable state. Completed URL/Blob waveforms MAY use `wavesurfer.js`; streamed PCM MUST use a custom incremental renderer.
+
+#### Scenario: Completed audio displays waveform
+- **WHEN** a URL or Base64 `mp3`/`wav` result is decoded
+- **THEN** the Playground renders a waveform whose playback progress stays synchronized with the audio element
+
+#### Scenario: Streaming waveform updates
+- **WHEN** PCM synthesis chunks arrive
+- **THEN** the waveform updates incrementally without treating each chunk as a complete file
+
+#### Scenario: Waveform decoding fails
+- **WHEN** the browser cannot decode the audio for waveform preview
+- **THEN** playback and download remain available where possible and the UI explains that waveform preview is unavailable
+
 ### Requirement: Users can stream HTTP SSE audio
-Each Playground SHALL support an optional streaming mode that consumes `streamAudio()` events: `sentence-begin`, `sentence-synthesis`, `sentence-end`, and `complete`. Streaming MUST use POST-capable transport, not `EventSource`. Individual PCM chunks MUST NOT be treated as independently playable files. The default playback mode SHALL accumulate chunks and produce a WAV Blob after completion; an optional low-latency Web Audio mode MAY schedule decoded PCM buffers after a user gesture. Cancellation SHALL abort the stream.
+Each Playground SHALL support an optional streaming mode that consumes `streamAudio()` events: `sentence-begin`, `sentence-synthesis`, `sentence-end`, `complete`, and a terminal `error`. Streaming MUST use POST-capable transport, not `EventSource`. Individual PCM chunks MUST NOT be treated as independently playable files. Stream events MUST provide or inherit `format`, `sampleRate`, `channels`, `bitDepth`, and `encoding`; missing metadata MUST fail closed. The default playback mode SHALL accumulate chunks and produce a WAV Blob after completion; an optional low-latency Web Audio mode MAY schedule decoded PCM buffers after a user gesture. Cancellation SHALL abort the stream and MUST be distinguishable from a provider failure. Network disconnects MUST NOT be retried automatically.
 
 #### Scenario: Stream completes successfully
 - **WHEN** the user starts streaming TTS for a supporting model
@@ -91,6 +106,14 @@ Each Playground SHALL support an optional streaming mode that consumes `streamAu
 #### Scenario: Stream event lacks playback metadata
 - **WHEN** a synthesis event does not include enough format or sample-rate metadata to decode PCM
 - **THEN** the Playground keeps accumulating or falls back to the complete URL/result instead of guessing a playable file
+
+#### Scenario: Stream fails
+- **WHEN** the provider or transport emits a terminal stream error
+- **THEN** the Playground stops scheduling audio, releases the AudioContext if one was started, shows a sanitized error, and does not retry automatically
+
+#### Scenario: Stream is disconnected
+- **WHEN** the SSE connection ends unexpectedly before `complete`
+- **THEN** the Playground treats the stream as failed, does not retry, and preserves any already accumulated audio only as a non-authoritative preview if it can be decoded
 
 ### Requirement: Users can clone and design voices
 Both Playgrounds SHALL expose separate cloning and design workflows using the existing Alibaba voice managers. Cloning SHALL support create, list, get, update, and delete. Design SHALL support create, list, get, and delete, and MUST NOT offer update. Created voices MUST remain bound to their `targetModel` when later used for TTS. MiniMax voice cloning remains out of scope.
@@ -106,6 +129,17 @@ Both Playgrounds SHALL expose separate cloning and design workflows using the ex
 #### Scenario: Design update is requested
 - **WHEN** a client attempts to update a designed voice
 - **THEN** the Playground rejects the request without sending a cloning update action
+
+### Requirement: Web voice-resource APIs use a stable contract
+The web Playground SHALL expose cloning and design routes that map to the existing SDK managers and result shapes. Cloning routes SHALL be `POST|GET /api/playground/voices/cloning`, `GET|PATCH|DELETE /api/playground/voices/cloning/:id`. Design routes SHALL be `POST|GET /api/playground/voices/design` and `GET|DELETE /api/playground/voices/design/:id`. List routes SHALL accept `protocol`, optional `targetModel`, `pageIndex`, and `pageSize`. Design MUST NOT have an update route.
+
+#### Scenario: User lists cloned voices
+- **WHEN** a web client requests cloned voices with a protocol and optional target model
+- **THEN** the route returns a paginated `VoiceListResult` without exposing credentials
+
+#### Scenario: Design update route is requested
+- **WHEN** a client sends an update to a designed voice
+- **THEN** the API rejects the request before any cloning update action is sent
 
 ### Requirement: Local audio upload is supported for voice resources
 Voice cloning and design SHALL accept either a public URL or a local audio file. Local files MUST be uploaded through the Aliyun temporary-file uploader, bound to the selected target model, and converted to an `oss://` URL before the voice-resource request. The Playground SHALL validate size, MIME/extension, and required filename, and SHALL display expiry guidance for uploaded files.

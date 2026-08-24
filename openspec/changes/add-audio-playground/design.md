@@ -13,6 +13,7 @@ See `proposal.md` for motivation and the capability specs for observable behavio
 - Reuse existing SDK/provider audio and voice-resource APIs.
 - Support public URL and local-file inputs for cloning/design through the existing Aliyun uploader.
 - Make SSE streaming playable without treating PCM chunks as complete files.
+- Show a synchronized waveform for completed audio and an incremental waveform during PCM streaming.
 - Keep web credentials server-only and site credentials browser-local.
 
 **Non-Goals:**
@@ -28,7 +29,7 @@ See `proposal.md` for motivation and the capability specs for observable behavio
 
 ### Dual execution surfaces with the same request shape
 
-Both apps use an explicit audio request: `text`, `voice`, `model`, `family`, and `providerOptions.aliyun`. Image `prompt` and video `audioSetting` are not reused.
+Both apps use an explicit audio request: `text`, `voice`, `model`, and `providerOptions.aliyun`. Image `prompt` and video `audioSetting` are not reused. The server or site executor derives the option family from the selected model registry entry; clients MUST NOT submit a `family` field.
 
 - `apps/web` adds server routes for generate, stream, upload, and voice resources. The browser never calls DashScope directly.
 - `apps/site` extends `executeSiteRequest` / `buildSiteProvider` to call `provider.audio()`, `streamAudio()`, and the voice managers with the stored key.
@@ -61,21 +62,25 @@ v3.5 CosyVoice entries remain cloning/design-oriented where the provider documen
 
 The form submits SSML and LaTeX as the `text` field. Validation checks presence, length, modality, and supported options only. `enableSsml` is sent only for supporting CosyVoice/Qwen-Audio models. JSON string escaping is a transport concern, not a formula rewrite.
 
-### Streaming uses native fetch and two playback modes
+### Streaming uses native fetch, required waveforms, and two playback modes
 
-Do not add a third-party PCM player. `wavesurfer.js` may be considered later for complete-file waveforms, but it does not consume SSE PCM chunks and is not part of this change.
+Do not add a third-party PCM player. Waveform display is required in this change:
+
+- Completed URL/Blob `mp3`/`wav` audio MAY use `wavesurfer.js` for the static waveform and seek cursor.
+- Streamed PCM MUST use a custom incremental waveform buffer. `wavesurfer.js` MUST NOT own realtime PCM playback or SSE parsing.
 
 Transport:
 
 - Web: `POST /api/playground/audio/stream` returns `text/event-stream` and forwards `streamAudio()` events. Client abort cancels the provider stream.
 - Site: browser `fetch(..., { method: "POST", signal })` plus `ReadableStream` parsing. `EventSource` is rejected because it cannot send POST bodies or BYO headers.
+- SSE responses MUST disable caching. A terminal `error` event carries a sanitized code/message. Network disconnects are not retried. User cancel and provider failure remain distinct.
 
 Playback:
 
 1. Default compatibility mode: accumulate `sentence-synthesis` PCM/Base64 chunks, wrap them as a WAV Blob after `complete` or after enough metadata is known, then use `<audio controls>`.
-2. Optional low-latency mode: after a user gesture, decode PCM into `AudioBuffer`s and schedule them on `AudioContext`. Cancellation stops further scheduling.
+2. Optional low-latency mode: after a user gesture, decode PCM into `AudioBuffer`s and schedule them on `AudioContext`. Cancellation stops further scheduling. This mode is optional and MUST NOT replace accumulate-to-WAV as the default.
 
-Streaming events must carry or inherit `format`, `sampleRate`, `channels`, and `bitDepth`. If the current SDK event cannot represent that metadata, extend `AudioContent` / stream events in the smallest compatible way. Raw PCM MUST NOT be assigned to `<audio src>`.
+Streaming events MUST provide or inherit `format`, `sampleRate`, `channels`, `bitDepth`, and `encoding`. Missing metadata MUST fail closed to a non-playable or complete-result fallback. Raw PCM MUST NOT be assigned to `<audio src>`. The waveform cursor MUST stay synchronized with the audio element for completed results, and MUST update incrementally while PCM chunks arrive.
 
 ### Upload reuses Aliyun temporary OSS and stays model-bound
 
@@ -113,6 +118,20 @@ UI has two panels, not one generic “voice CRUD”:
 
 Created voice ids can be copied into the TTS `voice` field only for the same `targetModel`. Design never emits `update_voice`. MiniMax preview-clone remains out of scope.
 
+Web voice-resource routes use these contracts and the existing SDK result shapes (`VoiceProfile`, `VoiceListResult`, `VoiceDesignResult`):
+
+- `POST /api/playground/voices/cloning`
+- `GET /api/playground/voices/cloning`
+- `GET /api/playground/voices/cloning/:id`
+- `PATCH /api/playground/voices/cloning/:id`
+- `DELETE /api/playground/voices/cloning/:id`
+- `POST /api/playground/voices/design`
+- `GET /api/playground/voices/design`
+- `GET /api/playground/voices/design/:id`
+- `DELETE /api/playground/voices/design/:id`
+
+List routes accept `protocol`, optional `targetModel`, `pageIndex`, and `pageSize`. Design has no update route.
+
 ### Protect the public web surface
 
 Named limits:
@@ -139,7 +158,8 @@ SSML and LaTeX examples are fenced code blocks. Docs distinguish:
 
 - [Risk] DashScope workspace endpoints may lack browser CORS. → Document the standard DashScope endpoint for site use; keep web server-proxied as the reliable path.
 - [Risk] Node `fs` in the Aliyun uploader breaks the site bundle. → Add or extract a `fileBytes`-only browser entry; keep `filePath` for Node/examples.
-- [Risk] PCM chunks are not playable files. → Default to accumulate-to-WAV; never assign raw PCM to `<audio src>`.
+- [Risk] PCM chunks are not playable files. → Default to accumulate-to-WAV; never assign raw PCM to `<audio src>`; render incremental waveform peaks from decoded PCM, not from raw files.
+- [Risk] Waveform decoding can block the main thread. → Decode once, reuse peaks, and keep playback available if waveform rendering fails.
 - [Risk] Stream events omit sample rate. → Extend stream metadata or inherit the requested sample rate; fail closed to complete-result fallback.
 - [Risk] Temporary `oss://` and result URLs expire. → Show expiry and require re-upload/re-generate; do not cache provider objects server-side.
 - [Risk] A public web audio endpoint can consume quota. → Enforce body/text/timeout/shared rate limits; disable audio when the shared limiter is missing.
@@ -159,4 +179,4 @@ Rollback is removing the audio UI/API branches and browser upload export. Image/
 
 ## Open Questions
 
-None. Browser-safe upload will be an additional export or internal split of `@ai-media/uploader/aliyun`, not a new provider. Low-latency Web Audio playback is optional and must not replace accumulate-to-WAV as the default.
+None. Browser-safe upload will be an additional export or internal split of `@ai-media/uploader/aliyun`, not a new provider. Low-latency Web Audio playback remains optional and must not replace accumulate-to-WAV as the default. Waveform display is required.
