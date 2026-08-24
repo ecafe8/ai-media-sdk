@@ -38,7 +38,7 @@ The SDK SHALL expose create, list, get, update, and delete operations for cloned
 
 ### Requirement: Voice cloning validates protocol-specific inputs before transport
 
-The SDK SHALL validate required fields, naming rules, supported audio input forms, language values, and operation/model compatibility before dispatching a request.
+The SDK SHALL validate required fields, naming rules, supported audio input forms, language values, text length, and operation/model compatibility before dispatching a request. Qwen-Audio/CosyVoice cloning SHALL use `prefix` with alphanumeric characters and at most ten characters, `language_hints` limited to `zh` or `en`, and a public audio URL. Qwen-TTS cloning SHALL use `preferred_name` with alphanumeric characters or underscores and at most sixteen characters, `language` from its documented language set, and an audio URL or Data URL limited to WAV, MPEG, or MP4.
 
 #### Scenario: Invalid clone prefix is rejected
 - **WHEN** a Qwen-Audio prefix contains unsupported characters or exceeds ten characters
@@ -46,6 +46,10 @@ The SDK SHALL validate required fields, naming rules, supported audio input form
 
 #### Scenario: Clone language values are model-specific
 - **WHEN** a caller supplies an unsupported `language_hints` or `language` value for the selected clone protocol
+- **THEN** the SDK SHALL raise `INVALID_REQUEST` without invoking the transport
+
+#### Scenario: Clone source audio form is validated
+- **WHEN** a Qwen-TTS clone receives a non-public URL or a Data URL with an unsupported audio MIME type
 - **THEN** the SDK SHALL raise `INVALID_REQUEST` without invoking the transport
 
 #### Scenario: Unsupported clone operation is rejected
@@ -59,3 +63,15 @@ Normalized voice records SHALL use stable SDK fields such as `id`, `targetModel`
 #### Scenario: Provider identifier fields are normalized
 - **WHEN** Alibaba returns either `voice_id` or `voice`
 - **THEN** the SDK SHALL expose the value as the normalized voice `id` and preserve the provider response as optional raw metadata
+
+### Requirement: Voice cloning distinguishes resource model from TTS target model
+
+The SDK SHALL record both the cloning protocol/model and the target synthesis model. It SHALL validate that the target model belongs to the supported voice-cloning target set and SHALL not assume that every TTS model can consume every cloned voice.
+
+#### Scenario: Cloning target model is preserved
+- **WHEN** a voice is created with a target model
+- **THEN** the normalized voice profile SHALL expose that target model and subsequent TTS documentation/API examples SHALL use the same model for the voice
+
+#### Scenario: Unsupported cloning target is rejected
+- **WHEN** a caller uses a target model not supported by the selected cloning protocol
+- **THEN** the SDK SHALL raise `INVALID_REQUEST` before transport dispatch

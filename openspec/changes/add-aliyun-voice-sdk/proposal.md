@@ -10,8 +10,11 @@ The SDK currently supports Alibaba Bailian image and video capabilities, but it 
 - Add `provider.voiceCloning` for creating, listing, querying, updating, and deleting cloned voices.
 - Add `provider.voiceDesign` for creating, listing, querying, and deleting designed voices.
 - Normalize Alibaba's `voice_id`/`voice`, `target_model`, timestamps, status, and preview audio fields into stable SDK types while retaining raw provider responses.
-- Implement Alibaba Qwen-Audio-TTS/CosyVoice and Qwen-TTS request/response mappings through the existing `Transport` and regional `baseUrl` configuration.
-- Register supported Alibaba TTS, voice-cloning, and voice-design model families with capability metadata and typed provider parameters.
+- Implement Alibaba Qwen-Audio-TTS, CosyVoice, Qwen-TTS, and MiniMax non-realtime TTS request/response mappings through the existing `Transport` and regional `baseUrl` configuration.
+- Register an explicit model, protocol, endpoint, and region matrix for TTS, voice cloning, and voice design, including stable and snapshot model IDs.
+- Support HTTP SSE streaming TTS with ordered audio chunks, sentence events, optional word timestamps, final URLs, cancellation, and errors.
+- Model SSML, LaTeX, emotional/rich-language tags, instruction controls, dialect constraints, and voice-specific capabilities without implementing a parser or silently rewriting caller text.
+- Normalize characters, token, and operation-count usage fields across provider response formats.
 - Register an explicit model/protocol capability matrix and validate model-specific fields, language values, audio formats, sample rates, text lengths, naming rules, and supported operations before network dispatch.
 - Keep MiniMax voice cloning outside the persistent voice resource managers because its API is an immediate preview-generation operation rather than voice CRUD.
 - Add focused unit tests, type tests, package exports, README/API documentation, and examples without adding provider runtime SDK dependencies.
@@ -35,4 +38,5 @@ The SDK currently supports Alibaba Bailian image and video capabilities, but it 
 - `packages/provider-aliyun-bailian`: audio model registry, TTS adapter, voice cloning manager, voice design manager, validation, mapping, exports, and tests.
 - Provider README, SDK API reference, and runnable examples.
 - Existing `Transport`, `SdkError`, and retry behavior are reused; no external DashScope SDK or other runtime dependency is introduced.
+- WebSocket realtime TTS, including `run-task`/`continue-task`/`finish-task` duplex sessions and binary audio frames, is explicitly excluded and will be handled by a separate change because it requires a WebSocket transport boundary.
 - Playground UI and browser-side credential handling are out of scope for this change.

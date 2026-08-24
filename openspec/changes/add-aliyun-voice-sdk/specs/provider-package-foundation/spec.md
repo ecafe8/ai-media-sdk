@@ -2,7 +2,7 @@
 
 ### Requirement: Provider runtime skeletons do not call external APIs
 
-Provider packages SHALL route external calls exclusively through the shared `Transport`. The Azure OpenAI adapter `generate` SHALL perform real Azure HTTP calls via the injected transport; the Azure adapter `edit` SHALL remain a `NOT_IMPLEMENTED` stub pending the multipart `/images/edits` contract. The Alibaba Bailian adapter `generate` and `edit` SHALL perform real Qwen-Image synchronous calls via the injected transport for `qwen-multimodal`-family models, while `wan-image`-family models SHALL remain `NOT_IMPLEMENTED` stubs on `generate`/`edit` pending the Wan sync path. The Alibaba Bailian Provider SHALL additionally perform synchronous and SSE streaming audio TTS calls plus voice cloning/design resource-manager operations through the injected transport for supported Alibaba models and actions. The Doubao-Seedream adapter `generate` and `edit` SHALL perform real Volcengine Ark synchronous calls via the injected transport on the `/images/generations` endpoint. The Aliyun Bailian adapter `submit` SHALL perform real async task submission and polling via the injected transport for both existing image/video modalities. None of the Provider packages SHALL depend on an external Provider runtime SDK (`openai`, DashScope, or the Volcengine Ark SDK).
+Provider packages SHALL route external calls exclusively through the shared `Transport`. The Azure OpenAI adapter `generate` SHALL perform real Azure HTTP calls via the injected transport; the Azure adapter `edit` SHALL remain a `NOT_IMPLEMENTED` stub pending the multipart `/images/edits` contract. The Alibaba Bailian adapter `generate` and `edit` SHALL perform real Qwen-Image synchronous calls via the injected transport for `qwen-multimodal`-family models, while `wan-image`-family models SHALL remain `NOT_IMPLEMENTED` stubs on `generate`/`edit` pending the Wan sync path. The Alibaba Bailian Provider SHALL additionally perform synchronous and SSE streaming audio TTS calls for supported Qwen-Audio-TTS, CosyVoice, Qwen-TTS, and MiniMax models, plus voice cloning/design resource-manager operations through the injected transport for supported Alibaba models and actions. WebSocket realtime TTS is not part of this HTTP Provider boundary. The Doubao-Seedream adapter `generate` and `edit` SHALL perform real Volcengine Ark synchronous calls via the injected transport on the `/images/generations` endpoint. The Aliyun Bailian adapter `submit` SHALL perform real async task submission and polling via the injected transport for both existing image/video modalities. None of the Provider packages SHALL depend on an external Provider runtime SDK (`openai`, DashScope, or the Volcengine Ark SDK).
 
 #### Scenario: Aliyun audio generation performs a real transport call
 - **WHEN** the Alibaba audio adapter is invoked with valid TTS input
@@ -15,6 +15,14 @@ Provider packages SHALL route external calls exclusively through the shared `Tra
 #### Scenario: Aliyun voice design uses the shared transport
 - **WHEN** a supported voice design operation is invoked with valid input
 - **THEN** the provider SHALL send the documented customization action through the injected transport and normalize the response, including preview audio when returned
+
+#### Scenario: Aliyun MiniMax TTS uses the shared transport
+- **WHEN** a supported MiniMax speech model is invoked with valid non-realtime or SSE input
+- **THEN** the provider SHALL send the documented multimodal generation request through the injected transport and map the response to normalized audio content
+
+#### Scenario: HTTP Provider boundary rejects WebSocket realtime TTS
+- **WHEN** a caller selects a WebSocket-only realtime TTS model through the HTTP audio path
+- **THEN** the provider SHALL reject it before attempting an HTTP request
 
 #### Scenario: Azure adapter performs real calls through the transport
 - **WHEN** the Azure adapter `generate` is invoked with valid configuration and an injected transport

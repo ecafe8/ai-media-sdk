@@ -10,7 +10,7 @@
 ## 2. Alibaba Registry And Parameters
 
 - [ ] 2.1 Extend the Alibaba registry with supported Qwen-Audio/CosyVoice and Qwen-TTS audio model entries.
-- [ ] 2.2 Add an explicit matrix covering TTS models (`qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2`, `qwen3-tts-flash`, `qwen3-tts-instruct-flash`) and cloning/design model IDs.
+- [ ] 2.2 Add an explicit matrix covering TTS models (`qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2`, `qwen3-tts-flash`, `qwen3-tts-flash-2025-11-27`, `qwen3-tts-flash-2025-09-18`, `qwen3-tts-instruct-flash`, `qwen3-tts-instruct-flash-2026-01-26`, `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`, and the four MiniMax speech models) plus cloning/design model IDs.
 - [ ] 2.3 Add registry metadata for cloning/design protocol, supported operations, languages, formats, sample rates, and limits.
 - [ ] 2.4 Add separate typed Qwen-Audio/CosyVoice and Qwen-TTS `providerOptions.aliyun` parameter families.
 - [ ] 2.5 Add typed `provider.audio(modelId)` overloads and public exports.
@@ -26,6 +26,10 @@
 - [ ] 3.6 Implement SSE streaming mapping, ordered Base64 chunks, sentence events, word timestamps, final URL, abort, and stream errors.
 - [ ] 3.7 Classify HTTP/provider errors as sanitized `SdkError` values.
 - [ ] 3.8 Add focused sync and streaming TTS Transport fixture tests for both protocol families and error paths.
+- [ ] 3.9 Implement MiniMax non-realtime and HTTP SSE TTS mapping with separate `voice_setting` and `audio_setting` options.
+- [ ] 3.10 Add MiniMax TTS response, usage, endpoint, model-region, and option validation tests.
+- [ ] 3.11 Add deterministic capability checks for SSML, LaTeX pass-through, emotional/rich-language tags, dialects, instructions, word timestamps, and voice/model compatibility without parsing or rewriting caller text.
+- [ ] 3.12 Add endpoint/region matrix tests proving SpeechSynthesizer versus multimodal-generation routing and rejecting unsupported regions before transport.
 
 ## 4. Alibaba Voice Cloning
 
@@ -53,6 +57,9 @@
 - [ ] 6.2 Update SDK API reference and Chinese provider documentation with the three-way naming boundary.
 - [ ] 6.3 Add runnable Alibaba audio/TTS and voice-resource example configuration without committing credentials.
 - [ ] 6.4 Document temporary audio URLs, inline preview data, upload expectations, and MiniMax out-of-scope behavior.
+- [ ] 6.5 Document the complete non-realtime model/protocol/endpoint/region matrix, including stable and snapshot model IDs.
+- [ ] 6.6 Document HTTP SSE versus WebSocket realtime boundaries, PCM chunk semantics, final URL behavior, usage normalization, and voice capability metadata.
+- [ ] 6.7 Keep system voice catalogs separately versioned from the model registry and document that unsupported voice/model combinations are provider errors unless deterministically known locally.
 
 ## 7. Verification And Release
 

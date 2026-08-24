@@ -35,3 +35,23 @@ The streaming contract SHALL support optional word-level timestamps, an abort si
 #### Scenario: Provider stream returns an error
 - **WHEN** an SSE chunk contains a provider failure
 - **THEN** the SDK SHALL surface a sanitized classified SDK error and SHALL not silently discard prior or subsequent stream state
+
+### Requirement: Streaming distinguishes HTTP SSE from WebSocket realtime sessions
+
+The HTTP streaming contract SHALL cover SSE responses only. WebSocket `run-task`, `continue-task`, `finish-task`, binary-frame, and duplex-session semantics SHALL not be represented as HTTP SSE events and SHALL remain a separate capability.
+
+#### Scenario: HTTP SSE is selected for supported non-realtime models
+- **WHEN** a caller requests streaming for a model supporting HTTP SSE
+- **THEN** the provider SHALL send `X-DashScope-SSE: enable` and expose SSE events through the streaming audio contract
+
+#### Scenario: WebSocket realtime is not silently emulated
+- **WHEN** a caller requests a WebSocket realtime model through the HTTP streaming API
+- **THEN** the SDK SHALL reject the request as unsupported rather than sending an HTTP SSE request
+
+### Requirement: Streaming audio encoding metadata is explicit
+
+The SDK SHALL expose the encoding or format metadata needed to interpret chunks and SHALL not claim that an individual Base64 PCM chunk is an independently playable complete file.
+
+#### Scenario: Qwen-TTS PCM chunks are identified
+- **WHEN** Qwen-TTS returns Base64 PCM chunks followed by a final complete URL
+- **THEN** the SDK SHALL identify the chunk encoding as PCM and expose the final URL separately
