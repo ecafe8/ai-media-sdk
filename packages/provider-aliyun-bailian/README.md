@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/@ai-media/provider-aliyun-bailian.svg)](https://www.npmjs.com/package/@ai-media/provider-aliyun-bailian)
 [![License](https://img.shields.io/npm/l/@ai-media/provider-aliyun-bailian.svg)](https://github.com/ecafe8/ai-media-sdk/blob/main/packages/provider-aliyun-bailian/LICENSE)
 
-[AI Media SDK](../ai-media-sdk/README.md) 的阿里云百炼（DashScope）Provider，支持图像生成/编辑与视频生成。基于原生 `fetch` 直接调用 DashScope REST API，不依赖平台 SDK。
+[AI Media SDK](../ai-media-sdk/README.md) 的阿里云百炼（DashScope）Provider，支持图像生成/编辑、视频生成、非实时语音合成、声音复刻与声音设计。基于原生 `fetch` 直接调用 DashScope REST API，不依赖平台 SDK。
 
 > **注意**：本项目处于快速迭代期间，API 可能随时变更，生产使用请锁定版本。
 
@@ -51,6 +51,68 @@ const edited = await editImage({
   images: [{ url: "https://example.com/input.png" }], // 1-3 张，URL 或 base64
 });
 ```
+
+## 非实时语音合成
+
+使用 `provider.audio(model)` 绑定音频模型，再通过 `generateAudio` 合成语音。Qwen-Audio-TTS/CosyVoice 使用 `SpeechSynthesizer`，Qwen-TTS 和 MiniMax 使用多模态生成接口。
+
+```ts
+import { generateAudio } from "@ai-media/sdk";
+
+const speech = await generateAudio({
+  model: provider.audio("qwen-audio-3.0-tts-flash"),
+  text: "你好，欢迎使用 AI Media SDK。",
+  voice: "longanhuan_v3.6",
+  providerOptions: {
+    aliyun: { format: "wav", sampleRate: 24000 },
+  },
+});
+
+console.log(speech.content[0]?.url);
+```
+
+MiniMax 使用独立的 `voiceSetting` 和 `audioSetting` 参数：
+
+```ts
+const speech = await generateAudio({
+  model: provider.audio("MiniMax/speech-2.8-hd"),
+  text: "今天天气真不错。",
+  voice: "male-qn-qingse",
+  providerOptions: {
+    aliyun: {
+      voiceSetting: { emotion: "happy", speed: 1 },
+      audioSetting: { format: "mp3", sampleRate: 32000 },
+    },
+  },
+});
+```
+
+## 声音复刻与声音设计
+
+声音复刻和声音设计是独立的资源管理器。复刻从参考音频创建音色，设计从文字描述创建音色；两者都需要使用创建时指定的 `targetModel` 进行后续合成。
+
+```ts
+const cloned = await provider.voiceCloning.create({
+  protocol: "qwen-audio",
+  targetModel: "qwen-audio-3.0-tts-flash",
+  prefix: "myvoice",
+  audioUrl: "https://example.com/sample.wav",
+  languageHints: ["zh"],
+});
+
+const designed = await provider.voiceDesign.create({
+  protocol: "qwen-audio",
+  targetModel: "cosyvoice-v3.5-plus",
+  prefix: "announcer",
+  voicePrompt: "沉稳的中年男性，音色低沉浑厚",
+  previewText: "各位听众朋友们大家好，欢迎收听本期节目",
+});
+
+console.log(cloned.voice?.id, designed.voice?.id);
+console.log(designed.previewAudio?.base64);
+```
+
+HTTP SSE 流式 TTS 使用 `streamAudio`；WebSocket 实时 TTS 不属于当前 HTTP Provider 边界。音频 URL 通常有效 24 小时，设计预览音频以 Base64 形式返回，请按需及时持久化。
 
 ## 图像生成（Wan：异步任务）
 

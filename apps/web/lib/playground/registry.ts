@@ -137,9 +137,23 @@ function labelFor(
  * `wan-image` Aliyun family (used for adapter routing).
  */
 function aliyunFamilySlug(
-  family: "qwen-multimodal" | "wan-image" | "happyhorse-video" | "wan3-video",
+  family:
+    | "qwen-multimodal"
+    | "wan-image"
+    | "happyhorse-video"
+    | "wan3-video"
+    | "qwen-audio-tts"
+    | "qwen-tts"
+    | "minimax-tts",
   id: string
 ): PlaygroundModelFamily {
+  if (
+    family === "qwen-audio-tts" ||
+    family === "qwen-tts" ||
+    family === "minimax-tts"
+  ) {
+    return "audio" as PlaygroundModelFamily;
+  }
   if (family === "wan-image") {
     return id === "wan2.6-t2i" ? "wan-image-2.6" : "wan-image-2.7";
   }

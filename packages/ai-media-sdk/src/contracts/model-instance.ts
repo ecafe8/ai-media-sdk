@@ -1,3 +1,4 @@
+import type { AudioGenerationInput } from "../audio/request.ts";
 import type { ImageGenerationInput } from "../image/request.ts";
 import type { VideoGenerationInput } from "../video/request.ts";
 import type { ProviderAdapter } from "./adapter.ts";
@@ -39,3 +40,4 @@ export interface ModelInstance<TContent, _TParams = unknown> {
  */
 export type DefaultImageParams = ImageGenerationInput;
 export type DefaultVideoParams = VideoGenerationInput;
+export type DefaultAudioParams = AudioGenerationInput;

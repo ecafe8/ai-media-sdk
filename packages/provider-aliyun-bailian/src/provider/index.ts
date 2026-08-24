@@ -1,5 +1,8 @@
 import {
   type AdapterRequest,
+  type AudioContent,
+  type AudioGenerationInput,
+  type AudioModelInstance,
   classifyHttpError,
   createTaskHandle,
   createTransport,
@@ -25,12 +28,15 @@ import {
 } from "@ai-media/sdk";
 
 import type { AliyunBailianConfig } from "../config/index.ts";
+import { generateAliyunAudio, streamAliyunAudio } from "./audio.ts";
 import type { AliyunImageProviderOptions } from "./options.ts";
 import type {
   AliyunHappyHorseI2VParams,
   AliyunHappyHorseR2VParams,
   AliyunHappyHorseT2VParams,
   AliyunHappyHorseVideoEditParams,
+  AliyunMiniMaxAudioParams,
+  AliyunQwenAudioParams,
   AliyunQwenImageParams,
   AliyunWan3VideoParams,
   AliyunWan26T2VParams,
@@ -42,6 +48,11 @@ import {
   type AliyunModelEntry,
   aliyunModelRegistry,
 } from "./registry.ts";
+import {
+  createVoiceManagers,
+  type VoiceCloningManager,
+  type VoiceDesignManager,
+} from "./voice.ts";
 
 /**
  * Alibaba Cloud Bailian (DashScope) Provider factory, model instance, and
@@ -79,6 +90,28 @@ export interface AliyunBailianProvider extends ProviderAdapter<ImageContent[]> {
   readonly providerId: ProviderId;
   readonly config: Readonly<AliyunBailianConfig>;
   readonly transport: Transport;
+  readonly audio: {
+    (
+      modelId:
+        | "qwen-audio-3.0-tts-plus"
+        | "qwen-audio-3.0-tts-flash"
+        | "cosyvoice-v3.5-plus"
+        | "cosyvoice-v3.5-flash"
+        | "cosyvoice-v3-plus"
+        | "cosyvoice-v3-flash"
+        | "cosyvoice-v2"
+    ): AudioModelInstance<AliyunQwenAudioParams>;
+    (
+      modelId:
+        | "MiniMax/speech-2.8-hd"
+        | "MiniMax/speech-02-hd"
+        | "MiniMax/speech-2.8-turbo"
+        | "MiniMax/speech-02-turbo"
+    ): AudioModelInstance<AliyunMiniMaxAudioParams>;
+    (modelId: string): AudioModelInstance;
+  };
+  readonly voiceCloning: VoiceCloningManager;
+  readonly voiceDesign: VoiceDesignManager;
   /**
    * Create an image model instance bound to an Aliyun model id.
    *
@@ -184,11 +217,14 @@ export function createAliyunBailianProvider(
   options?: AliyunBailianProviderOptions
 ): AliyunBailianProvider {
   const transport = options?.transport ?? createTransport();
+  const voiceManagers = createVoiceManagers(config, transport);
 
   const provider: AliyunBailianProvider = {
     providerId: ALIYUN_PROVIDER_ID,
     config,
     transport,
+    voiceCloning: voiceManagers.voiceCloning,
+    voiceDesign: voiceManagers.voiceDesign,
 
     image: (modelId: string): ImageModelInstance => {
       const entry = ALIYUN_MODEL_REGISTRY[modelId];
@@ -242,6 +278,50 @@ export function createAliyunBailianProvider(
     },
 
     listModels: (): readonly SupportedModel[] => aliyunModelRegistry.models,
+
+    audio: ((modelId: string): AudioModelInstance => {
+      const entry = requireRegistryEntry(modelId);
+      if (
+        entry.family !== "qwen-audio-tts" &&
+        entry.family !== "qwen-tts" &&
+        entry.family !== "minimax-tts"
+      ) {
+        throw new SdkError({
+          code: "INVALID_REQUEST",
+          message: `Model "${modelId}" is not an audio model`,
+        });
+      }
+      const family = entry.family;
+      const adapter: ProviderAdapter<AudioContent[]> = {
+        providerId: ALIYUN_PROVIDER_ID,
+        generate: (request) =>
+          generateAliyunAudio(
+            transport,
+            config,
+            request.model,
+            request.input as AudioGenerationInput,
+            family
+          ),
+        streamAudio: (request) =>
+          streamAliyunAudio(
+            transport,
+            config,
+            request.model,
+            request.input as AudioGenerationInput,
+            family,
+            request.signal
+          ),
+        edit: async () => {
+          throw notImplemented(`aliyun-bailian.editAudio (${modelId})`);
+        },
+      };
+      return {
+        providerId: ALIYUN_PROVIDER_ID,
+        modelId,
+        adapter,
+        capabilities: entry.capabilities,
+      };
+    }) as AliyunBailianProvider["audio"],
 
     async generate(
       request: AdapterRequest

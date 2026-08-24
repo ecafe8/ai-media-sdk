@@ -114,9 +114,22 @@ function labelsFor(
 }
 
 function aliyunFamilySlug(
-  family: "qwen-multimodal" | "wan-image" | "happyhorse-video" | "wan3-video",
+  family:
+    | "qwen-multimodal"
+    | "wan-image"
+    | "happyhorse-video"
+    | "wan3-video"
+    | "qwen-audio-tts"
+    | "qwen-tts"
+    | "minimax-tts",
   id: string
 ): SiteModelFamily | undefined {
+  if (
+    family === "qwen-audio-tts" ||
+    family === "qwen-tts" ||
+    family === "minimax-tts"
+  )
+    return undefined;
   if (family === "wan3-video") return undefined;
   if (family === "wan-image") {
     return id === "wan2.6-t2i" ? "wan-image-2.6" : "wan-image-2.7";

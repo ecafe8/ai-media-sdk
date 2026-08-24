@@ -54,7 +54,41 @@ export function createTransport(options?: CreateTransportOptions): Transport {
         request
       );
     },
+    async sendStream(request: TransportRequest) {
+      const response = await fetchImpl(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body:
+          request.body === undefined ? undefined : serializeBody(request.body),
+        signal: mergeSignals(
+          request.timeoutMs && request.timeoutMs > 0
+            ? AbortSignal.timeout(request.timeoutMs)
+            : undefined,
+          request.signal
+        ),
+      });
+      if (!response.body) {
+        throw new TransportError({
+          kind: "network",
+          message: "Streaming response has no body",
+        });
+      }
+      return {
+        status: response.status,
+        headers: headersToObject(response.headers),
+        body: decodeStream(response.body),
+      };
+    },
   };
+}
+
+async function* decodeStream(
+  body: ReadableStream<Uint8Array>
+): AsyncIterable<string> {
+  const decoder = new TextDecoder();
+  for await (const chunk of body) yield decoder.decode(chunk, { stream: true });
+  const tail = decoder.decode();
+  if (tail) yield tail;
 }
 
 async function sendWithRetry<T>(
@@ -79,7 +113,10 @@ async function sendWithRetry<T>(
         method,
         headers,
         body: body === undefined ? undefined : serializeBody(body),
-        signal: timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
+        signal: mergeSignals(
+          timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : undefined,
+          request.signal
+        ),
       });
 
       const data = (await parseBody(response)) as T;
@@ -159,6 +196,15 @@ function backoffMs(retryPolicy: RetryPolicy, attempt: number): number {
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function mergeSignals(
+  timeoutSignal: AbortSignal | undefined,
+  requestSignal: AbortSignal | undefined
+): AbortSignal | undefined {
+  if (!timeoutSignal) return requestSignal;
+  if (!requestSignal) return timeoutSignal;
+  return AbortSignal.any([timeoutSignal, requestSignal]);
 }
 
 function isAbortError(error: unknown): boolean {

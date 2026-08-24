@@ -4,6 +4,8 @@ description: AI Media SDK 核心公共导出：生成函数、任务抽象、结
 ---
 
 export const API_REFERENCE_EXPORTS = [
+  "generateAudio",
+  "streamAudio",
   "generateImage",
   "editImage",
   "submitImageTask",
@@ -16,10 +18,27 @@ export const API_REFERENCE_EXPORTS = [
   "TaskHandle",
   "ImageContent",
   "VideoContent",
+  "AudioContent",
   "SdkError",
 ];
 
 # API 参考
+
+## generateAudio
+
+```ts
+function generateAudio(request: AudioGenerationRequest): Promise<GenerationResult<AudioContent[]>>
+```
+
+使用绑定的音频模型进行非实时语音合成。`text` 和 `voice` 必须非空；格式、采样率、指令等 Provider 专属参数放在 `providerOptions` 下。
+
+## streamAudio
+
+```ts
+function streamAudio(request: AudioStreamRequest): AsyncIterable<AudioStreamEvent>
+```
+
+通过 HTTP SSE 逐段获取语音合成事件。WebSocket 实时语音合成不属于此 HTTP API。
 
 本页手写覆盖 `@ai-media/sdk` 的核心公共导出。完整导出以源码 `packages/ai-media-sdk/src/index.ts` 为准；更细的契约类型（能力声明、模型注册表聚合等）参见源码 TSDoc。
 
@@ -111,12 +130,13 @@ interface TaskHandle<TContent> {
 
 ```ts
 interface GenerationResult<TContent> {
-  readonly content: TContent; // 图像 ImageContent[]，视频 VideoContent[]
+  readonly content: TContent; // 图像、视频或音频内容
   readonly provider: ProviderId;
   readonly model: ModelId;
   readonly requestId?: string;
   readonly createdAt?: string;
   readonly raw?: unknown;
+  readonly usage?: unknown;
 }
 ```
 
@@ -138,6 +158,17 @@ interface VideoContent {
   duration?: number; // 秒
   width?: number;
   height?: number;
+}
+
+interface AudioContent {
+  url?: string;
+  base64?: string;
+  mimeType?: string;
+  id?: string;
+  expiresAt?: number;
+  sampleRate?: number;
+  format?: string;
+  encoding?: string;
 }
 ```
 

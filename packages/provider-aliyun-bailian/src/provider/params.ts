@@ -1,4 +1,5 @@
 import type {
+  AudioGenerationInput,
   ImageContent,
   ImageGenerationInput,
   VideoGenerationInput,
@@ -24,6 +25,18 @@ import type {
  * options regardless of the selected family.
  */
 export type AliyunImageFamilyOptions = AliyunImageProviderOptions;
+
+export interface AliyunQwenAudioParams extends AudioGenerationInput {
+  readonly providerOptions?: {
+    readonly aliyun?: import("./audio.ts").AliyunQwenAudioOptions;
+  };
+}
+
+export interface AliyunMiniMaxAudioParams extends AudioGenerationInput {
+  readonly providerOptions?: {
+    readonly aliyun?: import("./audio.ts").AliyunMiniMaxOptions;
+  };
+}
 
 /**
  * Family-typed request params for Aliyun Qwen-image models

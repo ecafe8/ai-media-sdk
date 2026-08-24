@@ -16,6 +16,7 @@ export interface TransportRequest {
   readonly headers?: Record<string, string>;
   readonly body?: unknown;
   readonly timeoutMs?: number;
+  readonly signal?: AbortSignal;
 }
 
 /**
@@ -35,4 +36,12 @@ export interface TransportResponse<T> {
  */
 export interface Transport {
   send<T>(request: TransportRequest): Promise<TransportResponse<T>>;
+  sendStream?(request: TransportRequest): Promise<TransportStreamResponse>;
+}
+
+/** Streaming HTTP response exposed for SSE-capable provider adapters. */
+export interface TransportStreamResponse {
+  readonly status: number;
+  readonly headers: Record<string, string>;
+  readonly body: AsyncIterable<string>;
 }

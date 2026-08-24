@@ -19,6 +19,7 @@ export interface GenerationResult<TContent> {
   readonly requestId?: string;
   readonly createdAt?: string;
   readonly raw?: unknown;
+  readonly usage?: unknown;
 }
 
 /**

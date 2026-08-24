@@ -1,3 +1,4 @@
+import type { AudioStreamEvent } from "./audio-stream.ts";
 import type { GenerationResult, TaskHandle } from "./generation.ts";
 import type { ModelId, ProviderId } from "./provider-identity.ts";
 import type { Transport } from "./transport.ts";
@@ -23,6 +24,7 @@ export interface AdapterRequest {
   readonly model: ModelId;
   readonly modality: AdapterModality;
   readonly input: unknown;
+  readonly signal?: AbortSignal;
 }
 
 /**
@@ -46,4 +48,5 @@ export interface ProviderAdapter<TContent = unknown> {
   generate(request: AdapterRequest): Promise<GenerationResult<TContent>>;
   edit(request: AdapterRequest): Promise<GenerationResult<TContent>>;
   submit?(request: AdapterRequest): Promise<TaskHandle<TContent>>;
+  streamAudio?(request: AdapterRequest): AsyncIterable<AudioStreamEvent>;
 }

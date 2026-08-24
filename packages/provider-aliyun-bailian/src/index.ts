@@ -1,5 +1,10 @@
 export type { AliyunBailianConfig } from "./config/index.ts";
 export type {
+  AliyunAudioInput,
+  AliyunMiniMaxOptions,
+  AliyunQwenAudioOptions,
+} from "./provider/audio.ts";
+export type {
   AliyunBailianProvider,
   AliyunBailianProviderOptions,
 } from "./provider/index.ts";
@@ -13,6 +18,8 @@ export type {
   AliyunHappyHorseT2VParams,
   AliyunHappyHorseVideoEditParams,
   AliyunImageFamilyOptions,
+  AliyunMiniMaxAudioParams,
+  AliyunQwenAudioParams,
   AliyunQwenImageParams,
   AliyunVideoFamilyOptions,
   AliyunWan3VideoOptions,
@@ -30,3 +37,10 @@ export {
   ALIYUN_MODEL_REGISTRY,
   aliyunModelRegistry,
 } from "./provider/registry.ts";
+export type {
+  CloneCreateInput,
+  VoiceCloningManager,
+  VoiceDesignCreateInput,
+  VoiceDesignManager,
+  VoiceResourceManager,
+} from "./provider/voice.ts";

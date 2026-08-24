@@ -41,3 +41,15 @@ export interface VideoContent extends Content {
   readonly width?: number;
   readonly height?: number;
 }
+
+/** Audio content produced by text-to-speech or voice-design preview APIs. */
+export interface AudioContent extends Content {
+  readonly url?: string;
+  readonly base64?: string;
+  readonly mimeType?: string;
+  readonly id?: string;
+  readonly expiresAt?: number;
+  readonly sampleRate?: number;
+  readonly format?: string;
+  readonly encoding?: string;
+}

@@ -4,12 +4,18 @@ export type {
   AdapterRequest,
   ProviderAdapter,
 } from "./adapter.ts";
+export type { AudioStreamEvent, AudioWordTimestamp } from "./audio-stream.ts";
 export type {
   CapabilityEntry,
   Modality,
   ModelCapability,
 } from "./capabilities.ts";
-export type { Content, ImageContent, VideoContent } from "./content.ts";
+export type {
+  AudioContent,
+  Content,
+  ImageContent,
+  VideoContent,
+} from "./content.ts";
 export type { SdkErrorCode, SdkErrorOptions } from "./error.ts";
 export {
   classifyHttpError,
@@ -48,4 +54,12 @@ export type {
   Transport,
   TransportRequest,
   TransportResponse,
+  TransportStreamResponse,
 } from "./transport.ts";
+export type {
+  VoiceDesignResult,
+  VoiceListResult,
+  VoiceOperationResult,
+  VoiceProfile,
+  VoiceStatus,
+} from "./voice.ts";

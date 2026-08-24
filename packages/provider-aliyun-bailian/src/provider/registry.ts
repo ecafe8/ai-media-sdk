@@ -22,7 +22,10 @@ export type AliyunModelFamily =
   | "qwen-multimodal"
   | "wan-image"
   | "happyhorse-video"
-  | "wan3-video";
+  | "wan3-video"
+  | "qwen-audio-tts"
+  | "qwen-tts"
+  | "minimax-tts";
 
 /**
  * Supported public parameters per model (drives what the adapter forwards).
@@ -152,6 +155,12 @@ const WAN3_VIDEO_RATIOS: readonly string[] = [
 ];
 
 const WAN3_VIDEO_RESOLUTIONS: readonly string[] = ["480P", "720P", "1080P"];
+
+const AUDIO_GENERATE_CAPABILITY: ModelCapability = {
+  modality: "audio",
+  generate: true,
+  edit: false,
+};
 
 /**
  * The model registry. Qwen models run the synchronous `multimodal-generation`
@@ -290,6 +299,106 @@ export const ALIYUN_MODEL_REGISTRY: Readonly<
     paramSupport: {},
     supportedResolutions: WAN3_VIDEO_RESOLUTIONS,
     supportedAspectRatios: WAN3_VIDEO_RATIOS,
+  },
+  "qwen-audio-3.0-tts-plus": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen-audio-3.0-tts-flash": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "cosyvoice-v3.5-plus": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "cosyvoice-v3.5-flash": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "cosyvoice-v3-plus": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "cosyvoice-v3-flash": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "cosyvoice-v2": {
+    family: "qwen-audio-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen3-tts-flash": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen3-tts-flash-2025-11-27": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen3-tts-flash-2025-09-18": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen3-tts-instruct-flash": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen3-tts-instruct-flash-2026-01-26": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen-tts": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen-tts-latest": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen-tts-2025-05-22": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "qwen-tts-2025-04-10": {
+    family: "qwen-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "MiniMax/speech-2.8-hd": {
+    family: "minimax-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "MiniMax/speech-02-hd": {
+    family: "minimax-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "MiniMax/speech-2.8-turbo": {
+    family: "minimax-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
+  },
+  "MiniMax/speech-02-turbo": {
+    family: "minimax-tts",
+    capabilities: AUDIO_GENERATE_CAPABILITY,
+    paramSupport: {},
   },
 };
 

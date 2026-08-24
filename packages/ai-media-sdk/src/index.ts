@@ -4,6 +4,17 @@ export {
   submitTask,
   type TaskSubmissionRequest,
 } from "./async/index.ts";
+export type {
+  AudioGenerationInput,
+  AudioGenerationRequest,
+  AudioModelInstance,
+  AudioStreamRequest,
+} from "./audio/index.ts";
+export {
+  generateAudio,
+  isAudioGenerationInput,
+  streamAudio,
+} from "./audio/index.ts";
 export * from "./contracts/index.ts";
 export type {
   ImageEditInput,
