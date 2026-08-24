@@ -251,7 +251,10 @@ function AudioSuccess({
       {audio?.map((item) => {
         const source =
           item.url ??
-          (item.base64 && item.mimeType
+          (item.base64 &&
+          item.mimeType !== "audio/pcm" &&
+          item.format !== "pcm" &&
+          item.mimeType
             ? `data:${item.mimeType};base64,${item.base64}`
             : undefined);
         return (
