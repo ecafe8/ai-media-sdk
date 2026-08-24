@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { executeSiteRequest, mapSdkErrorMessage } from "@/lib/executor";
+import {
+  executeSiteRequest,
+  executeSiteVoiceCloning,
+  mapSdkErrorMessage,
+} from "@/lib/executor";
 import { setCredentials } from "@/lib/key-store";
 import { installMockWindow, uninstallMockWindow } from "./helpers/mock-window";
 
@@ -24,6 +28,42 @@ function countFetchCalls(): { calls: () => number } {
 }
 
 describe("executor local interception", () => {
+  test("audio requires text and voice without contacting the provider", async () => {
+    installMockWindow();
+    setCredentials("aliyun-bailian", {
+      apiKey: "secret-key",
+      baseUrl: "https://dashscope.aliyuncs.com",
+    });
+    const fetchSpy = countFetchCalls();
+    const response = await executeSiteRequest({
+      provider: "aliyun-bailian",
+      model: "cosyvoice-v3.5-flash",
+      modality: "audio",
+      prompt: "",
+      text: " ",
+      voice: "longxiaochun",
+    });
+    expect(response.error?.code).toBe("INVALID_REQUEST");
+    expect(fetchSpy.calls()).toBe(0);
+  });
+
+  test("voice protocol and target model are validated locally", async () => {
+    installMockWindow();
+    setCredentials("aliyun-bailian", {
+      apiKey: "secret-key",
+      baseUrl: "https://dashscope.aliyuncs.com",
+    });
+    const fetchSpy = countFetchCalls();
+    await expect(
+      executeSiteVoiceCloning("create", {
+        protocol: "qwen",
+        targetModel: "cosyvoice-v3.5-flash",
+        audioUrl: "https://example.com/voice.wav",
+        prefix: "voice",
+      })
+    ).rejects.toThrow("incompatible");
+    expect(fetchSpy.calls()).toBe(0);
+  });
   test("missing credentials fail locally without any network call", async () => {
     const fetchSpy = countFetchCalls();
     const response = await executeSiteRequest({

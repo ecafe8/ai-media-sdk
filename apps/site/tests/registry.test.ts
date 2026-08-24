@@ -17,6 +17,20 @@ describe("site model projection", () => {
     expect(getSiteModel("minimax", "MiniMax-H3")).toBeDefined();
   });
 
+  test("projects Alibaba audio families without image capabilities", () => {
+    const audio = SITE_MODELS.filter((m) => m.modality === "audio");
+    expect(audio.length).toBeGreaterThan(0);
+    expect(audio.map((m) => m.family)).toEqual(
+      expect.arrayContaining(["qwen-audio-tts", "qwen-tts", "minimax-tts"])
+    );
+    expect(
+      getSiteModel("aliyun-bailian", "cosyvoice-v3.5-flash")?.audio
+    ).toBeDefined();
+    expect(
+      getSiteModel("aliyun-bailian", "cosyvoice-v3.5-flash")?.modality
+    ).toBe("audio");
+  });
+
   test("every projected model carries a non-empty label", () => {
     for (const model of SITE_MODELS) {
       expect(model.label.length).toBeGreaterThan(0);

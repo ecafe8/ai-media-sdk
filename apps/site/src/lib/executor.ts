@@ -3,16 +3,22 @@ import type { AzureOpenAIProvider } from "@ai-media/provider-azure-openai";
 import type { MiniMaxProvider } from "@ai-media/provider-minimax";
 import type { VolcengineProvider } from "@ai-media/provider-volcengine";
 import {
+  type AudioModelInstance,
   editImage,
   type GenerationResult,
+  generateAudio,
   generateImage,
   type ImageContent,
   type ImageModelInstance,
   SdkError,
   type SdkErrorCode,
+  streamAudio,
   submitImageTask,
   submitVideoTask,
   type VideoModelInstance,
+  type VoiceDesignResult,
+  type VoiceListResult,
+  type VoiceOperationResult,
 } from "@ai-media/sdk";
 
 import {
@@ -25,11 +31,19 @@ import {
 import { getSiteModel } from "./playground/registry";
 import type {
   ImageInput,
+  SiteAudioStreamRequest,
   SiteErrorCode,
   SiteGenerationRequest,
+  SiteModel,
   SitePlaygroundResponse,
+  SiteVoiceCloningInput,
+  SiteVoiceDesignInput,
 } from "./playground/types";
-import { buildSiteProvider, EndpointNotUsableError } from "./provider-client";
+import {
+  buildSiteProvider,
+  createSiteAliyunUploader,
+  EndpointNotUsableError,
+} from "./provider-client";
 
 /**
  * Client-side playground executor. Mirrors the `apps/web` server executor
@@ -87,6 +101,204 @@ function buildVideoProviderOptions(
   return { aliyun };
 }
 
+function assertAudioRequest(request: SiteGenerationRequest): SiteModel {
+  const model = getSiteModel(request.provider, request.model);
+  if (model?.modality !== "audio") {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "The selected provider/model does not support audio",
+    });
+  }
+  if (!request.text?.trim()) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "text must not be empty",
+    });
+  }
+  if (!request.voice?.trim()) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "voice must not be empty",
+    });
+  }
+  return model;
+}
+
+function audioInstance(
+  provider: AliyunBailianProvider,
+  model: string
+): AudioModelInstance {
+  return provider.audio(model);
+}
+
+export async function executeSiteAudioStream(
+  request: SiteAudioStreamRequest
+): Promise<AsyncIterable<import("@ai-media/sdk").AudioStreamEvent>> {
+  const generationRequest: SiteGenerationRequest = {
+    provider: request.provider,
+    model: request.model,
+    modality: "audio",
+    prompt: "",
+    text: request.text,
+    voice: request.voice,
+    providerOptions: request.providerOptions,
+  };
+  const model = assertAudioRequest(generationRequest);
+  if (request.provider !== "aliyun-bailian") {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Audio is only supported by Alibaba Bailian",
+    });
+  }
+  const credentials = getCredentials(request.provider);
+  if (!isCredentialsComplete(request.provider, credentials)) {
+    throw new SdkError({
+      code: "AUTH_ERROR",
+      message: "Alibaba credentials are not configured",
+    });
+  }
+  const provider = buildSiteProvider(
+    request.provider,
+    credentials!,
+    getConfirmedHosts()
+  ) as AliyunBailianProvider;
+  return streamAudio({
+    model: audioInstance(provider, model.id),
+    text: request.text,
+    voice: request.voice,
+    providerOptions: request.providerOptions,
+    signal: request.signal,
+  });
+}
+
+function assertVoiceTarget(
+  protocol: "qwen-audio" | "qwen",
+  targetModel: string
+): void {
+  const model = getSiteModel("aliyun-bailian", targetModel);
+  if (
+    !model?.audio?.voiceResource?.targetModel ||
+    !model.audio.voiceResource.protocols.includes(protocol)
+  ) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "The voice protocol and target model are incompatible",
+    });
+  }
+}
+
+export async function executeSiteVoiceCloning(
+  operation: "create" | "list" | "get" | "update" | "delete",
+  input: SiteVoiceCloningInput & {
+    readonly id?: string;
+    readonly targetModel?: string;
+  }
+): Promise<VoiceOperationResult | VoiceListResult> {
+  if (input.targetModel) assertVoiceTarget(input.protocol, input.targetModel);
+  const provider = await siteAliyunProvider();
+  if (operation === "create") {
+    if (!input.targetModel)
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "A target model is required",
+      });
+    return provider.voiceCloning.create(
+      input as SiteVoiceCloningInput & { readonly targetModel: string }
+    );
+  }
+  if (operation === "list") return provider.voiceCloning.list(input);
+  if (operation === "get")
+    return provider.voiceCloning.get({
+      protocol: input.protocol,
+      id: input.id!,
+    });
+  if (operation === "delete")
+    return provider.voiceCloning.delete({
+      protocol: input.protocol,
+      id: input.id!,
+    });
+  return provider.voiceCloning.update({
+    id: input.id!,
+    audioUrl: input.audioUrl!,
+  });
+}
+
+export async function executeSiteVoiceDesign(
+  operation: "create" | "list" | "get" | "delete",
+  input: SiteVoiceDesignInput & {
+    readonly id?: string;
+    readonly targetModel?: string;
+  }
+): Promise<VoiceDesignResult | VoiceOperationResult | VoiceListResult> {
+  if (input.targetModel) assertVoiceTarget(input.protocol, input.targetModel);
+  const provider = await siteAliyunProvider();
+  if (operation === "create") {
+    if (!input.targetModel)
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "A target model is required",
+      });
+    return provider.voiceDesign.create(
+      input as SiteVoiceDesignInput & { readonly targetModel: string }
+    );
+  }
+  if (operation === "list") return provider.voiceDesign.list(input);
+  if (operation === "get")
+    return provider.voiceDesign.get({
+      protocol: input.protocol,
+      id: input.id!,
+    });
+  return provider.voiceDesign.delete({
+    protocol: input.protocol,
+    id: input.id!,
+  });
+}
+
+export async function uploadSiteAudio(
+  file: File,
+  targetModel: string
+): Promise<{ readonly url: string; readonly expiresAt: Date }> {
+  const model = getSiteModel("aliyun-bailian", targetModel);
+  if (!model?.audio?.voiceResource?.targetModel) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "A compatible audio target model is required",
+    });
+  }
+  const credentials = getCredentials("aliyun-bailian");
+  if (!isCredentialsComplete("aliyun-bailian", credentials)) {
+    throw new SdkError({
+      code: "AUTH_ERROR",
+      message: "Alibaba credentials are not configured",
+    });
+  }
+  const uploaded = await createSiteAliyunUploader(
+    credentials!,
+    getConfirmedHosts()
+  ).upload({
+    model: targetModel,
+    fileBytes: new Uint8Array(await file.arrayBuffer()),
+    fileName: file.name,
+    mimeType: file.type,
+  });
+  return { url: uploaded.url, expiresAt: uploaded.expiresAt };
+}
+
+async function siteAliyunProvider(): Promise<AliyunBailianProvider> {
+  const credentials = getCredentials("aliyun-bailian");
+  if (!isCredentialsComplete("aliyun-bailian", credentials)) {
+    throw new SdkError({
+      code: "AUTH_ERROR",
+      message: "Alibaba credentials are not configured",
+    });
+  }
+  return buildSiteProvider(
+    "aliyun-bailian",
+    credentials!,
+    getConfirmedHosts()
+  ) as AliyunBailianProvider;
+}
+
 export async function executeSiteRequest(
   request: SiteGenerationRequest
 ): Promise<SitePlaygroundResponse> {
@@ -108,6 +320,42 @@ export async function executeSiteRequest(
       "EDIT_NOT_SUPPORTED",
       "The selected model does not support image editing"
     );
+  }
+  if (request.modality === "audio") {
+    try {
+      assertAudioRequest(request);
+      const providerInstance = buildSiteProvider(
+        request.provider,
+        credentials!,
+        getConfirmedHosts()
+      );
+      if (request.provider !== "aliyun-bailian") {
+        return localError(
+          "INVALID_REQUEST",
+          "Audio is only supported by Alibaba Bailian"
+        );
+      }
+      const result = await generateAudio({
+        model: (providerInstance as AliyunBailianProvider).audio(request.model),
+        text: request.text!,
+        voice: request.voice!,
+        providerOptions: request.providerOptions,
+      });
+      return {
+        status: "succeeded",
+        modality: "audio",
+        audio: result.content,
+        metadata: {
+          provider: result.provider,
+          model: result.model,
+          requestId: result.requestId,
+        },
+      };
+    } catch (error) {
+      if (error instanceof EndpointNotUsableError)
+        return endpointNotUsableResponse(error);
+      return { status: "failed", error: toSafeError(error) };
+    }
   }
   if (request.modality === "video") {
     if (!model.supportsVideo) {
@@ -344,13 +592,24 @@ function toSafeError(
   error: unknown
 ): NonNullable<SitePlaygroundResponse["error"]> {
   if (error instanceof SdkError) {
+    const detail = sanitizeErrorDetail(error.message);
     return {
       code: error.code,
-      message: mapSdkErrorMessage(error.code, error.message),
-      ...(error.message ? { detail: error.message } : {}),
+      message: mapSdkErrorMessage(error.code, detail),
+      ...(detail ? { detail } : {}),
     };
   }
   return { code: "UNKNOWN", message: "Generation failed; please retry." };
+}
+
+function sanitizeErrorDetail(detail: string): string {
+  return detail
+    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+    .replace(
+      /(?:api[-_ ]?key|authorization)\s*[:=]\s*[^,;\s]+/gi,
+      "$1: [redacted]"
+    )
+    .slice(0, 500);
 }
 
 /**

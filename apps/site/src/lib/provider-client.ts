@@ -15,6 +15,7 @@ import {
   type VolcengineProvider,
 } from "@ai-media/provider-volcengine";
 import { createTransport } from "@ai-media/sdk";
+import { createAliyunBrowserUploader } from "@ai-media/uploader/aliyun/browser";
 
 import {
   ENDPOINT_ERROR_TEXT,
@@ -38,6 +39,24 @@ export type AnySiteProvider =
   | AliyunBailianProvider
   | VolcengineProvider
   | MiniMaxProvider;
+
+export function createSiteAliyunUploader(
+  credentials: ProviderCredentials,
+  confirmedHosts: readonly string[]
+): Pick<ReturnType<typeof createAliyunBrowserUploader>, "upload"> {
+  const baseUrl = assertEndpointUsable(
+    "aliyun-bailian",
+    "Base URL",
+    credentials.baseUrl,
+    confirmedHosts,
+    true
+  );
+  const options = {
+    apiKey: credentials.apiKey.trim(),
+    baseUrl,
+  };
+  return createAliyunBrowserUploader(options);
+}
 
 export type EndpointUnusableReason =
   | "MISSING_FIELD"

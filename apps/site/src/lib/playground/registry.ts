@@ -128,8 +128,9 @@ function aliyunFamilySlug(
     family === "qwen-audio-tts" ||
     family === "qwen-tts" ||
     family === "minimax-tts"
-  )
-    return undefined;
+  ) {
+    return family;
+  }
   if (family === "wan3-video") return undefined;
   if (family === "wan-image") {
     return id === "wan2.6-t2i" ? "wan-image-2.6" : "wan-image-2.7";
@@ -161,7 +162,12 @@ function fromAliyun(
     id,
     label,
     provider: "aliyun-bailian",
-    modality: caps.modality === "video" ? "video" : "image",
+    modality:
+      caps.modality === "video"
+        ? "video"
+        : caps.modality === "audio"
+          ? "audio"
+          : "image",
     family,
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
@@ -177,6 +183,7 @@ function fromAliyun(
     supportedResolutions: entry.supportedResolutions,
     supportedAspectRatios: entry.supportedAspectRatios,
     recommendation,
+    ...(entry.audio ? { audio: entry.audio } : {}),
   };
 }
 

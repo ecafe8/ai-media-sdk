@@ -1,3 +1,4 @@
+import type { AudioStreamEvent } from "@ai-media/sdk";
 import type { SiteProvider } from "../key-store";
 
 /**
@@ -8,7 +9,7 @@ import type { SiteProvider } from "../key-store";
  * fields.
  */
 
-export type SiteModality = "image" | "video";
+export type SiteModality = "image" | "video" | "audio";
 
 export type ImageOperation = "generate" | "edit";
 
@@ -35,7 +36,10 @@ export type SiteModelFamily =
   | "doubao-seedream-5-pro"
   | "doubao-seedream-5-lite"
   | "doubao-seedream-4-5"
-  | "doubao-seedream-4-0";
+  | "doubao-seedream-4-0"
+  | "qwen-audio-tts"
+  | "qwen-tts"
+  | "minimax-tts";
 
 /**
  * A video generation scenario served by a single model id. Models declaring
@@ -72,6 +76,18 @@ export interface SiteModel {
   readonly supportedResolutions?: readonly string[];
   readonly supportedAspectRatios?: readonly string[];
   readonly recommendation: string;
+  readonly audio?: {
+    readonly supportsSsml?: boolean;
+    readonly supportedFormats?: readonly string[];
+    readonly supportedSampleRates?: readonly number[];
+    readonly instructionField?: "instruction" | "instructions";
+    readonly region?: string;
+    readonly endpoint?: string;
+    readonly voiceResource?: {
+      readonly protocols: readonly ("qwen-audio" | "qwen")[];
+      readonly targetModel?: boolean;
+    };
+  };
 }
 
 export interface SiteGenerationRequest {
@@ -79,6 +95,8 @@ export interface SiteGenerationRequest {
   readonly model: string;
   readonly modality: SiteModality;
   readonly prompt: string;
+  readonly text?: string;
+  readonly voice?: string;
   readonly imageOperation?: ImageOperation;
   /** Image edit reference / i2v first frame. */
   readonly referenceImage?: ImageInput;
@@ -100,6 +118,41 @@ export interface SiteGenerationRequest {
   readonly audioSetting?: string;
   readonly providerOptions?: Readonly<Record<string, Record<string, unknown>>>;
 }
+
+export interface SiteAudioStreamRequest {
+  readonly provider: SiteProvider;
+  readonly model: string;
+  readonly text: string;
+  readonly voice: string;
+  readonly providerOptions?: Readonly<Record<string, Record<string, unknown>>>;
+  readonly signal?: AbortSignal;
+}
+
+export interface SiteVoiceCloningInput {
+  readonly protocol: "qwen-audio" | "qwen";
+  readonly targetModel: string;
+  readonly audioUrl?: string;
+  readonly audio?: { readonly data: string };
+  readonly text?: string;
+  readonly prefix?: string;
+  readonly preferredName?: string;
+  readonly languageHints?: readonly string[];
+  readonly language?: string;
+}
+
+export interface SiteVoiceDesignInput {
+  readonly protocol: "qwen-audio" | "qwen";
+  readonly targetModel: string;
+  readonly voicePrompt: string;
+  readonly previewText: string;
+  readonly prefix?: string;
+  readonly preferredName?: string;
+  readonly languageHints?: readonly string[];
+  readonly language?: string;
+  readonly sampleRate?: number;
+  readonly responseFormat?: "pcm" | "wav" | "mp3" | "opus";
+}
+export type SiteAudioStreamEvent = AudioStreamEvent;
 
 export interface SiteResponseMetadata {
   readonly provider: string;
@@ -149,6 +202,17 @@ export interface SitePlaygroundResponse {
     readonly duration?: number;
     readonly width?: number;
     readonly height?: number;
+  }[];
+  readonly audio?: readonly {
+    readonly url?: string;
+    readonly base64?: string;
+    readonly mimeType?: string;
+    readonly format?: string;
+    readonly expiresAt?: number;
+    readonly sampleRate?: number;
+    readonly channels?: number;
+    readonly bitDepth?: number;
+    readonly encoding?: string;
   }[];
   readonly metadata?: SiteResponseMetadata;
   readonly error?: {

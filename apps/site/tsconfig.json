@@ -33,7 +33,9 @@
       "@ai-media/provider-minimax": [
         "../../packages/provider-minimax/src/index.ts"
       ],
-      "@ai-media/provider-minimax/*": ["../../packages/provider-minimax/src/*"]
+      "@ai-media/provider-minimax/*": ["../../packages/provider-minimax/src/*"],
+      "@ai-media/uploader": ["../../packages/uploader/src/index.ts"],
+      "@ai-media/uploader/*": ["../../packages/uploader/src/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "tests/**/*.ts", "vite.config.ts"]

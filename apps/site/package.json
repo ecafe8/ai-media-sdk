@@ -17,6 +17,7 @@
     "@ai-media/provider-minimax": "workspace:*",
     "@ai-media/provider-volcengine": "workspace:*",
     "@ai-media/sdk": "workspace:*",
+    "@ai-media/uploader": "workspace:*",
     "@mdx-js/rollup": "^3.1.1",
     "@workspace/ui": "workspace:*",
     "i18next": "^26.3.6",
