@@ -18,6 +18,7 @@ import type { PlaygroundCredentials, PlaygroundRequest } from "./types";
 export const MAX_AUDIO_JSON_BYTES = 64 * 1024;
 export const MAX_AUDIO_TEXT_LENGTH = 10_000;
 export const MAX_AUDIO_UPLOAD_BYTES = 100 * 1024 * 1024;
+export const MAX_AUDIO_MULTIPART_BYTES = MAX_AUDIO_UPLOAD_BYTES + 1024 * 1024;
 
 interface SharedLimiter {
   allow(key: string): boolean | Promise<boolean>;
@@ -160,6 +161,18 @@ export function errorResponse(
     { status: "failed", error: { code, message } },
     { status }
   );
+}
+
+export function credentialsFromHeader(
+  request: Request
+): PlaygroundCredentials | undefined {
+  const value = request.headers.get("x-playground-credentials");
+  if (!value) return undefined;
+  try {
+    return parseCredentials(JSON.parse(value));
+  } catch {
+    return undefined;
+  }
 }
 
 export function sseEvent(

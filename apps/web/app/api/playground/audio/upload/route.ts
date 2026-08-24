@@ -2,6 +2,7 @@ import {
   consumeAudioLimit,
   createUploader,
   errorResponse,
+  MAX_AUDIO_MULTIPART_BYTES,
   MAX_AUDIO_UPLOAD_BYTES,
   toAudioError,
 } from "@/lib/playground/audio-api";
@@ -9,6 +10,17 @@ import {
 export async function POST(request: Request): Promise<Response> {
   const limited = await consumeAudioLimit(request);
   if (limited) return limited;
+  const contentLength = Number(request.headers.get("content-length"));
+  if (
+    Number.isFinite(contentLength) &&
+    contentLength > MAX_AUDIO_MULTIPART_BYTES
+  ) {
+    return errorResponse(
+      "VALIDATION_ERROR",
+      "The multipart request exceeds the 101 MiB limit.",
+      413
+    );
+  }
   try {
     const form = await request.formData();
     const file = form.get("file");
@@ -37,6 +49,20 @@ export async function POST(request: Request): Promise<Response> {
       return errorResponse(
         "VALIDATION_ERROR",
         "Only wav, mp3, and m4a audio files are supported.",
+        422
+      );
+    }
+    const allowedMimeTypes = new Set([
+      "audio/wav",
+      "audio/x-wav",
+      "audio/mpeg",
+      "audio/mp4",
+      "audio/x-m4a",
+    ]);
+    if (file.type && !allowedMimeTypes.has(file.type.toLowerCase())) {
+      return errorResponse(
+        "VALIDATION_ERROR",
+        "The audio MIME type is not supported.",
         422
       );
     }

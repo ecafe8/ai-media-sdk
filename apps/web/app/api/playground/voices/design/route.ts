@@ -1,6 +1,7 @@
 import {
   consumeAudioLimit,
   createAliyunProvider,
+  credentialsFromHeader,
   errorResponse,
   isRecord,
   readJson,
@@ -88,6 +89,7 @@ export async function GET(request: Request): Promise<Response> {
       prompt: "",
       text: "voice",
       voice: "voice",
+      credentials: credentialsFromHeader(request),
     }).voiceDesign;
     return Response.json(
       await manager.list({

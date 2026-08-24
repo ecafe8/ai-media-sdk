@@ -35,7 +35,7 @@ import type {
   SiteVoiceCloningInput,
   SiteVoiceDesignInput,
 } from "@/lib/playground/types";
-import { base64Bytes, type PcmFormat, pcmToWav } from "../lib/audio";
+import { base64Bytes, type PcmFormat, pcmPeaks, pcmToWav } from "../lib/audio";
 import { Field } from "../lib/field";
 import { AudioResult } from "../result-feed";
 
@@ -71,6 +71,7 @@ export function AudioWorkbench({
   const [streaming, setStreaming] = useState(false);
   const [streamAudio, setStreamAudio] =
     useState<SitePlaygroundResponse["audio"]>(undefined);
+  const [streamPeaks, setStreamPeaks] = useState<number[]>([]);
   const [result, setResult] = useState<SitePlaygroundResponse>();
   const [error, setError] = useState<ValidationKey>();
   const abortRef = useRef<AbortController | null>(null);
@@ -163,6 +164,7 @@ export function AudioWorkbench({
     setError(undefined);
     setResult({ status: "processing", modality: "audio" });
     setStreamAudio(undefined);
+    setStreamPeaks([]);
     if (useStream) {
       const controller = new AbortController();
       abortRef.current = controller;
@@ -179,13 +181,18 @@ export function AudioWorkbench({
           signal: controller.signal,
         })) {
           if (event.type === "sentence-synthesis" && event.audio.base64) {
-            chunks.push(base64Bytes(event.audio.base64));
+            const chunk = base64Bytes(event.audio.base64);
+            chunks.push(chunk);
             format ??= readFormat(
               event.audio,
               metadata?.supportedSampleRates?.[0]
             );
             setStreamAudio([
               { ...event.audio, format: "pcm", mimeType: "audio/pcm" },
+            ]);
+            setStreamPeaks((previous) => [
+              ...previous,
+              ...pcmPeaks(chunk, event.audio.bitDepth ?? 16),
             ]);
           }
           if (event.type === "error") throw new Error(event.message);
@@ -524,6 +531,7 @@ export function AudioWorkbench({
         <AudioResult
           result={result}
           streamAudio={streamAudio}
+          streamPeaks={streamPeaks}
           prompt={text}
           provider={provider}
           model={modelId}
@@ -693,7 +701,10 @@ function VoiceResourcePanel({
           items={clones}
           onGet={(id) => clone("get", id)}
           onDelete={(id) => clone("delete", id)}
-          onUse={onVoice}
+          onUse={(id) => {
+            const item = clones.find((voice) => voice.id === id);
+            if (item?.targetModel === selectedModel) onVoice(id);
+          }}
         />
       </div>
       <div className="space-y-3">
@@ -759,7 +770,10 @@ function VoiceResourcePanel({
           items={designs}
           onGet={(id) => design("get", id)}
           onDelete={(id) => design("delete", id)}
-          onUse={onVoice}
+          onUse={(id) => {
+            const item = designs.find((voice) => voice.id === id);
+            if (item?.targetModel === selectedModel) onVoice(id);
+          }}
         />
         <p className="text-muted-foreground text-xs">{message}</p>
       </div>

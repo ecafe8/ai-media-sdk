@@ -157,7 +157,7 @@ Voice cloning and design SHALL accept either a public URL or a local audio file.
 - **THEN** the Playground rejects the upload before contacting Aliyun
 
 ### Requirement: Web audio traffic stays server-proxied and protected
-The web Playground SHALL keep Alibaba API keys and authorization headers on the server. Audio generate, stream, upload, and voice-resource routes SHALL enforce a maximum 64 KiB JSON body or equivalent multipart size limit, a maximum 10,000-character text value, the configured provider timeout, and five audio operations per client per minute through a shared rate-limit mechanism. If the shared limiter is unavailable, audio features MUST remain disabled. Non-idempotent generation MUST NOT be retried automatically. Responses and logs MUST NOT include API keys or authorization headers.
+The web Playground SHALL keep Alibaba API keys and authorization headers on the server. JSON audio generate, stream, and voice-resource requests SHALL enforce a maximum 64 KiB body; multipart upload requests SHALL enforce a maximum 100 MiB file and 101 MiB total body. Audio requests with text SHALL enforce a maximum 10,000-character text value, all routes SHALL enforce the configured provider timeout and five audio operations per client per minute through a shared rate-limit mechanism, and audio features MUST remain disabled if the shared limiter is unavailable. Non-idempotent generation MUST NOT be retried automatically. Responses and logs MUST NOT include API keys or authorization headers.
 
 #### Scenario: Request exceeds a configured limit
 - **WHEN** a web audio request body or text exceeds the configured maximum

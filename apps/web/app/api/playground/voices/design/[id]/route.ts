@@ -1,6 +1,7 @@
 import {
   consumeAudioLimit,
   createAliyunProvider,
+  credentialsFromHeader,
   errorResponse,
   toAudioError,
 } from "@/lib/playground/audio-api";
@@ -51,6 +52,7 @@ async function operation(
       prompt: "",
       text: "voice",
       voice: "voice",
+      credentials: credentialsFromHeader(request),
     }).voiceDesign;
     const { id } = await context.params;
     return Response.json(

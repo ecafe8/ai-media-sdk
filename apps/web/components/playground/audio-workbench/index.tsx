@@ -581,7 +581,15 @@ function VoiceResourcePanel({
   const [message, setMessage] = useState("");
 
   async function request(path: string, init?: RequestInit): Promise<unknown> {
-    const response = await fetch(path, init);
+    const response = await fetch(path, {
+      ...init,
+      headers: {
+        ...(credentials
+          ? { "x-playground-credentials": JSON.stringify(credentials) }
+          : {}),
+        ...init?.headers,
+      },
+    });
     const value = (await response.json()) as { error?: { message?: string } };
     if (!response.ok)
       throw new Error(value.error?.message ?? "Voice request failed");
@@ -758,7 +766,10 @@ function VoiceResourcePanel({
           value={clones}
           onGet={(id) => clone("get", id)}
           onDelete={(id) => clone("delete", id)}
-          onUse={onVoice}
+          onUse={(id) => {
+            const item = clones?.voices.find((voice) => voice.id === id);
+            if (item?.targetModel === selectedModel) onVoice(id);
+          }}
         />
       </div>
       <VoiceResourceFields
@@ -817,7 +828,10 @@ function VoiceResourcePanel({
           value={designs}
           onGet={(id) => design("get", id)}
           onDelete={(id) => design("delete", id)}
-          onUse={onVoice}
+          onUse={(id) => {
+            const item = designs?.voices.find((voice) => voice.id === id);
+            if (item?.targetModel === selectedModel) onVoice(id);
+          }}
         />
         <p className="text-slate-500 text-xs">{message}</p>
       </div>
@@ -1016,10 +1030,11 @@ function AudioResult({
     const context = canvas.getContext("2d");
     if (!context) return;
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#10b981";
     const width = canvas.width / visiblePeaks.length;
     visiblePeaks.forEach((peak, index) => {
       const height = Math.max(2, peak * canvas.height);
+      context.fillStyle =
+        index / visiblePeaks.length < progress ? "#10b981" : "#64748b";
       context.fillRect(
         index * width,
         (canvas.height - height) / 2,
@@ -1027,7 +1042,7 @@ function AudioResult({
         height
       );
     });
-  }, [visiblePeaks]);
+  }, [visiblePeaks, progress]);
   if (!result)
     return (
       <section className="flex min-h-[640px] items-center justify-center rounded-2xl border border-slate-200 bg-white p-5 text-center text-slate-500 shadow-sm">

@@ -1,6 +1,7 @@
 import {
   consumeAudioLimit,
   createAliyunProvider,
+  credentialsFromHeader,
   errorResponse,
   isRecord,
   readJson,
@@ -47,7 +48,9 @@ async function operation(
       (isRecord(body) && typeof body.targetModel === "string"
         ? body.targetModel
         : "");
-    const credentials = isRecord(body) ? body.credentials : undefined;
+    const credentials = isRecord(body)
+      ? body.credentials
+      : credentialsFromHeader(request);
     if ((protocol !== "qwen-audio" && protocol !== "qwen") || !model)
       return errorResponse(
         "VALIDATION_ERROR",

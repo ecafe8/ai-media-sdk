@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { consumeAudioLimit } from "@/lib/playground/audio-api";
 import { executePlaygroundRequest } from "@/lib/playground/server";
 import type {
   PlaygroundCredentials,
@@ -19,6 +20,20 @@ const MAX_AUDIO_TEXT_LENGTH = 10_000;
 
 export async function POST(request: Request): Promise<Response> {
   try {
+    if (request.headers.get("content-type")?.includes("application/json")) {
+      const candidate = await request
+        .clone()
+        .json()
+        .catch(() => undefined);
+      if (
+        typeof candidate === "object" &&
+        candidate !== null &&
+        (candidate as Record<string, unknown>).modality === "audio"
+      ) {
+        const limited = await consumeAudioLimit(request);
+        if (limited) return limited;
+      }
+    }
     const rawBody = await request.text();
     if (new TextEncoder().encode(rawBody).byteLength > MAX_JSON_BYTES) {
       return validationResponse(

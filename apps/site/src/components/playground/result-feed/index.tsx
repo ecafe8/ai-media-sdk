@@ -47,15 +47,23 @@ export function AudioResult({
   provider,
   model,
   configured,
+  streamPeaks,
 }: ResultFeedProps & {
   readonly streamAudio?: SitePlaygroundResponse["audio"];
+  readonly streamPeaks?: readonly number[];
 }) {
   if (!result) return <EmptyState configured={configured} />;
-  if (result.status === "processing")
+  if (result.status === "processing" && !streamAudio?.length)
     return <ProcessingState provider={provider} model={model} />;
   if (result.status === "failed")
     return <FailureState message={result.error?.message ?? "Request failed"} />;
-  return <AudioSuccess audio={result.audio ?? streamAudio} prompt={prompt} />;
+  return (
+    <AudioSuccess
+      audio={result.audio ?? streamAudio}
+      prompt={prompt}
+      peaks={streamPeaks}
+    />
+  );
 }
 
 function EmptyState({ configured }: { configured: boolean }) {
@@ -237,9 +245,11 @@ function SuccessState({
 function AudioSuccess({
   audio,
   prompt,
+  peaks,
 }: {
   readonly audio: SitePlaygroundResponse["audio"];
   readonly prompt: string;
+  readonly peaks?: readonly number[];
 }) {
   const { t } = useTranslation();
   return (
@@ -248,56 +258,66 @@ function AudioSuccess({
         {t("playground.result.audioSuccess")}
       </span>
       <p className="my-5 text-foreground/80 text-sm">{prompt}</p>
-      {audio?.map((item) => {
-        const source =
-          item.url ??
-          (item.base64 &&
-          item.mimeType !== "audio/pcm" &&
-          item.format !== "pcm" &&
-          item.mimeType
-            ? `data:${item.mimeType};base64,${item.base64}`
-            : undefined);
-        return (
-          <div
-            key={`${source ?? "audio"}-${item.format ?? "unknown"}-${item.sampleRate ?? "default"}`}
-            className="space-y-3 rounded-xl border border-border bg-muted/50 p-4"
-          >
-            {source ? (
-              <AudioPreview source={source} />
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                {t("playground.result.audioUnavailable")}
-              </p>
-            )}
-            {source ? (
-              <a
-                href={source}
-                download={`audio.${item.format ?? "wav"}`}
-                className="text-emerald-700 text-sm hover:underline dark:text-emerald-400"
-              >
-                {t("playground.result.downloadAudio")}
-              </a>
-            ) : null}
-            {item.url ? (
-              <p className="text-muted-foreground text-xs">
-                {t("playground.result.temporaryAudio")}
-              </p>
-            ) : null}
-          </div>
-        );
-      })}
+      {audio?.length ? (
+        audio.map((item) => {
+          const source =
+            item.url ??
+            (item.base64 &&
+            item.mimeType !== "audio/pcm" &&
+            item.format !== "pcm" &&
+            item.mimeType
+              ? `data:${item.mimeType};base64,${item.base64}`
+              : undefined);
+          return (
+            <div
+              key={`${source ?? "audio"}-${item.format ?? "unknown"}-${item.sampleRate ?? "default"}`}
+              className="space-y-3 rounded-xl border border-border bg-muted/50 p-4"
+            >
+              {source || peaks?.length ? (
+                <AudioPreview source={source} peaks={peaks} />
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  {t("playground.result.audioUnavailable")}
+                </p>
+              )}
+              {source ? (
+                <a
+                  href={source}
+                  download={`audio.${item.format ?? "wav"}`}
+                  className="text-emerald-700 text-sm hover:underline dark:text-emerald-400"
+                >
+                  {t("playground.result.downloadAudio")}
+                </a>
+              ) : null}
+              {item.url ? (
+                <p className="text-muted-foreground text-xs">
+                  {t("playground.result.temporaryAudio")}
+                </p>
+              ) : null}
+            </div>
+          );
+        })
+      ) : peaks?.length ? (
+        <AudioPreview peaks={peaks} />
+      ) : null}
     </div>
   );
 }
 
-function AudioPreview({ source }: { readonly source: string }) {
+function AudioPreview({
+  source,
+  peaks = [],
+}: {
+  readonly source?: string;
+  readonly peaks?: readonly number[];
+}) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [progress, setProgress] = useState(0);
-  const [peaks, setPeaks] = useState<readonly number[]>([]);
+  const [decodedPeaks, setDecodedPeaks] = useState<readonly number[]>([]);
   useEffect(() => {
     let active = true;
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !source) return;
     const update = () =>
       setProgress(audio.duration ? audio.currentTime / audio.duration : 0);
     audio.addEventListener("timeupdate", update);
@@ -309,7 +329,7 @@ function AudioPreview({ source }: { readonly source: string }) {
         if (!active) return;
         const data = decoded.getChannelData(0);
         const bucketSize = Math.max(1, Math.floor(data.length / 64));
-        setPeaks(
+        setDecodedPeaks(
           Array.from({ length: 64 }, (_, index) => {
             let peak = 0;
             for (
@@ -322,7 +342,7 @@ function AudioPreview({ source }: { readonly source: string }) {
           })
         );
       })
-      .catch(() => setPeaks([]));
+      .catch(() => setDecodedPeaks([]));
     return () => {
       active = false;
       audio.removeEventListener("timeupdate", update);
@@ -341,24 +361,27 @@ function AudioPreview({ source }: { readonly source: string }) {
         className="h-12 w-full rounded bg-muted p-1"
       >
         <title>Audio waveform</title>
-        {(peaks.length ? peaks : Array.from({ length: 64 }, () => 0.18)).map(
-          (peak, index) => (
-            <rect
-              // biome-ignore lint/suspicious/noArrayIndexKey: Waveform bars are fixed positional samples.
-              key={`peak-${peak}-${index}`}
-              x={index * 5}
-              y={24 - Math.max(2, peak * 21)}
-              width="3"
-              height={Math.max(4, peak * 42)}
-              rx="1"
-              className={
-                index / 64 < progress
-                  ? "fill-emerald-600"
-                  : "fill-muted-foreground/40"
-              }
-            />
-          )
-        )}
+        {(peaks.length > 0
+          ? peaks
+          : decodedPeaks.length
+            ? decodedPeaks
+            : Array.from({ length: 64 }, () => 0.18)
+        ).map((peak, index) => (
+          <rect
+            // biome-ignore lint/suspicious/noArrayIndexKey: Waveform bars are fixed positional samples.
+            key={`peak-${peak}-${index}`}
+            x={index * 5}
+            y={24 - Math.max(2, peak * 21)}
+            width="3"
+            height={Math.max(4, peak * 42)}
+            rx="1"
+            className={
+              index / 64 < progress
+                ? "fill-emerald-600"
+                : "fill-muted-foreground/40"
+            }
+          />
+        ))}
       </svg>
     </div>
   );

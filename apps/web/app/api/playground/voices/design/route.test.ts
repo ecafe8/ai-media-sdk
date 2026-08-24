@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
-import { PATCH } from "./route";
 import { PATCH as PATCH_BY_ID } from "./[id]/route";
+import { PATCH } from "./route";
 
 describe("voice design route", () => {
   test("rejects design updates without dispatch", async () => {

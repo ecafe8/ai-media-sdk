@@ -1,6 +1,7 @@
 import {
   consumeAudioLimit,
   createAliyunProvider,
+  credentialsFromHeader,
   errorResponse,
   isRecord,
   readJson,
@@ -24,7 +25,9 @@ async function run(
   if (limited) return limited;
   try {
     const value =
-      operation === "create" ? await readJson(request) : query(request);
+      operation === "create"
+        ? await readJson(request)
+        : { ...query(request), credentials: credentialsFromHeader(request) };
     if (value instanceof Response) return value;
     if (!isRecord(value))
       return errorResponse("VALIDATION_ERROR", "Invalid voice request.", 422);

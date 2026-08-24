@@ -21,7 +21,8 @@ export function audioUrl(audio: {
 }): string | undefined {
   if (audio.url) return audio.url;
   if (!audio.base64) return undefined;
-  const mime = audio.mimeType ?? (audio.format ? `audio/${audio.format}` : undefined);
+  const mime =
+    audio.mimeType ?? (audio.format ? `audio/${audio.format}` : undefined);
   if (!mime || mime === "audio/pcm") return undefined;
   return `data:${mime};base64,${audio.base64}`;
 }
@@ -45,6 +46,31 @@ export function pcmToWav(bytes: Uint8Array, format: PcmFormat): Blob {
   view.setUint32(40, bytes.byteLength, true);
   new Uint8Array(buffer, 44).set(bytes);
   return new Blob([buffer], { type: "audio/wav" });
+}
+
+export function pcmPeaks(
+  bytes: Uint8Array,
+  bitDepth = 16,
+  bucketSize = 32
+): number[] {
+  const step = Math.max(1, bitDepth / 8);
+  const peaks: number[] = [];
+  for (let offset = 0; offset < bytes.length; offset += step * bucketSize) {
+    let peak = 0;
+    for (
+      let sample = offset;
+      sample + step <= Math.min(bytes.length, offset + step * bucketSize);
+      sample += step
+    ) {
+      const value =
+        bitDepth === 16
+          ? Math.abs(new DataView(bytes.buffer).getInt16(sample, true)) / 32768
+          : Math.abs((bytes[sample] ?? 128) - 128) / 128;
+      peak = Math.max(peak, value);
+    }
+    peaks.push(peak);
+  }
+  return peaks;
 }
 
 function writeText(view: DataView, offset: number, value: string): void {
