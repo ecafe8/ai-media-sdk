@@ -182,6 +182,26 @@
         "note": "Public http/https URLs only; 2-15 seconds each, 15 seconds in total."
       }
     },
+    "audioWorkbench": {
+      "title": "Audio workbench",
+      "subtitle": "Text-to-speech with Alibaba audio models",
+      "noModels": " (no audio models)",
+      "text": "Text",
+      "textPlaceholder": "Enter text, SSML, or LaTeX without changes...",
+      "voice": "Voice",
+      "voicePlaceholder": "e.g. longxiaochun",
+      "format": "Format",
+      "sampleRate": "Sample rate",
+      "rate": "Rate",
+      "pitch": "Pitch",
+      "volume": "Volume",
+      "ssml": "Enable SSML",
+      "instruction": "Instruction",
+      "languageType": "Language type",
+      "instructions": "Instructions",
+      "optimizeInstructions": "Optimize instructions",
+      "speed": "Speed"
+    },
     "prompt": {
       "label": "Prompt",
       "placeholder": "Describe what you want to generate..."
@@ -205,6 +225,8 @@
     "audioSetting": "Audio setting",
     "validation": {
       "promptRequired": "Enter a prompt before generating.",
+      "audioTextRequired": "Enter text before generating.",
+      "audioVoiceRequired": "Enter a voice before generating.",
       "providerNotConfigured": "This provider has no credentials yet; fill them in via API settings first.",
       "editNeedsReference": "Edit mode requires a reference image (URL or local upload).",
       "referenceCacheMiss": "The reference image cache has been reclaimed; please re-select the image.",
@@ -231,6 +253,10 @@
       "failedDefault": "Request failed",
       "imageSuccess": "Generated",
       "videoSuccess": "Video generated",
+      "audioSuccess": "Audio generated",
+      "audioUnavailable": "Audio data is not available for playback.",
+      "downloadAudio": "Download audio",
+      "temporaryAudio": "This provider URL is temporary and may expire.",
       "imageAlt": "Generated result {{count}}",
       "viewImageData": "View image data"
     },

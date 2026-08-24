@@ -182,6 +182,26 @@
         "note": "仅公网 http/https URL；单条 2-15 秒，合计不超过 15 秒。"
       }
     },
+    "audioWorkbench": {
+      "title": "音频工作台",
+      "subtitle": "使用 Alibaba 音频模型进行语音合成",
+      "noModels": "（无音频模型）",
+      "text": "文本",
+      "textPlaceholder": "输入文本、SSML 或 LaTeX，内容不会被修改……",
+      "voice": "音色",
+      "voicePlaceholder": "例如 longxiaochun",
+      "format": "格式",
+      "sampleRate": "采样率",
+      "rate": "语速",
+      "pitch": "音调",
+      "volume": "音量",
+      "ssml": "启用 SSML",
+      "instruction": "指令",
+      "languageType": "语言类型",
+      "instructions": "指令",
+      "optimizeInstructions": "优化指令",
+      "speed": "速度"
+    },
     "prompt": {
       "label": "提示词",
       "placeholder": "描述你想生成的画面..."
@@ -199,6 +219,8 @@
     "audioSetting": "声音设置",
     "validation": {
       "promptRequired": "请输入提示词后再开始生成。",
+      "audioTextRequired": "请输入文本后再开始生成。",
+      "audioVoiceRequired": "请输入音色后再开始生成。",
       "providerNotConfigured": "该 Provider 尚未配置凭证，请先在 API 设置中填写。",
       "editNeedsReference": "编辑模式需要一张参考图（URL 或本地上传）。",
       "referenceCacheMiss": "参考图缓存已失效，请重新选择图片。",
@@ -225,6 +247,10 @@
       "failedDefault": "请求失败",
       "imageSuccess": "生成成功",
       "videoSuccess": "视频生成成功",
+      "audioSuccess": "音频生成成功",
+      "audioUnavailable": "当前音频数据无法播放。",
+      "downloadAudio": "下载音频",
+      "temporaryAudio": "该 Provider URL 为临时地址，可能会过期。",
       "imageAlt": "生成结果 {{count}}",
       "viewImageData": "查看图片数据"
     },

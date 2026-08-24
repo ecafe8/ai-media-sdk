@@ -1,5 +1,6 @@
 import { toImageUrl } from "@ai-media/sdk";
 import { ImagePlus, LoaderCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useErrorText } from "@/lib/error-text";
@@ -37,6 +38,24 @@ export function ResultFeed({
     return <FailureState message={errorText(result.error, provider)} />;
   }
   return <SuccessState result={result} prompt={prompt} />;
+}
+
+export function AudioResult({
+  result,
+  streamAudio,
+  prompt,
+  provider,
+  model,
+  configured,
+}: ResultFeedProps & {
+  readonly streamAudio?: SitePlaygroundResponse["audio"];
+}) {
+  if (!result) return <EmptyState configured={configured} />;
+  if (result.status === "processing")
+    return <ProcessingState provider={provider} model={model} />;
+  if (result.status === "failed")
+    return <FailureState message={result.error?.message ?? "Request failed"} />;
+  return <AudioSuccess audio={result.audio ?? streamAudio} prompt={prompt} />;
 }
 
 function EmptyState({ configured }: { configured: boolean }) {
@@ -211,6 +230,133 @@ function SuccessState({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function AudioSuccess({
+  audio,
+  prompt,
+}: {
+  readonly audio: SitePlaygroundResponse["audio"];
+  readonly prompt: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <span className="rounded-full bg-emerald-500/10 px-3 py-1 font-medium text-emerald-700 text-xs dark:text-emerald-400">
+        {t("playground.result.audioSuccess")}
+      </span>
+      <p className="my-5 text-foreground/80 text-sm">{prompt}</p>
+      {audio?.map((item) => {
+        const source =
+          item.url ??
+          (item.base64 && item.mimeType
+            ? `data:${item.mimeType};base64,${item.base64}`
+            : undefined);
+        return (
+          <div
+            key={`${source ?? "audio"}-${item.format ?? "unknown"}-${item.sampleRate ?? "default"}`}
+            className="space-y-3 rounded-xl border border-border bg-muted/50 p-4"
+          >
+            {source ? (
+              <AudioPreview source={source} />
+            ) : (
+              <p className="text-muted-foreground text-sm">
+                {t("playground.result.audioUnavailable")}
+              </p>
+            )}
+            {source ? (
+              <a
+                href={source}
+                download={`audio.${item.format ?? "wav"}`}
+                className="text-emerald-700 text-sm hover:underline dark:text-emerald-400"
+              >
+                {t("playground.result.downloadAudio")}
+              </a>
+            ) : null}
+            {item.url ? (
+              <p className="text-muted-foreground text-xs">
+                {t("playground.result.temporaryAudio")}
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AudioPreview({ source }: { readonly source: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [progress, setProgress] = useState(0);
+  const [peaks, setPeaks] = useState<readonly number[]>([]);
+  useEffect(() => {
+    let active = true;
+    const audio = audioRef.current;
+    if (!audio) return;
+    const update = () =>
+      setProgress(audio.duration ? audio.currentTime / audio.duration : 0);
+    audio.addEventListener("timeupdate", update);
+    audio.addEventListener("loadedmetadata", update);
+    void fetch(source)
+      .then((response) => response.arrayBuffer())
+      .then((buffer) => new AudioContext().decodeAudioData(buffer))
+      .then((decoded) => {
+        if (!active) return;
+        const data = decoded.getChannelData(0);
+        const bucketSize = Math.max(1, Math.floor(data.length / 64));
+        setPeaks(
+          Array.from({ length: 64 }, (_, index) => {
+            let peak = 0;
+            for (
+              let offset = index * bucketSize;
+              offset < Math.min(data.length, (index + 1) * bucketSize);
+              offset += 1
+            )
+              peak = Math.max(peak, Math.abs(data[offset] ?? 0));
+            return peak;
+          })
+        );
+      })
+      .catch(() => setPeaks([]));
+    return () => {
+      active = false;
+      audio.removeEventListener("timeupdate", update);
+      audio.removeEventListener("loadedmetadata", update);
+    };
+  }, [source]);
+  return (
+    <div className="space-y-2">
+      <audio ref={audioRef} controls src={source} className="w-full">
+        <track kind="captions" />
+      </audio>
+      <svg
+        role="img"
+        aria-label="Audio waveform"
+        viewBox="0 0 320 48"
+        className="h-12 w-full rounded bg-muted p-1"
+      >
+        <title>Audio waveform</title>
+        {(peaks.length ? peaks : Array.from({ length: 64 }, () => 0.18)).map(
+          (peak, index) => (
+            <rect
+              // biome-ignore lint/suspicious/noArrayIndexKey: Waveform bars are fixed positional samples.
+              key={`peak-${peak}-${index}`}
+              x={index * 5}
+              y={24 - Math.max(2, peak * 21)}
+              width="3"
+              height={Math.max(4, peak * 42)}
+              rx="1"
+              className={
+                index / 64 < progress
+                  ? "fill-emerald-600"
+                  : "fill-muted-foreground/40"
+              }
+            />
+          )
+        )}
+      </svg>
     </div>
   );
 }

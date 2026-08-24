@@ -8,6 +8,7 @@ import { PageContainer } from "@/components/layout/page-container";
 import { SettingsDialog } from "@/components/settings-dialog";
 import { getConfiguredProviders, useKeyStore } from "@/lib/key-store";
 import type { SiteModality, SiteModel } from "@/lib/playground/types";
+import { AudioWorkbench } from "./audio-workbench";
 import { ImageWorkbench } from "./image-workbench";
 import { VideoWorkbench } from "./video-workbench";
 
@@ -17,7 +18,7 @@ interface PlaygroundProps {
 
 /**
  * Playground shell: header with BYO environment state, modality tabs
- * (image/video; audio reserved), workbench mounting, and the settings
+ * (image/video/audio), workbench mounting, and the settings
  * dialog. Credentials come from the global key store.
  */
 export function Playground({ models }: PlaygroundProps) {
@@ -100,10 +101,8 @@ export function Playground({ models }: PlaygroundProps) {
               {t("playground.modality.video")}
             </ModalityTab>
             <ModalityTab
-              active={false}
-              disabled
-              title={t("common.comingSoon")}
-              onClick={() => undefined}
+              active={modality === "audio"}
+              onClick={() => setModality("audio")}
             >
               {t("playground.modality.audio")}
             </ModalityTab>
@@ -120,6 +119,13 @@ export function Playground({ models }: PlaygroundProps) {
       ) : null}
       {modality === "video" ? (
         <VideoWorkbench
+          models={models}
+          configuredProviders={configuredProviders}
+          onOpenSettings={() => setSettingsOpen(true)}
+        />
+      ) : null}
+      {modality === "audio" ? (
+        <AudioWorkbench
           models={models}
           configuredProviders={configuredProviders}
           onOpenSettings={() => setSettingsOpen(true)}
