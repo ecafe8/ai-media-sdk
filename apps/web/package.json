@@ -16,6 +16,7 @@
     "@ai-media/provider-minimax": "workspace:*",
     "@ai-media/provider-volcengine": "workspace:*",
     "@ai-media/sdk": "workspace:*",
+    "@ai-media/uploader": "workspace:*",
     "@workspace/ui": "workspace:*",
     "dotenv": "^16.4.5",
     "lucide-react": "^1.27.0",

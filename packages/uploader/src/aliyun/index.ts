@@ -11,6 +11,8 @@ import type {
 } from "./types.ts";
 import { uploadFileToOss } from "./upload-oss.ts";
 
+export type { AliyunUploadedFile, AliyunUploader } from "./types.ts";
+
 /**
  * Create an Aliyun DashScope temporary-file uploader.
  *
