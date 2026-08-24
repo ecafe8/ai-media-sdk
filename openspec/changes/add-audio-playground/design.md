@@ -1,81 +1,162 @@
 ## Context
 
-The core SDK and Alibaba provider already expose `generateAudio()`, `AudioModelInstance`, CosyVoice request mapping, URL/Base64 audio normalization, and SSML pass-through. The `apps/web` Playground currently has audio in its top-level modality union but projects audio registry entries as images and has no audio request, form, API, or result path. The site is a browser-side BYO-key application, while the web Playground is server-proxied and keeps provider credentials on the server.
+The Alibaba provider already implements `generateAudio()`, `streamAudio()`, CosyVoice/Qwen-Audio/Qwen-TTS/MiniMax request mapping, and `voiceCloning` / `voiceDesign` managers. Both Playgrounds still hard-code audio as a disabled tab: `apps/web` projects non-video Alibaba models as images, and `apps/site` drops audio families entirely. The web app is a server-proxied Playground; the site is a browser-direct BYO-key app. Aliyun temporary uploads already exist in `@ai-media/uploader`, but the public factory imports Node `fs` and cannot be used as-is from the site bundle.
+
+See `proposal.md` for motivation and the capability specs for observable behavior.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Add a complete first-slice audio path to the server-proxied web Playground.
-- Reuse the existing SDK/provider contracts and Alibaba credential resolution.
-- Make SSML and LaTeX pass-through explicit and lossless.
-- Keep model-aware controls and audio result handling separate from image/video behavior.
-- Publish synchronized Chinese and English documentation.
+- Enable a complete audio path in both Playgrounds without changing image/video contracts.
+- Drive forms from registry family metadata rather than ad-hoc model-id conditionals.
+- Reuse existing SDK/provider audio and voice-resource APIs.
+- Support public URL and local-file inputs for cloning/design through the existing Aliyun uploader.
+- Make SSE streaming playable without treating PCM chunks as complete files.
+- Keep web credentials server-only and site credentials browser-local.
 
 **Non-Goals:**
 
-- No WebSocket realtime TTS or streaming playback in this change.
-- No browser-side `apps/site` TTS execution until CORS and BYO-key behavior are separately approved.
-- No SSML parser, LaTeX parser, formula renderer, formula validator, or automatic XML escaping of user text.
-- No voice cloning/design UI, audio editing, or automatic persistence of temporary provider URLs.
-- No broad exposure of every Alibaba TTS family in the initial UI; CosyVoice is the first supported slice.
+- No WebSocket realtime TTS.
+- No MiniMax voice cloning/design manager.
+- No SSML/LaTeX parser, renderer, validator, or automatic XML escaping of user text.
+- No automatic persistence or refresh of temporary result/upload URLs.
+- No KaTeX/MathJax documentation renderer.
+- No shared audio UI package extraction unless an existing shared primitive already covers the need.
 
 ## Decisions
 
-### Use the web Playground as the first execution surface
+### Dual execution surfaces with the same request shape
 
-Audio requests will use the existing `apps/web` API route and server executor. This preserves the repository's server-side credential boundary and avoids making public site behavior depend on Alibaba endpoint CORS configuration. `apps/site` will receive documentation only in this change; its model projection must not imply that browser execution is available.
+Both apps use an explicit audio request: `text`, `voice`, `model`, `family`, and `providerOptions.aliyun`. Image `prompt` and video `audioSetting` are not reused.
 
-### Add a distinct audio workbench and request shape
+- `apps/web` adds server routes for generate, stream, upload, and voice resources. The browser never calls DashScope directly.
+- `apps/site` extends `executeSiteRequest` / `buildSiteProvider` to call `provider.audio()`, `streamAudio()`, and the voice managers with the stored key.
 
-Audio gets its own form and result branch rather than reusing image `prompt` or video `audioSetting`. The request carries explicit `text`, `voice`, and audio controls. This prevents video audio settings from being accidentally sent as TTS options and makes required TTS inputs visible in the type system.
+Credential handling stays as-is: web may use env or per-request BYO credentials that are proxied and not persisted server-side; site keeps keys in the existing local key store.
 
-### Start with CosyVoice registry entries
+### Registry metadata drives the workbench
 
-The web registry projection will preserve `modality: "audio"` and expose a deliberately selected CosyVoice allowlist for the first UI slice: `cosyvoice-v3.5-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3-flash`, `cosyvoice-v3-plus`, and `cosyvoice-v2`. The implementation must record the documented Beijing-region and voice/SSML constraints as capability metadata or validation rules. Qwen-TTS and MiniMax TTS remain provider capabilities but are deferred because their option families and endpoint behavior differ. `apps/site` will not project these models as runnable audio models in this change. Future additions should extend registry metadata and form families instead of adding provider-specific conditionals to the generic audio path.
+Extend Alibaba audio registry entries with Playground-facing capability data instead of inferring options from model-id prefixes:
 
-### Preserve caller text exactly
+- family: `qwen-audio-tts` | `qwen-tts` | `minimax-tts`
+- region/endpoint family
+- SSML support
+- supported formats and sample rates
+- instruction field name (`instruction` vs `instructions`)
+- voice-resource protocol (`qwen-audio` vs `qwen`) when a model can be a cloning/design target
 
-The form submits SSML and LaTeX as ordinary text. The API validates presence and supported modality but does not transform content. The provider's existing `enableSsml` option is sent only when selected. LaTeX backslashes are escaped by the JSON transport as required by the language runtime, not rewritten as a formula-specific operation.
+Web and site projections both keep `modality: "audio"`. Site no longer filters audio families out.
 
-### Normalize playback at the application boundary
+First implementation exposes the current registry allowlist:
 
-The web response will carry normalized `AudioContent[]`. The first UI slice will offer directly playable `mp3` and `wav` formats. PCM and any format without a browser-playable container will be download-only or rejected by the form. The result feed will render provider URLs directly and construct `data:<mime>;base64,...` URLs for inline data. It will show download controls where possible and a temporary-link warning without attempting server-side caching or transcoding.
+- CosyVoice: `cosyvoice-v3.5-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3-flash`, `cosyvoice-v3-plus`, `cosyvoice-v2`
+- Qwen-Audio: `qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`
+- Qwen-TTS: `qwen3-tts-flash`, dated flash/instruct snapshots, and legacy `qwen-tts*`
+- MiniMax: `MiniMax/speech-2.8-hd`, `MiniMax/speech-02-hd`, `MiniMax/speech-2.8-turbo`, `MiniMax/speech-02-turbo`
 
-### Protect the server-proxied endpoint
+v3.5 CosyVoice entries remain cloning/design-oriented where the provider documents no system voices.
 
-The API route will enforce a maximum 64 KiB JSON request body, a maximum 10,000-character text value, the configured provider timeout, and a rate limit of five audio generations per client per minute through the deployment's shared rate-limit mechanism. If the shared mechanism is not available in the target deployment, the feature MUST remain disabled rather than silently falling back to an ineffective process-local limiter. It will reject invalid or oversized requests before provider dispatch, avoid automatic retries for non-idempotent generation, and return sanitized errors. Provider credentials and authorization headers remain server-only and are never included in response payloads or logs. These limits must be represented as named constants and covered by route tests.
+### Pass text through exactly
 
-### Keep documentation examples in code blocks
+The form submits SSML and LaTeX as the `text` field. Validation checks presence, length, modality, and supported options only. `enableSsml` is sent only for supporting CosyVoice/Qwen-Audio models. JSON string escaping is a transport concern, not a formula rewrite.
 
-The site currently has no KaTeX/MathJax pipeline. SSML and LaTeX examples will therefore be presented in fenced code blocks, with escaped source-string examples, rather than relying on documentation-time mathematical rendering.
+### Streaming uses native fetch and two playback modes
 
-### Alternatives considered
+Do not add a third-party PCM player. `wavesurfer.js` may be considered later for complete-file waveforms, but it does not consume SSE PCM chunks and is not part of this change.
 
-- **Implement both playgrounds immediately:** rejected because browser-side credentials and CORS introduce a separate security and deployment decision.
-- **Reuse the image prompt field:** rejected because it obscures TTS semantics and makes validation less precise.
-- **Parse or sanitize SSML/LaTeX locally:** rejected because Alibaba owns the supported grammar and rewriting can change pronunciation.
-- **Expose every audio model now:** rejected because Qwen-Audio/CosyVoice, Qwen-TTS, and MiniMax use incompatible option families.
+Transport:
+
+- Web: `POST /api/playground/audio/stream` returns `text/event-stream` and forwards `streamAudio()` events. Client abort cancels the provider stream.
+- Site: browser `fetch(..., { method: "POST", signal })` plus `ReadableStream` parsing. `EventSource` is rejected because it cannot send POST bodies or BYO headers.
+
+Playback:
+
+1. Default compatibility mode: accumulate `sentence-synthesis` PCM/Base64 chunks, wrap them as a WAV Blob after `complete` or after enough metadata is known, then use `<audio controls>`.
+2. Optional low-latency mode: after a user gesture, decode PCM into `AudioBuffer`s and schedule them on `AudioContext`. Cancellation stops further scheduling.
+
+Streaming events must carry or inherit `format`, `sampleRate`, `channels`, and `bitDepth`. If the current SDK event cannot represent that metadata, extend `AudioContent` / stream events in the smallest compatible way. Raw PCM MUST NOT be assigned to `<audio src>`.
+
+### Upload reuses Aliyun temporary OSS and stays model-bound
+
+Cloning/design accept either:
+
+- a public HTTP(S) URL, or
+- a local file uploaded to DashScope temporary OSS
+
+The Aliyun uploader already requires `model` and returns `oss://` plus `X-DashScope-OssResourceResolve: enable`. The Alibaba adapter already injects that header when it sees `oss://`.
+
+Web path:
+
+```text
+browser file -> POST /api/playground/audio/upload -> createAliyunUploader().upload({ model, fileBytes, fileName }) -> oss:// URL
+```
+
+Site path:
+
+Extract or add a browser-safe Aliyun upload entry that uses `fileBytes` / `File.arrayBuffer()` and does not import `node:fs/promises`. The current `packages/uploader/src/aliyun/index.ts` factory is Node-oriented and cannot be imported by the site bundle as-is.
+
+Upload validation:
+
+- required target model
+- filename
+- allowlisted audio MIME/extension (`wav`, `mp3`, `m4a` where documented)
+- maximum file size from the policy or a named constant
+- no automatic retry of a successful upload
+
+### Voice resources stay as two managers
+
+UI has two panels, not one generic “voice CRUD”:
+
+- Cloning: protocol, target model, URL or upload, Qwen-Audio `prefix` or Qwen `preferredName`, language/hints, list/get/update/delete
+- Design: protocol, target model, `voicePrompt`, `previewText`, naming, language, sample rate, response format, preview-audio playback, list/get/delete
+
+Created voice ids can be copied into the TTS `voice` field only for the same `targetModel`. Design never emits `update_voice`. MiniMax preview-clone remains out of scope.
+
+### Protect the public web surface
+
+Named limits:
+
+- JSON body: 64 KiB
+- text: 10,000 characters
+- timeout: existing `PLAYGROUND_PROVIDER_TIMEOUT_MS`
+- rate: 5 audio operations per client per minute through a shared limiter
+
+Audio generate/stream/upload/voice routes stay disabled if the shared limiter is unavailable. Do not add a process-local fallback. Do not automatically retry generate/stream/create. Sanitize errors and logs.
+
+Site does not get a project-operated proxy in this change. Its protections are complete credentials, endpoint allowlist/confirmation, CORS-visible errors, and client-side validation.
+
+### Documentation stays in code blocks
+
+SSML and LaTeX examples are fenced code blocks. Docs distinguish:
+
+- SDK pass-through versus Playground playback
+- HTTP SSE versus WebSocket realtime
+- web server proxy versus site BYO-key/CORS
+- `mp3`/`wav` playback versus PCM accumulate-to-WAV
 
 ## Risks / Trade-offs
 
-- [Risk] Temporary audio URLs expire before a user replays them. → Show expiry/persistence guidance and provide immediate download where supported.
-- [Risk] Base64 audio may be large for a browser response. → Keep the first slice non-streaming and avoid duplicating the payload in client state unnecessarily.
-- [Risk] A public generation endpoint can be abused to consume provider quota. → Enforce request-size, text-length, timeout, and rate-limit boundaries before dispatch; do not add automatic retries.
-- [Risk] Users enter unsupported SSML tags or LaTeX syntax. → Preserve text and document provider/model limits; surface sanitized provider errors.
-- [Risk] Registry metadata and live Alibaba model availability drift. → Use the existing explicit registry and add projection/validation tests for the selected allowlist.
-- [Risk] Existing image/video branches regress while adding audio. → Keep modality branches discriminated and run focused plus full repository verification.
+- [Risk] DashScope workspace endpoints may lack browser CORS. → Document the standard DashScope endpoint for site use; keep web server-proxied as the reliable path.
+- [Risk] Node `fs` in the Aliyun uploader breaks the site bundle. → Add or extract a `fileBytes`-only browser entry; keep `filePath` for Node/examples.
+- [Risk] PCM chunks are not playable files. → Default to accumulate-to-WAV; never assign raw PCM to `<audio src>`.
+- [Risk] Stream events omit sample rate. → Extend stream metadata or inherit the requested sample rate; fail closed to complete-result fallback.
+- [Risk] Temporary `oss://` and result URLs expire. → Show expiry and require re-upload/re-generate; do not cache provider objects server-side.
+- [Risk] A public web audio endpoint can consume quota. → Enforce body/text/timeout/shared rate limits; disable audio when the shared limiter is missing.
+- [Risk] Family option mixing corrupts requests. → Validate and serialize only the selected family's fields.
+- [Risk] Local uploads are large. → Enforce MIME/size limits and model binding before policy/OSS calls.
 
 ## Migration Plan
 
-1. Extend web types, registry projection, API validation, server selection, and executor for audio.
-2. Add the CosyVoice audio workbench and result rendering.
-3. Add focused registry, API, executor, and result tests.
-4. Add bilingual documentation and manifest navigation.
-5. Run lint, typecheck, build, test, and strict OpenSpec validation.
+1. Extend registry metadata and Playground types/projections in both apps.
+2. Add web generate/stream/upload/voice routes and site executor/provider-client branches.
+3. Add AudioWorkbench, result/stream players, and cloning/design panels.
+4. Extract a browser-safe Aliyun upload surface and wire local-file inputs.
+5. Add bilingual docs and tests for registry, API, executor, upload, stream playback, and voice resources.
+6. Run lint, typecheck, build, test, and `openspec validate "add-audio-playground" --type change --strict`.
 
-Rollback requires removing the audio UI/API branch and its registry projection; existing image/video and provider SDK behavior remain independent.
+Rollback is removing the audio UI/API branches and browser upload export. Image/video paths and existing SDK audio APIs remain independently usable.
 
 ## Open Questions
 
-None for this first implementation slice. Browser-side site execution and additional TTS families require a separate scope decision.
+None. Browser-safe upload will be an additional export or internal split of `@ai-media/uploader/aliyun`, not a new provider. Low-latency Web Audio playback is optional and must not replace accumulate-to-WAV as the default.
