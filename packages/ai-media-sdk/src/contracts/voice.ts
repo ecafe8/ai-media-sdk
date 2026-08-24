@@ -1,5 +1,14 @@
 import type { AudioContent } from "./content.ts";
 
+export interface AudioUsage {
+  readonly characters?: number;
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly totalTokens?: number;
+  readonly count?: number;
+  readonly raw?: unknown;
+}
+
 export type VoiceStatus = "DEPLOYING" | "OK" | "UNDEPLOYED" | string;
 
 /** Normalized persistent voice resource shared by cloning and design APIs. */

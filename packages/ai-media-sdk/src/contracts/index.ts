@@ -57,6 +57,7 @@ export type {
   TransportStreamResponse,
 } from "./transport.ts";
 export type {
+  AudioUsage,
   VoiceDesignResult,
   VoiceListResult,
   VoiceOperationResult,

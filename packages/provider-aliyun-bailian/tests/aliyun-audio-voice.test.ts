@@ -104,7 +104,7 @@ describe("Aliyun audio and voice APIs", () => {
       voice: "MiniMax001",
     });
     expect(result.content[0]?.url).toBe("https://example.com/demo.mp3");
-    expect(result.usage).toEqual({ characters: 2 });
+    expect(result.usage).toMatchObject({ characters: 2 });
   });
 
   test("normalizes designed voice preview audio", async () => {

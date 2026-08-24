@@ -2,6 +2,7 @@ import {
   type AudioContent,
   type AudioGenerationInput,
   type AudioStreamEvent,
+  type AudioUsage,
   classifyHttpError,
   type GenerationResult,
   SdkError,
@@ -176,8 +177,29 @@ export async function generateAliyunAudio(
       typeof response.data?.request_id === "string"
         ? response.data.request_id
         : undefined,
-    usage: response.data?.usage,
+    usage: mapUsage(response.data?.usage),
     raw: response.data,
+  };
+}
+
+function mapUsage(value: unknown): AudioUsage | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const usage = value as Record<string, unknown>;
+  return {
+    ...(typeof usage.characters === "number"
+      ? { characters: usage.characters }
+      : {}),
+    ...(typeof usage.input_tokens === "number"
+      ? { inputTokens: usage.input_tokens }
+      : {}),
+    ...(typeof usage.output_tokens === "number"
+      ? { outputTokens: usage.output_tokens }
+      : {}),
+    ...(typeof usage.total_tokens === "number"
+      ? { totalTokens: usage.total_tokens }
+      : {}),
+    ...(typeof usage.count === "number" ? { count: usage.count } : {}),
+    raw: value,
   };
 }
 

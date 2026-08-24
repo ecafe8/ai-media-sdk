@@ -5,12 +5,12 @@
 - [x] 1.3 Add `AudioGenerationInput`, `AudioGenerationRequest`, and `AudioModelInstance` with typed provider options.
 - [x] 1.4 Implement and export `generateAudio()` with modality/capability checks and preflight validation.
 - [x] 1.5 Add `streamAudio()` and discriminated SSE event contracts for sentence events, audio chunks, word timestamps, abort, and terminal errors.
-- [ ] 1.6 Add core audio and voice contract tests, including invalid input rejection before adapter dispatch.
+- [x] 1.6 Add core audio and voice contract tests, including invalid input rejection before adapter dispatch.
 
 ## 2. Alibaba Registry And Parameters
 
 - [x] 2.1 Extend the Alibaba registry with supported Qwen-Audio/CosyVoice and Qwen-TTS audio model entries.
-- [ ] 2.2 Add an explicit matrix covering TTS models (`qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2`, `qwen3-tts-flash`, `qwen3-tts-flash-2025-11-27`, `qwen3-tts-flash-2025-09-18`, `qwen3-tts-instruct-flash`, `qwen3-tts-instruct-flash-2026-01-26`, `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`, and the four MiniMax speech models) plus cloning/design model IDs.
+- [x] 2.2 Add an explicit matrix covering TTS models (`qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2`, `qwen3-tts-flash`, `qwen3-tts-flash-2025-11-27`, `qwen3-tts-flash-2025-09-18`, `qwen3-tts-instruct-flash`, `qwen3-tts-instruct-flash-2026-01-26`, `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`, and the four MiniMax speech models) plus cloning/design model IDs.
 - [ ] 2.3 Add registry metadata for cloning/design protocol, supported operations, languages, formats, sample rates, and limits.
 - [ ] 2.4 Add separate typed Qwen-Audio/CosyVoice and Qwen-TTS `providerOptions.aliyun` parameter families.
 - [x] 2.5 Add typed `provider.audio(modelId)` overloads and public exports.
@@ -36,7 +36,7 @@
 - [x] 4.1 Implement `voiceCloning.create()` for Qwen-Audio/CosyVoice audio URL input.
 - [x] 4.2 Implement `voiceCloning.create()` for Qwen-TTS public URL and supported Data URL input.
 - [x] 4.3 Implement cloning list, get, update, and delete action mappings with Qwen/Qwen-Audio identifier differences.
-- [ ] 4.4 Normalize cloning records, statuses, timestamps, target models, resource links, and raw metadata.
+- [x] 4.4 Normalize cloning records, statuses, timestamps, target models, resource links, and raw metadata.
 - [ ] 4.5 Validate protocol-specific names, URLs/Data URLs, languages, and operation compatibility before Transport.
 - [ ] 4.6 Add cloning CRUD, pagination, validation, and error tests.
 - [ ] 4.7 Add explicit tests for Qwen-TTS preferred-name, Data URL MIME, language, and unsupported-update boundaries.
@@ -54,7 +54,7 @@
 ## 6. Documentation And Examples
 
 - [x] 6.1 Update Alibaba Provider README with TTS, cloning, and design examples and capability tables.
-- [ ] 6.2 Update SDK API reference and Chinese provider documentation with the three-way naming boundary.
+- [x] 6.2 Update SDK API reference and Chinese provider documentation with the three-way naming boundary.
 - [ ] 6.3 Add runnable Alibaba audio/TTS and voice-resource example configuration without committing credentials.
 - [ ] 6.4 Document temporary audio URLs, inline preview data, upload expectations, and MiniMax out-of-scope behavior.
 - [ ] 6.5 Document the complete non-realtime model/protocol/endpoint/region matrix, including stable and snapshot model IDs.
