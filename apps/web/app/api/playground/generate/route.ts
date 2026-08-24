@@ -12,24 +12,26 @@ const PROVIDERS = new Set([
   "volcengine",
   "minimax",
 ]);
-const MODALITIES = new Set(["image", "video"]);
+const MODALITIES = new Set(["image", "video", "audio"]);
 const IMAGE_OPERATIONS = new Set(["generate", "edit"]);
+const MAX_JSON_BYTES = 64 * 1024;
+const MAX_AUDIO_TEXT_LENGTH = 10_000;
 
 export async function POST(request: Request): Promise<Response> {
   try {
-    const body: unknown = await request.json();
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_JSON_BYTES) {
+      return validationResponse(
+        "The request body exceeds the 64 KiB limit.",
+        413
+      );
+    }
+    const body: unknown = JSON.parse(rawBody);
     const input = validateRequest(body);
     if (!input) {
-      return NextResponse.json(
-        {
-          status: "failed",
-          error: {
-            code: "VALIDATION_ERROR",
-            message:
-              "Provide a Provider, model, modality, and non-empty prompt.",
-          },
-        },
-        { status: 422 }
+      return validationResponse(
+        "Provide a Provider, model, modality, and non-empty prompt.",
+        422
       );
     }
     const result = await executePlaygroundRequest(input);
@@ -48,15 +50,36 @@ export async function POST(request: Request): Promise<Response> {
   }
 }
 
+function validationResponse(message: string, status: number): Response {
+  return NextResponse.json(
+    { status: "failed", error: { code: "VALIDATION_ERROR", message } },
+    { status }
+  );
+}
+
 function validateRequest(value: unknown): PlaygroundRequest | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const candidate = value as Record<string, unknown>;
+  if (candidate.family !== undefined) return undefined;
   if (
     typeof candidate.provider !== "string" ||
     !PROVIDERS.has(candidate.provider) ||
     typeof candidate.model !== "string" ||
     typeof candidate.modality !== "string" ||
-    !MODALITIES.has(candidate.modality) ||
+    !MODALITIES.has(candidate.modality)
+  ) {
+    return undefined;
+  }
+  if (candidate.modality === "audio") {
+    if (
+      typeof candidate.text !== "string" ||
+      candidate.text.trim().length === 0 ||
+      candidate.text.length > MAX_AUDIO_TEXT_LENGTH ||
+      typeof candidate.voice !== "string" ||
+      candidate.voice.trim().length === 0
+    )
+      return undefined;
+  } else if (
     typeof candidate.prompt !== "string" ||
     candidate.prompt.trim().length === 0
   ) {
@@ -186,7 +209,15 @@ function validateRequest(value: unknown): PlaygroundRequest | undefined {
       typeof candidate.imageOperation === "string"
         ? (candidate.imageOperation as PlaygroundRequest["imageOperation"])
         : undefined,
-    prompt: candidate.prompt.trim(),
+    prompt: typeof candidate.prompt === "string" ? candidate.prompt.trim() : "",
+    text: typeof candidate.text === "string" ? candidate.text : undefined,
+    voice: typeof candidate.voice === "string" ? candidate.voice : undefined,
+    providerOptions:
+      typeof candidate.providerOptions === "object" &&
+      candidate.providerOptions !== null &&
+      !Array.isArray(candidate.providerOptions)
+        ? (candidate.providerOptions as Readonly<Record<string, unknown>>)
+        : undefined,
     referenceImageUrl:
       typeof candidate.referenceImageUrl === "string"
         ? candidate.referenceImageUrl

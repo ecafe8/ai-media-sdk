@@ -116,6 +116,18 @@ describe("Playground capability registry", () => {
     }
   });
 
+  test("projects every Alibaba audio family as audio", () => {
+    const audioModels = PLAYGROUND_MODELS.filter(
+      (model) =>
+        model.provider === "aliyun-bailian" && model.modality === "audio"
+    );
+    expect(audioModels.length).toBeGreaterThan(0);
+    expect(new Set(audioModels.map((model) => model.family))).toEqual(
+      new Set(["qwen-audio-tts", "qwen-tts", "minimax-tts"])
+    );
+    expect(audioModels.every((model) => model.supportsGenerate)).toBe(true);
+  });
+
   test("PLAYGROUND_MODELS derives every model from the SDK registries with matching capabilities", () => {
     // gpt-image-2 is the only Azure entry; it is generate-only (no edit).
     const azure = PLAYGROUND_MODELS.filter(

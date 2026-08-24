@@ -1,4 +1,9 @@
-import type { ImageContent, SdkErrorCode, VideoContent } from "@ai-media/sdk";
+import type {
+  AudioContent,
+  ImageContent,
+  SdkErrorCode,
+  VideoContent,
+} from "@ai-media/sdk";
 
 export type PlaygroundProvider =
   | "azure-openai"
@@ -30,7 +35,9 @@ export type PlaygroundModelFamily =
   | "wan-image-2.6"
   | "happyhorse-video"
   | "wan3-video"
-  | "audio"
+  | "qwen-audio-tts"
+  | "qwen-tts"
+  | "minimax-tts"
   | "minimax-h3-video"
   | "doubao-seedream-5-pro"
   | "doubao-seedream-5-lite"
@@ -58,7 +65,7 @@ export interface PlaygroundModel {
   readonly id: string;
   readonly label: string;
   readonly provider: PlaygroundProvider;
-  readonly modality: "image" | "video";
+  readonly modality: PlaygroundModality;
   readonly family: PlaygroundModelFamily;
   readonly supportsGenerate: boolean;
   readonly supportsEdit: boolean;
@@ -88,6 +95,10 @@ export interface PlaygroundModel {
   readonly supportedAspectRatios?: readonly string[];
   readonly recommendation: string;
   readonly configured: boolean;
+  readonly supportsSsml?: boolean;
+  readonly supportedFormats?: readonly string[];
+  readonly supportedSampleRates?: readonly number[];
+  readonly instructionField?: "instruction" | "instructions";
 }
 
 /**
@@ -115,8 +126,11 @@ export interface PlaygroundCredentials {
 export interface PlaygroundRequest {
   readonly provider: PlaygroundProvider;
   readonly model: string;
-  readonly modality: "image" | "video";
+  readonly modality: PlaygroundModality;
   readonly prompt: string;
+  readonly text?: string;
+  readonly voice?: string;
+  readonly providerOptions?: Readonly<Record<string, unknown>>;
   /** Optional visitor-supplied credentials; takes precedence over env. */
   readonly credentials?: PlaygroundCredentials;
   /** Image modality: `generate` (default) or `edit`. */
@@ -153,7 +167,8 @@ export interface PlaygroundMetadata {
 
 export interface PlaygroundResponse {
   readonly status: "succeeded" | "processing" | "failed";
-  readonly modality?: "image" | "video";
+  readonly modality?: PlaygroundModality;
+  readonly audio?: readonly AudioContent[];
   readonly images?: readonly ImageContent[];
   readonly videos?: readonly VideoContent[];
   readonly metadata?: PlaygroundMetadata;

@@ -183,6 +183,75 @@ describe("Playground generate route", () => {
     expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
   });
 
+  test("rejects audio requests missing text or voice", async () => {
+    for (const field of ["text", "voice"]) {
+      const response = await POST(
+        new Request("http://localhost/api/playground/generate", {
+          method: "POST",
+          body: JSON.stringify({
+            provider: "aliyun-bailian",
+            model: "qwen-audio-3.0-tts-flash",
+            modality: "audio",
+            text: field === "text" ? "" : "hello",
+            voice: field === "voice" ? "" : "Cherry",
+          }),
+        })
+      );
+      expect(response.status).toBe(422);
+      expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  test("rejects oversized audio text and JSON bodies", async () => {
+    const oversizedText = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          provider: "aliyun-bailian",
+          model: "qwen-audio-3.0-tts-flash",
+          modality: "audio",
+          text: "x".repeat(10_001),
+          voice: "Cherry",
+        }),
+      })
+    );
+    expect(oversizedText.status).toBe(422);
+
+    const oversizedBody = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          provider: "aliyun-bailian",
+          model: "qwen-audio-3.0-tts-flash",
+          modality: "audio",
+          text: "hello",
+          voice: "Cherry",
+          padding: "x".repeat(66_000),
+        }),
+      })
+    );
+    expect(oversizedBody.status).toBe(413);
+  });
+
+  test("does not use a client-supplied audio family", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/playground/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          provider: "aliyun-bailian",
+          model: "qwen-tts",
+          modality: "audio",
+          text: "hello",
+          voice: "Cherry",
+          family: "minimax-tts",
+          providerOptions: { aliyun: { enableSsml: true } },
+        }),
+      })
+    );
+    expect(response.status).toBe(422);
+    expect((await response.json()).error.code).toBe("VALIDATION_ERROR");
+  });
+
   test("rejects a malformed last-frame URL before Provider dispatch", async () => {
     const response = await POST(
       new Request("http://localhost/api/playground/generate", {

@@ -152,7 +152,7 @@ function aliyunFamilySlug(
     family === "qwen-tts" ||
     family === "minimax-tts"
   ) {
-    return "audio" as PlaygroundModelFamily;
+    return family;
   }
   if (family === "wan-image") {
     return id === "wan2.6-t2i" ? "wan-image-2.6" : "wan-image-2.7";
@@ -176,7 +176,14 @@ function fromAliyun(
     id,
     label,
     provider: "aliyun-bailian",
-    modality: caps.modality === "video" ? "video" : "image",
+    modality:
+      entry.family === "qwen-audio-tts" ||
+      entry.family === "qwen-tts" ||
+      entry.family === "minimax-tts"
+        ? "audio"
+        : caps.modality === "video"
+          ? "video"
+          : "image",
     family: aliyunFamilySlug(entry.family, id),
     supportsGenerate: caps.generate,
     supportsEdit: caps.edit,
@@ -191,6 +198,10 @@ function fromAliyun(
     maxN: caps.maxN,
     supportedResolutions: entry.supportedResolutions,
     supportedAspectRatios: entry.supportedAspectRatios,
+    supportsSsml: entry.audio?.supportsSsml,
+    supportedFormats: entry.audio?.supportedFormats,
+    supportedSampleRates: entry.audio?.supportedSampleRates,
+    instructionField: entry.audio?.instructionField,
     recommendation,
     configured: false,
   };

@@ -15,9 +15,11 @@ import {
   type VolcengineProvider,
 } from "@ai-media/provider-volcengine";
 import {
+  type AudioModelInstance,
   createTransport,
   editImage,
   type GenerationResult,
+  generateAudio,
   generateImage,
   type ImageContent,
   type ImageModelInstance,
@@ -46,7 +48,10 @@ import type {
 
 interface ProviderSelection {
   readonly model: PlaygroundModel;
-  readonly instance: ImageModelInstance | VideoModelInstance;
+  readonly instance:
+    | ImageModelInstance
+    | VideoModelInstance
+    | AudioModelInstance;
 }
 
 export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
@@ -83,6 +88,25 @@ export function createProviderSelection(
       code: "INVALID_REQUEST",
       message: "The selected model does not support image editing",
     });
+  }
+
+  if (request.modality === "audio") {
+    if (request.provider !== "aliyun-bailian" || model.modality !== "audio") {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: "The selected model does not support audio generation",
+      });
+    }
+    validateAudioOptions(request, model);
+    const provider = createAliyunBailianProvider(
+      resolveAliyunCredentials(request.credentials, config),
+      {
+        transport: createTransport({
+          defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
+        }),
+      }
+    );
+    return { model, instance: provider.audio(request.model) };
   }
 
   if (request.modality === "video") {
@@ -238,6 +262,25 @@ export async function executePlaygroundRequest(
       return response;
     }
 
+    if (request.modality === "audio") {
+      const result = await generateAudio({
+        model: selection.instance as AudioModelInstance,
+        text: request.text ?? "",
+        voice: request.voice ?? "",
+        providerOptions: request.providerOptions,
+      });
+      return {
+        status: "succeeded",
+        modality: "audio",
+        audio: result.content,
+        metadata: {
+          provider: result.provider,
+          model: result.model,
+          requestId: result.requestId,
+        },
+      };
+    }
+
     let result: GenerationResult<ImageContent[]>;
     if (request.imageOperation === "edit") {
       result = await editImage({
@@ -330,6 +373,88 @@ function buildVideoProviderOptions(
       watermark: false,
     },
   };
+}
+
+function validateAudioOptions(
+  request: PlaygroundRequest,
+  model: PlaygroundModel
+): void {
+  if (!request.text?.trim() || !request.voice?.trim()) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Audio requests require non-empty text and voice",
+    });
+  }
+  const options = request.providerOptions?.aliyun;
+  if (options === undefined) return;
+  if (
+    typeof options !== "object" ||
+    options === null ||
+    Array.isArray(options)
+  ) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "Invalid audio options",
+    });
+  }
+  const value = options as Record<string, unknown>;
+  const allowed =
+    model.family === "qwen-audio-tts"
+      ? new Set([
+          "format",
+          "sampleRate",
+          "volume",
+          "rate",
+          "pitch",
+          "enableSsml",
+          "wordTimestampEnabled",
+          "seed",
+          "languageHints",
+          "instruction",
+          "enableAigcTag",
+          "aigcPropagator",
+          "aigcPropagateId",
+          "hotFix",
+          "enableMarkdownFilter",
+        ])
+      : model.family === "qwen-tts"
+        ? new Set(["languageType", "instructions", "optimizeInstructions"])
+        : new Set(["voiceSetting", "audioSetting"]);
+  for (const key of Object.keys(value)) {
+    if (!allowed.has(key)) {
+      throw new SdkError({
+        code: "INVALID_REQUEST",
+        message: `Audio option "${key}" is not supported by this model`,
+      });
+    }
+  }
+  if (
+    typeof value.format === "string" &&
+    !model.supportedFormats?.includes(value.format)
+  ) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: `Audio format "${value.format}" is not supported by this model`,
+    });
+  }
+  if (
+    typeof value.sampleRate === "number" &&
+    !model.supportedSampleRates?.includes(value.sampleRate)
+  ) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: `Audio sample rate "${value.sampleRate}" is not supported by this model`,
+    });
+  }
+  if (
+    value.enableSsml !== undefined &&
+    (!model.supportsSsml || typeof value.enableSsml !== "boolean")
+  ) {
+    throw new SdkError({
+      code: "INVALID_REQUEST",
+      message: "SSML is not supported by this model",
+    });
+  }
 }
 
 function logPlaygroundEvent(
