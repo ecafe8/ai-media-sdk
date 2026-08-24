@@ -15,7 +15,13 @@ import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { PageContainer } from "@/components/layout/page-container";
-import { executeSiteAudioStream, executeSiteRequest } from "@/lib/executor";
+import {
+  executeSiteAudioStream,
+  executeSiteRequest,
+  executeSiteVoiceCloning,
+  executeSiteVoiceDesign,
+  uploadSiteAudio,
+} from "@/lib/executor";
 import type { SiteResources } from "@/lib/i18n";
 import {
   PROVIDER_LABELS,
@@ -23,7 +29,12 @@ import {
   type SiteProvider,
 } from "@/lib/key-store";
 import { useModelText } from "@/lib/model-text";
-import type { SiteModel, SitePlaygroundResponse } from "@/lib/playground/types";
+import type {
+  SiteModel,
+  SitePlaygroundResponse,
+  SiteVoiceCloningInput,
+  SiteVoiceDesignInput,
+} from "@/lib/playground/types";
 import { base64Bytes, type PcmFormat, pcmToWav } from "../lib/audio";
 import { Field } from "../lib/field";
 import { AudioResult } from "../result-feed";
@@ -519,7 +530,360 @@ export function AudioWorkbench({
           configured={configuredProviders.has(provider)}
         />
       </section>
+      <VoiceResourcePanel
+        models={audioModels}
+        selectedModel={modelId}
+        configured={configuredProviders.has(provider)}
+        onVoice={(id) => setVoice(id)}
+      />
     </PageContainer>
+  );
+}
+
+function VoiceResourcePanel({
+  models,
+  selectedModel,
+  configured,
+  onVoice,
+}: {
+  readonly models: readonly SiteModel[];
+  readonly selectedModel: string;
+  readonly configured: boolean;
+  readonly onVoice: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const targets = models.filter((model) => model.audio?.voiceResource);
+  const [protocol, setProtocol] =
+    useState<SiteVoiceCloningInput["protocol"]>("qwen-audio");
+  const [targetModel, setTargetModel] = useState(targets[0]?.id ?? "");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [file, setFile] = useState<File>();
+  const [prefix, setPrefix] = useState("");
+  const [preferredName, setPreferredName] = useState("");
+  const [language, setLanguage] = useState("");
+  const [voicePrompt, setVoicePrompt] = useState("");
+  const [previewText, setPreviewText] = useState("");
+  const [sampleRate, setSampleRate] = useState(24000);
+  const [responseFormat, setResponseFormat] =
+    useState<SiteVoiceDesignInput["responseFormat"]>("mp3");
+  const [clones, setClones] = useState<
+    readonly { id: string; targetModel?: string }[]
+  >([]);
+  const [designs, setDesigns] = useState<
+    readonly { id: string; targetModel?: string }[]
+  >([]);
+  const [preview, setPreview] = useState<string>();
+  const [message, setMessage] = useState("");
+
+  async function clone(
+    operation: "create" | "list" | "get" | "update" | "delete",
+    id?: string
+  ) {
+    try {
+      let uploadedUrl = audioUrl.trim() || undefined;
+      if (operation === "create" && file)
+        uploadedUrl = (await uploadSiteAudio(file, targetModel)).url;
+      const result = await executeSiteVoiceCloning(operation, {
+        protocol,
+        targetModel,
+        ...(id ? { id } : {}),
+        ...(uploadedUrl ? { audioUrl: uploadedUrl } : {}),
+        ...(prefix ? { prefix } : {}),
+        ...(preferredName ? { preferredName } : {}),
+        ...(language ? { language } : {}),
+      });
+      if (operation === "list" && "voices" in result) setClones(result.voices);
+      if (operation === "create" && "voice" in result && result.voice?.id) {
+        if (result.voice.targetModel === selectedModel)
+          onVoice(result.voice.id);
+        setMessage(
+          result.voice.targetModel === selectedModel
+            ? t("playground.audioWorkbench.voiceApplied")
+            : t("playground.audioWorkbench.voiceModelMismatch")
+        );
+      } else setMessage(t("playground.audioWorkbench.voiceOperationDone"));
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : t("playground.audioWorkbench.voiceFailed")
+      );
+    }
+  }
+  async function design(
+    operation: "create" | "list" | "get" | "delete",
+    id?: string
+  ) {
+    try {
+      const result = await executeSiteVoiceDesign(operation, {
+        protocol,
+        targetModel,
+        ...(id ? { id } : {}),
+        voicePrompt,
+        previewText,
+        ...(prefix ? { prefix } : {}),
+        ...(preferredName ? { preferredName } : {}),
+        ...(language ? { language } : {}),
+        sampleRate,
+        responseFormat,
+      });
+      if (operation === "list" && "voices" in result) setDesigns(result.voices);
+      if (operation === "create" && "previewAudio" in result) {
+        const audio = result.previewAudio;
+        setPreview(
+          audio?.url ??
+            (audio?.base64
+              ? `data:${audio.mimeType ?? "audio/mpeg"};base64,${audio.base64}`
+              : undefined)
+        );
+        if (result.voice?.id && result.voice.targetModel === selectedModel)
+          onVoice(result.voice.id);
+      }
+      setMessage(t("playground.audioWorkbench.voiceOperationDone"));
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : t("playground.audioWorkbench.voiceFailed")
+      );
+    }
+  }
+  return (
+    <section className="grid gap-5 rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2 lg:grid-cols-2">
+      <div className="space-y-3">
+        <h3 className="font-semibold">
+          {t("playground.audioWorkbench.cloningTitle")}
+        </h3>
+        <VoiceFields
+          {...{
+            protocol,
+            setProtocol,
+            targetModel,
+            setTargetModel,
+            targets,
+            prefix,
+            setPrefix,
+            preferredName,
+            setPreferredName,
+            language,
+            setLanguage,
+          }}
+        />
+        <Input
+          aria-label={t("playground.audioWorkbench.audioUrl")}
+          placeholder="https://.../sample.wav"
+          value={audioUrl}
+          onChange={(event) => setAudioUrl(event.target.value)}
+        />
+        <Input
+          aria-label={t("playground.audioWorkbench.localAudio")}
+          type="file"
+          accept="audio/wav,audio/mpeg,audio/mp4"
+          onChange={(event) => setFile(event.target.files?.[0])}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={!configured} onClick={() => clone("create")}>
+            Create
+          </Button>
+          <Button variant="outline" onClick={() => clone("list")}>
+            List
+          </Button>
+        </div>
+        <VoiceList
+          items={clones}
+          onGet={(id) => clone("get", id)}
+          onDelete={(id) => clone("delete", id)}
+          onUse={onVoice}
+        />
+      </div>
+      <div className="space-y-3">
+        <h3 className="font-semibold">
+          {t("playground.audioWorkbench.designTitle")}
+        </h3>
+        <VoiceFields
+          {...{
+            protocol,
+            setProtocol,
+            targetModel,
+            setTargetModel,
+            targets,
+            prefix,
+            setPrefix,
+            preferredName,
+            setPreferredName,
+            language,
+            setLanguage,
+          }}
+        />
+        <Textarea
+          aria-label={t("playground.audioWorkbench.voicePrompt")}
+          placeholder={t("playground.audioWorkbench.voicePrompt")}
+          value={voicePrompt}
+          onChange={(event) => setVoicePrompt(event.target.value)}
+        />
+        <Textarea
+          aria-label={t("playground.audioWorkbench.previewText")}
+          placeholder={t("playground.audioWorkbench.previewText")}
+          value={previewText}
+          onChange={(event) => setPreviewText(event.target.value)}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            label={t("playground.audioWorkbench.sampleRate")}
+            value={sampleRate}
+            onChange={setSampleRate}
+          />
+          <Input
+            aria-label={t("playground.audioWorkbench.responseFormat")}
+            value={responseFormat}
+            onChange={(event) =>
+              setResponseFormat(
+                event.target.value as SiteVoiceDesignInput["responseFormat"]
+              )
+            }
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={!configured} onClick={() => design("create")}>
+            Create
+          </Button>
+          <Button variant="outline" onClick={() => design("list")}>
+            List
+          </Button>
+        </div>
+        {preview ? (
+          // biome-ignore lint/a11y/useMediaCaption: Preview text is shown in the form.
+          <audio controls src={preview} className="w-full" />
+        ) : null}
+        <VoiceList
+          items={designs}
+          onGet={(id) => design("get", id)}
+          onDelete={(id) => design("delete", id)}
+          onUse={onVoice}
+        />
+        <p className="text-muted-foreground text-xs">{message}</p>
+      </div>
+    </section>
+  );
+}
+
+function VoiceFields({
+  protocol,
+  setProtocol,
+  targetModel,
+  setTargetModel,
+  targets,
+  prefix,
+  setPrefix,
+  preferredName,
+  setPreferredName,
+  language,
+  setLanguage,
+}: {
+  protocol: "qwen-audio" | "qwen";
+  setProtocol: (value: "qwen-audio" | "qwen") => void;
+  targetModel: string;
+  setTargetModel: (value: string) => void;
+  targets: readonly SiteModel[];
+  prefix: string;
+  setPrefix: (value: string) => void;
+  preferredName: string;
+  setPreferredName: (value: string) => void;
+  language: string;
+  setLanguage: (value: string) => void;
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <Select
+        value={protocol}
+        items={[
+          { value: "qwen-audio", label: "qwen-audio" },
+          { value: "qwen", label: "qwen" },
+        ]}
+        onValueChange={(value) => {
+          if (value === "qwen" || value === "qwen-audio") setProtocol(value);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="qwen-audio">qwen-audio</SelectItem>
+          <SelectItem value="qwen">qwen</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select
+        value={targetModel}
+        items={targets.map((model) => ({ value: model.id, label: model.id }))}
+        onValueChange={(value) => {
+          if (typeof value === "string") setTargetModel(value);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {targets.map((model) => (
+            <SelectItem key={model.id} value={model.id}>
+              {model.id}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        placeholder="prefix"
+        value={prefix}
+        onChange={(event) => setPrefix(event.target.value)}
+      />
+      <Input
+        placeholder="preferred name"
+        value={preferredName}
+        onChange={(event) => setPreferredName(event.target.value)}
+      />
+      <Input
+        placeholder="language"
+        value={language}
+        onChange={(event) => setLanguage(event.target.value)}
+      />
+    </div>
+  );
+}
+
+function VoiceList({
+  items,
+  onGet,
+  onDelete,
+  onUse,
+}: {
+  items: readonly { id: string; targetModel?: string }[];
+  onGet: (id: string) => void;
+  onDelete: (id: string) => void;
+  onUse: (id: string) => void;
+}) {
+  return (
+    <ul className="space-y-1 text-sm">
+      {items.map((item) => (
+        <li key={item.id} className="flex items-center justify-between gap-2">
+          <span>
+            {item.id}{" "}
+            <small className="text-muted-foreground">
+              {item.targetModel ?? ""}
+            </small>
+          </span>
+          <span className="flex gap-1">
+            <Button size="sm" variant="ghost" onClick={() => onGet(item.id)}>
+              Get
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => onUse(item.id)}>
+              Use
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => onDelete(item.id)}>
+              Delete
+            </Button>
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

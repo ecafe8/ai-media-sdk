@@ -1,6 +1,12 @@
 "use client";
 
-import type { AudioContent, AudioStreamEvent } from "@ai-media/sdk";
+import type {
+  AudioContent,
+  AudioStreamEvent,
+  VoiceDesignResult,
+  VoiceListResult,
+  VoiceOperationResult,
+} from "@ai-media/sdk";
 import { Button } from "@workspace/ui/components/shadcn/button";
 import { Checkbox } from "@workspace/ui/components/shadcn/checkbox";
 import { Input } from "@workspace/ui/components/shadcn/input";
@@ -533,7 +539,410 @@ export function AudioWorkbench({
         peaks={streamPeaks}
         text={text}
       />
+      <VoiceResourcePanel
+        models={audioModels}
+        selectedModel={modelId}
+        credentials={credentialsMap[provider]}
+        configured={serverConfiguredProviders.has(provider)}
+        onVoice={setVoice}
+      />
     </div>
+  );
+}
+
+function VoiceResourcePanel({
+  models,
+  selectedModel,
+  credentials,
+  configured,
+  onVoice,
+}: {
+  readonly models: readonly PlaygroundModel[];
+  readonly selectedModel: string;
+  readonly credentials?: PlaygroundCredentials;
+  readonly configured: boolean;
+  readonly onVoice: (id: string) => void;
+}) {
+  const targets = models.filter((model) => model.voiceResource);
+  const [protocol, setProtocol] = useState<"qwen-audio" | "qwen">("qwen-audio");
+  const [targetModel, setTargetModel] = useState(targets[0]?.id ?? "");
+  const [url, setUrl] = useState("");
+  const [file, setFile] = useState<File>();
+  const [prefix, setPrefix] = useState("");
+  const [name, setName] = useState("");
+  const [language, setLanguage] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [previewText, setPreviewText] = useState("");
+  const [sampleRate, setSampleRate] = useState(24000);
+  const [format, setFormat] = useState<"pcm" | "wav" | "mp3" | "opus">("mp3");
+  const [clones, setClones] = useState<VoiceListResult>();
+  const [designs, setDesigns] = useState<VoiceListResult>();
+  const [preview, setPreview] = useState<string>();
+  const [message, setMessage] = useState("");
+
+  async function request(path: string, init?: RequestInit): Promise<unknown> {
+    const response = await fetch(path, init);
+    const value = (await response.json()) as { error?: { message?: string } };
+    if (!response.ok)
+      throw new Error(value.error?.message ?? "Voice request failed");
+    return value;
+  }
+  async function clone(
+    operation: "create" | "list" | "get" | "update" | "delete",
+    id?: string
+  ): Promise<void> {
+    try {
+      let audioUrl = url.trim();
+      if (operation === "create" && file) {
+        const form = new FormData();
+        form.set("file", file);
+        form.set("model", targetModel);
+        if (credentials) form.set("credentials", JSON.stringify(credentials));
+        const uploaded = (await request("/api/playground/audio/upload", {
+          method: "POST",
+          body: form,
+        })) as { url: string };
+        audioUrl = uploaded.url;
+      }
+      const body = {
+        protocol,
+        targetModel,
+        credentials,
+        ...(id ? { id } : {}),
+        ...(audioUrl ? { audioUrl } : {}),
+        prefix,
+        preferredName: name,
+        language,
+      };
+      const query = new URLSearchParams({ protocol, targetModel });
+      const value = await request(
+        operation === "list"
+          ? `/api/playground/voices/cloning?${query}`
+          : `/api/playground/voices/cloning${id ? `/${encodeURIComponent(id)}` : ""}`,
+        {
+          method:
+            operation === "list" ||
+            operation === "get" ||
+            operation === "delete"
+              ? operation === "list"
+                ? "GET"
+                : operation.toUpperCase()
+              : operation === "create"
+                ? "POST"
+                : "PATCH",
+          ...(operation !== "list" &&
+          operation !== "get" &&
+          operation !== "delete"
+            ? {
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              }
+            : {}),
+        }
+      );
+      if (operation === "list") setClones(value as VoiceListResult);
+      const voice = (value as VoiceOperationResult).voice;
+      if (operation === "create" && voice?.id) {
+        onVoice(voice.targetModel === selectedModel ? voice.id : "");
+        setMessage(
+          voice.targetModel === selectedModel
+            ? "Voice applied to TTS."
+            : "Voice target model does not match the selected TTS model."
+        );
+      } else setMessage("Voice operation completed.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Voice request failed."
+      );
+    }
+  }
+  async function design(
+    operation: "create" | "list" | "get" | "delete",
+    id?: string
+  ): Promise<void> {
+    try {
+      const query = new URLSearchParams({ protocol, targetModel });
+      const body = {
+        protocol,
+        targetModel,
+        credentials,
+        voicePrompt: prompt,
+        previewText,
+        prefix,
+        preferredName: name,
+        language,
+        sampleRate,
+        responseFormat: format,
+      };
+      const value = await request(
+        operation === "list"
+          ? `/api/playground/voices/design?${query}`
+          : `/api/playground/voices/design${id ? `/${encodeURIComponent(id)}` : ""}`,
+        {
+          method:
+            operation === "list" ||
+            operation === "get" ||
+            operation === "delete"
+              ? operation === "list"
+                ? "GET"
+                : operation.toUpperCase()
+              : "POST",
+          ...(operation === "create"
+            ? {
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+              }
+            : {}),
+        }
+      );
+      if (operation === "list") setDesigns(value as VoiceListResult);
+      const result = value as VoiceDesignResult;
+      if (result.previewAudio)
+        setPreview(
+          result.previewAudio.url ??
+            (result.previewAudio.base64
+              ? `data:${result.previewAudio.mimeType ?? "audio/mpeg"};base64,${result.previewAudio.base64}`
+              : undefined)
+        );
+      if (
+        operation === "create" &&
+        result.voice?.id &&
+        result.voice.targetModel === selectedModel
+      )
+        onVoice(result.voice.id);
+      setMessage("Voice operation completed.");
+    } catch (error) {
+      setMessage(
+        error instanceof Error ? error.message : "Voice request failed."
+      );
+    }
+  }
+  return (
+    <section className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 lg:grid-cols-2">
+      <VoiceResourceFields
+        title="Voice cloning"
+        protocol={protocol}
+        setProtocol={setProtocol}
+        targetModel={targetModel}
+        setTargetModel={setTargetModel}
+        targets={targets}
+        prefix={prefix}
+        setPrefix={setPrefix}
+        name={name}
+        setName={setName}
+        language={language}
+        setLanguage={setLanguage}
+      />
+      <div className="space-y-2">
+        <Input
+          aria-label="Public audio URL"
+          placeholder="https://.../sample.wav"
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+        />
+        <Input
+          aria-label="Local audio file"
+          type="file"
+          accept="audio/wav,audio/mpeg,audio/mp4"
+          onChange={(event) => setFile(event.target.files?.[0])}
+        />
+        <div className="flex gap-2">
+          <Button disabled={!configured} onClick={() => clone("create")}>
+            Create clone
+          </Button>
+          <Button variant="outline" onClick={() => clone("list")}>
+            List
+          </Button>
+        </div>
+        <VoiceResourceList
+          value={clones}
+          onGet={(id) => clone("get", id)}
+          onDelete={(id) => clone("delete", id)}
+          onUse={onVoice}
+        />
+      </div>
+      <VoiceResourceFields
+        title="Voice design"
+        protocol={protocol}
+        setProtocol={setProtocol}
+        targetModel={targetModel}
+        setTargetModel={setTargetModel}
+        targets={targets}
+        prefix={prefix}
+        setPrefix={setPrefix}
+        name={name}
+        setName={setName}
+        language={language}
+        setLanguage={setLanguage}
+      />
+      <div className="space-y-2">
+        <Textarea
+          aria-label="Voice prompt"
+          placeholder="Voice prompt"
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+        />
+        <Textarea
+          aria-label="Preview text"
+          placeholder="Preview text"
+          value={previewText}
+          onChange={(event) => setPreviewText(event.target.value)}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            aria-label="Sample rate"
+            type="number"
+            value={sampleRate}
+            onChange={(event) => setSampleRate(Number(event.target.value))}
+          />
+          <Input
+            aria-label="Response format"
+            value={format}
+            onChange={(event) => setFormat(event.target.value as typeof format)}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button disabled={!configured} onClick={() => design("create")}>
+            Create design
+          </Button>
+          <Button variant="outline" onClick={() => design("list")}>
+            List
+          </Button>
+        </div>
+        {preview ? (
+          // biome-ignore lint/a11y/useMediaCaption: Preview text is shown in the form.
+          <audio controls src={preview} className="w-full" />
+        ) : null}
+        <VoiceResourceList
+          value={designs}
+          onGet={(id) => design("get", id)}
+          onDelete={(id) => design("delete", id)}
+          onUse={onVoice}
+        />
+        <p className="text-slate-500 text-xs">{message}</p>
+      </div>
+    </section>
+  );
+}
+
+function VoiceResourceFields({
+  title,
+  protocol,
+  setProtocol,
+  targetModel,
+  setTargetModel,
+  targets,
+  prefix,
+  setPrefix,
+  name,
+  setName,
+  language,
+  setLanguage,
+}: {
+  title: string;
+  protocol: "qwen-audio" | "qwen";
+  setProtocol: (value: "qwen-audio" | "qwen") => void;
+  targetModel: string;
+  setTargetModel: (value: string) => void;
+  targets: readonly PlaygroundModel[];
+  prefix: string;
+  setPrefix: (value: string) => void;
+  name: string;
+  setName: (value: string) => void;
+  language: string;
+  setLanguage: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <h3 className="font-semibold">{title}</h3>
+      <Select
+        value={protocol}
+        items={[
+          { value: "qwen-audio", label: "qwen-audio" },
+          { value: "qwen", label: "qwen" },
+        ]}
+        onValueChange={(value) => {
+          if (value === "qwen" || value === "qwen-audio") setProtocol(value);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="qwen-audio">qwen-audio</SelectItem>
+          <SelectItem value="qwen">qwen</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select
+        value={targetModel}
+        items={targets.map((model) => ({ value: model.id, label: model.id }))}
+        onValueChange={(value) => {
+          if (typeof value === "string") setTargetModel(value);
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {targets.map((model) => (
+            <SelectItem key={model.id} value={model.id}>
+              {model.id}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Input
+        placeholder="prefix"
+        value={prefix}
+        onChange={(event) => setPrefix(event.target.value)}
+      />
+      <Input
+        placeholder="preferred name"
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+      />
+      <Input
+        placeholder="language"
+        value={language}
+        onChange={(event) => setLanguage(event.target.value)}
+      />
+    </div>
+  );
+}
+function VoiceResourceList({
+  value,
+  onGet,
+  onDelete,
+  onUse,
+}: {
+  value?: VoiceListResult;
+  onGet: (id: string) => void;
+  onDelete: (id: string) => void;
+  onUse: (id: string) => void;
+}) {
+  return (
+    <ul className="space-y-1 text-sm">
+      {value?.voices.map((voice) => (
+        <li key={voice.id} className="flex justify-between">
+          <span>{voice.id}</span>
+          <span>
+            <Button size="sm" variant="ghost" onClick={() => onGet(voice.id)}>
+              Get
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => onUse(voice.id)}>
+              Use
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onDelete(voice.id)}
+            >
+              Delete
+            </Button>
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

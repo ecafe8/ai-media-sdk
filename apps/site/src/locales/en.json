@@ -200,7 +200,18 @@
       "languageType": "Language type",
       "instructions": "Instructions",
       "optimizeInstructions": "Optimize instructions",
-      "speed": "Speed"
+      "speed": "Speed",
+      "cloningTitle": "Voice cloning",
+      "designTitle": "Voice design",
+      "audioUrl": "Public audio URL",
+      "localAudio": "Local audio file",
+      "voicePrompt": "Voice prompt",
+      "previewText": "Preview text",
+      "responseFormat": "Response format",
+      "voiceApplied": "Voice applied to the selected TTS model.",
+      "voiceModelMismatch": "Voice was created for a different TTS target model.",
+      "voiceOperationDone": "Voice operation completed.",
+      "voiceFailed": "Voice request failed."
     },
     "prompt": {
       "label": "Prompt",

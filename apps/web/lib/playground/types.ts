@@ -99,6 +99,10 @@ export interface PlaygroundModel {
   readonly supportedFormats?: readonly string[];
   readonly supportedSampleRates?: readonly number[];
   readonly instructionField?: "instruction" | "instructions";
+  readonly voiceResource?: {
+    readonly protocols: readonly ("qwen-audio" | "qwen")[];
+    readonly targetModel?: string;
+  };
 }
 
 /**

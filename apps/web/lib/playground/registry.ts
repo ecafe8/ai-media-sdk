@@ -202,6 +202,15 @@ function fromAliyun(
     supportedFormats: entry.audio?.supportedFormats,
     supportedSampleRates: entry.audio?.supportedSampleRates,
     instructionField: entry.audio?.instructionField,
+    voiceResource: entry.audio?.voiceResource
+      ? {
+          protocols: entry.audio.voiceResource.protocols,
+          targetModel:
+            typeof entry.audio.voiceResource.targetModel === "string"
+              ? entry.audio.voiceResource.targetModel
+              : undefined,
+        }
+      : undefined,
     recommendation,
     configured: false,
   };

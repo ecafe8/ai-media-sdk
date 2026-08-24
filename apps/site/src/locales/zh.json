@@ -200,7 +200,18 @@
       "languageType": "语言类型",
       "instructions": "指令",
       "optimizeInstructions": "优化指令",
-      "speed": "速度"
+      "speed": "速度",
+      "cloningTitle": "声音克隆",
+      "designTitle": "声音设计",
+      "audioUrl": "公网音频 URL",
+      "localAudio": "本地音频文件",
+      "voicePrompt": "声音提示词",
+      "previewText": "试听文本",
+      "responseFormat": "返回格式",
+      "voiceApplied": "已将声音填入当前 TTS 模型。",
+      "voiceModelMismatch": "声音对应的目标模型与当前 TTS 模型不一致。",
+      "voiceOperationDone": "声音操作完成。",
+      "voiceFailed": "声音请求失败。"
     },
     "prompt": {
       "label": "提示词",
