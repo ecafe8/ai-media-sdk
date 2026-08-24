@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { AudioWorkbench } from "@/components/playground/audio-workbench";
 import { ImageWorkbench } from "@/components/playground/image-workbench";
 import { VideoWorkbench } from "@/components/playground/video-workbench";
 import type {
@@ -75,11 +76,18 @@ export function Playground({ models }: PlaygroundProps) {
   );
 
   const [modality, setModality] = useState<PlaygroundModality>(() => {
-    // Default to video if any configured video model exists; otherwise image.
+    // Prefer configured media, while keeping image as the universal fallback.
     const hasConfiguredVideo = models.some(
       (m) => m.modality === "video" && m.configured
     );
-    return hasConfiguredVideo ? "video" : "image";
+    const hasConfiguredAudio = models.some(
+      (m) => m.modality === "audio" && m.configured
+    );
+    return hasConfiguredVideo
+      ? "video"
+      : hasConfiguredAudio
+        ? "audio"
+        : "image";
   });
 
   return (
@@ -122,10 +130,8 @@ export function Playground({ models }: PlaygroundProps) {
               视频
             </ModalityTab>
             <ModalityTab
-              active={false}
-              disabled
-              title="即将推出"
-              onClick={() => undefined}
+              active={modality === "audio"}
+              onClick={() => setModality("audio")}
             >
               音频
             </ModalityTab>
@@ -144,6 +150,15 @@ export function Playground({ models }: PlaygroundProps) {
       ) : null}
       {modality === "video" ? (
         <VideoWorkbench
+          models={effectiveModels}
+          credentialsMap={credentialsMap}
+          serverConfiguredProviders={serverConfiguredProviders}
+          onCredentialsChange={handleCredentialsChange}
+          onCredentialsClear={handleCredentialsClear}
+        />
+      ) : null}
+      {modality === "audio" ? (
+        <AudioWorkbench
           models={effectiveModels}
           credentialsMap={credentialsMap}
           serverConfiguredProviders={serverConfiguredProviders}
