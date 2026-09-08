@@ -11,7 +11,7 @@ import {
 } from "./provider-credentials";
 
 const EMPTY_CONFIG: AppConfig = {
-  PLAYGROUND_PROVIDER_TIMEOUT_MS: 120_000,
+  PLAYGROUND_PROVIDER_TIMEOUT_MS: 180_000,
 };
 
 const FULL_CONFIG: AppConfig = {
@@ -25,7 +25,7 @@ const FULL_CONFIG: AppConfig = {
   ARK_BASE_URL: "https://env.volces.com/api/v3",
   MINIMAX_API_KEY: "env-minimax-key",
   MINIMAX_BASE_URL: "https://api.minimax.io",
-  PLAYGROUND_PROVIDER_TIMEOUT_MS: 120_000,
+  PLAYGROUND_PROVIDER_TIMEOUT_MS: 180_000,
 };
 
 describe("resolveAzureCredentials", () => {

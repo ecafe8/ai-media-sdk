@@ -17,6 +17,7 @@ import {
 import {
   type AudioModelInstance,
   createTransport,
+  DEFAULT_RETRY_POLICY,
   editImage,
   type GenerationResult,
   generateAudio,
@@ -52,6 +53,20 @@ interface ProviderSelection {
     | ImageModelInstance
     | VideoModelInstance
     | AudioModelInstance;
+}
+
+function createAliyunTransport(timeoutMs: number) {
+  return createTransport({
+    defaultTimeoutMs: timeoutMs,
+    retryPolicy: {
+      ...DEFAULT_RETRY_POLICY,
+      maxRetries: 0,
+      initialDelayMs: 0,
+      maxDelayMs: 0,
+      backoffFactor: 1,
+      retryableStatusCodes: [],
+    },
+  });
 }
 
 export function getConfiguredProviders(): ReadonlySet<PlaygroundProvider> {
@@ -101,9 +116,7 @@ export function createProviderSelection(
     const provider = createAliyunBailianProvider(
       resolveAliyunCredentials(request.credentials, config),
       {
-        transport: createTransport({
-          defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
-        }),
+        transport: createAliyunTransport(config.PLAYGROUND_PROVIDER_TIMEOUT_MS),
       }
     );
     return { model, instance: provider.audio(request.model) };
@@ -128,7 +141,11 @@ export function createProviderSelection(
     if (request.provider === "aliyun-bailian") {
       const provider: AliyunBailianProvider = createAliyunBailianProvider(
         resolveAliyunCredentials(request.credentials, config),
-        { transport }
+        {
+          transport: createAliyunTransport(
+            config.PLAYGROUND_PROVIDER_TIMEOUT_MS
+          ),
+        }
       );
       return { model, instance: provider.video(request.model) };
     }

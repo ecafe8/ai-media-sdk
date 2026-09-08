@@ -27,7 +27,7 @@ const configSchema = z.object({
     .int()
     .min(1_000)
     .max(600_000)
-    .default(120_000),
+    .default(180_000),
 });
 
 export type AppConfig = z.infer<typeof configSchema>;

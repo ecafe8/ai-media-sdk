@@ -14,7 +14,7 @@ import {
   createVolcengineProvider,
   type VolcengineProvider,
 } from "@ai-media/provider-volcengine";
-import { createTransport } from "@ai-media/sdk";
+import { createTransport, DEFAULT_RETRY_POLICY } from "@ai-media/sdk";
 import { createAliyunBrowserUploader } from "@ai-media/uploader/aliyun/browser";
 
 import {
@@ -32,7 +32,16 @@ import {
  * key silently.
  */
 
-export const SITE_PROVIDER_TIMEOUT_MS = 120_000;
+export const SITE_PROVIDER_TIMEOUT_MS = 180_000;
+
+const ALIYUN_SYNC_RETRY_POLICY = {
+  ...DEFAULT_RETRY_POLICY,
+  maxRetries: 0,
+  initialDelayMs: 0,
+  maxDelayMs: 0,
+  backoffFactor: 1,
+  retryableStatusCodes: [],
+} as const;
 
 export type AnySiteProvider =
   | AzureOpenAIProvider
@@ -206,6 +215,11 @@ export function buildSiteProvider(
   );
   return createAliyunBailianProvider(
     { apiKey: credentials.apiKey.trim(), baseUrl: baseUrl! },
-    { transport }
+    {
+      transport: createTransport({
+        defaultTimeoutMs: SITE_PROVIDER_TIMEOUT_MS,
+        retryPolicy: ALIYUN_SYNC_RETRY_POLICY,
+      }),
+    }
   );
 }

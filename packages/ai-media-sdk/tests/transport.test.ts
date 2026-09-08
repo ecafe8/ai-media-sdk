@@ -109,6 +109,38 @@ describe("shared transport", () => {
     expect(calls).toHaveLength(2);
   });
 
+  test("supports a long-running request without automatic retries", async () => {
+    const calls: unknown[] = [];
+    const fetchImpl = (async () => {
+      calls.push(1);
+      const error = new Error("The operation timed out");
+      error.name = "TimeoutError";
+      throw error;
+    }) as unknown as typeof globalThis.fetch;
+    const transport = createTransport({
+      fetch: fetchImpl,
+      defaultTimeoutMs: 180_000,
+      retryPolicy: {
+        maxRetries: 0,
+        initialDelayMs: 0,
+        maxDelayMs: 0,
+        backoffFactor: 1,
+        retryableStatusCodes: [],
+      },
+    });
+
+    const error = await transport
+      .send({ url: "https://example.com", method: "POST" })
+      .catch((err: unknown) => err);
+
+    expect(error).toBeInstanceOf(TransportError);
+    expect(error).toMatchObject({
+      kind: "timeout",
+      message: "Request timed out after 180000ms",
+    });
+    expect(calls).toHaveLength(1);
+  });
+
   test("does not import SdkError into thrown transport errors", async () => {
     const fetchImpl = (async () => {
       const error = new Error("fetch failed");
