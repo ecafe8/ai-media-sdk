@@ -7,6 +7,7 @@ import {
   editImage,
   generateImage,
   SdkError,
+  TransportError,
 } from "@ai-media/sdk";
 
 import {
@@ -225,6 +226,43 @@ describe("aliyun-bailian provider", () => {
     expect(error.code).toBe("AUTH_ERROR");
     expect(error.retryable).toBe(false);
     expect(error.message).not.toContain("test-key");
+  });
+
+  test("preserves network diagnostics when Qwen edit transport fails", async () => {
+    const { transport } = createFakeTransport([
+      {
+        throw: new TransportError({
+          kind: "network",
+          message: "Network request failed",
+          url: "https://example.com/generation",
+          method: "POST",
+          attempts: 1,
+          originalName: "TypeError",
+          originalMessage: "fetch failed: ECONNRESET",
+        }),
+      },
+    ]);
+    const provider = createAliyunBailianProvider(ALIYUN_CONFIG, { transport });
+
+    const error = await editImage({
+      model: provider.image(QWEN),
+      prompt: "变成黑白",
+      images: [{ url: "https://example.com/reference.png" }],
+    }).catch((value: unknown) => value);
+
+    expect(error).toBeInstanceOf(SdkError);
+    expect(error).toMatchObject({
+      code: "NETWORK_ERROR",
+      message: "Network request failed",
+    });
+    expect((error as SdkError).cause).toMatchObject({
+      kind: "network",
+      url: "https://example.com/generation",
+      method: "POST",
+      attempts: 1,
+      originalName: "TypeError",
+      originalMessage: "fetch failed: ECONNRESET",
+    });
   });
 
   test("classifies 429/Throttling as retryable RATE_LIMITED", async () => {

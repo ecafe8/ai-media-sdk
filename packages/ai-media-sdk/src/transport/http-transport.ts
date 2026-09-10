@@ -71,6 +71,9 @@ export function createTransport(options?: CreateTransportOptions): Transport {
         throw new TransportError({
           kind: "network",
           message: "Streaming response has no body",
+          url: request.url,
+          method: request.method,
+          attempts: 1,
         });
       }
       return {
@@ -146,6 +149,10 @@ async function sendWithRetry<T>(
         throw new TransportError({
           kind: "timeout",
           message: `Request timed out after ${timeoutMs}ms`,
+          url,
+          method,
+          attempts: attempt + 1,
+          ...errorDetails(error),
           cause: error,
         });
       }
@@ -158,12 +165,27 @@ async function sendWithRetry<T>(
         throw new TransportError({
           kind: "network",
           message: "Network request failed",
+          url,
+          method,
+          attempts: attempt + 1,
+          ...errorDetails(error),
           cause: error,
         });
       }
       throw error;
     }
   }
+}
+
+function errorDetails(error: unknown): {
+  readonly originalName?: string;
+  readonly originalMessage?: string;
+} {
+  if (!(error instanceof Error)) return {};
+  return {
+    originalName: error.name,
+    originalMessage: error.message,
+  };
 }
 
 function serializeBody(body: unknown): string | undefined {

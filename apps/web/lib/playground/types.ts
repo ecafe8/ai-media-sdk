@@ -179,5 +179,6 @@ export interface PlaygroundResponse {
   readonly error?: {
     readonly code: SdkErrorCode | "CONFIGURATION_ERROR" | "VALIDATION_ERROR";
     readonly message: string;
+    readonly detail?: string;
   };
 }

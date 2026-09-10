@@ -27,6 +27,7 @@ import {
   SdkError,
   submitImageTask,
   submitVideoTask,
+  TransportError,
   type VideoModelInstance,
 } from "@ai-media/sdk";
 
@@ -190,9 +191,7 @@ export function createProviderSelection(
   const provider: AliyunBailianProvider = createAliyunBailianProvider(
     resolveAliyunCredentials(request.credentials, config),
     {
-      transport: createTransport({
-        defaultTimeoutMs: config.PLAYGROUND_PROVIDER_TIMEOUT_MS,
-      }),
+      transport: createAliyunTransport(config.PLAYGROUND_PROVIDER_TIMEOUT_MS),
     }
   );
   return { model, instance: provider.image(request.model) };
@@ -357,6 +356,7 @@ export async function executePlaygroundRequest(
       code: safeError.code,
       durationMs: Date.now() - startedAt,
       retryable: error instanceof SdkError ? error.retryable : false,
+      detail: safeError.detail,
     });
     return { status: "failed", error: safeError };
   }
@@ -538,12 +538,41 @@ function toSafeError(error: unknown): NonNullable<PlaygroundResponse["error"]> {
     return {
       code: error.code,
       message: safeMessage(error.code, error.message),
+      detail: diagnosticMessage(error),
     };
   }
   return {
     code: "UNKNOWN",
     message: "The image request failed. Please try again.",
+    detail: diagnosticMessage(error),
   };
+}
+
+function diagnosticMessage(error: unknown): string | undefined {
+  if (error instanceof SdkError) {
+    return error.cause === undefined
+      ? error.message
+      : diagnosticMessage(error.cause);
+  }
+  if (error instanceof TransportError) {
+    const original = error.originalName
+      ? `${error.originalName}: ${error.originalMessage ?? ""}`.trim()
+      : undefined;
+    return [
+      error.method && error.url
+        ? `${error.method} ${error.url}`
+        : "transport request",
+      `attempts=${error.attempts ?? "unknown"}`,
+      original ?? error.message,
+    ].join("; ");
+  }
+  if (error instanceof Error) return `${error.name}: ${error.message}`;
+  if (error === undefined) return undefined;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }
 
 function safeMessage(code: SdkError["code"], detail?: string): string {

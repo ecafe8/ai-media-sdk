@@ -160,6 +160,11 @@ describe("shared transport", () => {
     expect(error).toBeInstanceOf(TransportError);
     if (error instanceof TransportError) {
       expect(error.kind).toBe("network");
+      expect(error.url).toBe("https://example.com");
+      expect(error.method).toBe("POST");
+      expect(error.attempts).toBe(1);
+      expect(error.originalName).toBe("TypeError");
+      expect(error.originalMessage).toBe("fetch failed");
     }
   });
 });

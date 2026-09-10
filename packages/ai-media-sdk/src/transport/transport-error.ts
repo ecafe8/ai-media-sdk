@@ -18,6 +18,11 @@ export type TransportErrorKind = "timeout" | "network";
 export interface TransportErrorOptions {
   readonly kind: TransportErrorKind;
   readonly message: string;
+  readonly url?: string;
+  readonly method?: string;
+  readonly attempts?: number;
+  readonly originalName?: string;
+  readonly originalMessage?: string;
   readonly cause?: unknown;
 }
 
@@ -28,12 +33,22 @@ export interface TransportErrorOptions {
  */
 export class TransportError extends Error {
   readonly kind: TransportErrorKind;
+  readonly url?: string;
+  readonly method?: string;
+  readonly attempts?: number;
+  readonly originalName?: string;
+  readonly originalMessage?: string;
   override readonly cause?: unknown;
 
   constructor(options: TransportErrorOptions) {
     super(options.message);
     this.name = "TransportError";
     this.kind = options.kind;
+    this.url = options.url;
+    this.method = options.method;
+    this.attempts = options.attempts;
+    this.originalName = options.originalName;
+    this.originalMessage = options.originalMessage;
     this.cause = options.cause;
   }
 }
