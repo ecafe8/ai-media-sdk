@@ -10,6 +10,7 @@
 
    ```bash
    npm whoami
+   npm login
    git status --short
    ```
 
