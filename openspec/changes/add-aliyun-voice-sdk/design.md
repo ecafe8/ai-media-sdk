@@ -42,7 +42,7 @@ The initial non-realtime matrix includes:
 | Qwen-Audio-TTS | `qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash` | `audio/tts/SpeechSynthesizer`, Beijing |
 | CosyVoice | `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2` | `audio/tts/SpeechSynthesizer`, Beijing |
 | Qwen3-TTS | `qwen3-tts-flash`, `qwen3-tts-flash-2025-11-27`, `qwen3-tts-flash-2025-09-18`, `qwen3-tts-instruct-flash`, `qwen3-tts-instruct-flash-2026-01-26` | multimodal generation, Beijing/Singapore where documented |
-| Qwen-TTS legacy | `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10` | multimodal generation, Beijing where documented |
+| Qwen-TTS legacy | `qwen-tts` | multimodal generation, Beijing where documented |
 | Qwen voice resources | `qwen3-tts-vc-2026-01-22`, `qwen3-tts-vd-2026-01-26` | customization endpoint, Beijing/Singapore where documented |
 | MiniMax | `MiniMax/speech-2.8-hd`, `MiniMax/speech-02-hd`, `MiniMax/speech-2.8-turbo`, `MiniMax/speech-02-turbo` | multimodal generation, configured host selected by the current MiniMax contract |
 

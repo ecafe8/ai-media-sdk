@@ -55,7 +55,7 @@ const result = await generateImage({
 | 家族 | 当前模型 | 音频入口 | SSML | 语音资源协议 |
 | --- | --- | --- | --- | --- |
 | CosyVoice / Qwen-Audio TTS | `cosyvoice-v3.5-plus`、`cosyvoice-v3.5-flash`、`cosyvoice-v3-plus`、`cosyvoice-v3-flash`、`cosyvoice-v2`、`qwen-audio-3.0-tts-plus`、`qwen-audio-3.0-tts-flash` | `generateAudio`、`streamAudio` | 支持 | v3.5 使用 `qwen-audio` 语音资源；其他模型使用系统 voice |
-| Qwen-TTS | `qwen3-tts-flash`、日期版本、`qwen3-tts-instruct-flash`、`qwen-tts`、`qwen-tts-latest` 及日期版本 | `generateAudio`、`streamAudio` | 不由该家族元数据声明 | `qwen`（资源能力须由目标模型支持） |
+| Qwen-TTS | `qwen3-tts-flash`、日期版本、`qwen3-tts-instruct-flash`、`qwen-tts` | `generateAudio`、`streamAudio` | 不由该家族元数据声明 | `qwen`（资源能力须由目标模型支持） |
 | MiniMax TTS | `MiniMax/speech-2.8-hd`、`MiniMax/speech-02-hd`、`MiniMax/speech-2.8-turbo`、`MiniMax/speech-02-turbo` | `generateAudio`、`streamAudio` | 不支持 | 不提供 SDK 语音克隆/设计管理器 |
 
 <ProviderModelTable provider="aliyun-bailian" />

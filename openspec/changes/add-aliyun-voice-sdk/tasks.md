@@ -10,7 +10,7 @@
 ## 2. Alibaba Registry And Parameters
 
 - [x] 2.1 Extend the Alibaba registry with supported Qwen-Audio/CosyVoice and Qwen-TTS audio model entries.
-- [x] 2.2 Add an explicit matrix covering TTS models (`qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2`, `qwen3-tts-flash`, `qwen3-tts-flash-2025-11-27`, `qwen3-tts-flash-2025-09-18`, `qwen3-tts-instruct-flash`, `qwen3-tts-instruct-flash-2026-01-26`, `qwen-tts`, `qwen-tts-latest`, `qwen-tts-2025-05-22`, `qwen-tts-2025-04-10`, and the four MiniMax speech models) plus cloning/design model IDs.
+- [x] 2.2 Add an explicit matrix covering TTS models (`qwen-audio-3.0-tts-plus`, `qwen-audio-3.0-tts-flash`, `cosyvoice-v3.5-plus`, `cosyvoice-v3.5-flash`, `cosyvoice-v3-plus`, `cosyvoice-v3-flash`, `cosyvoice-v2`, `qwen3-tts-flash`, `qwen3-tts-flash-2025-11-27`, `qwen3-tts-flash-2025-09-18`, `qwen3-tts-instruct-flash`, `qwen3-tts-instruct-flash-2026-01-26`, `qwen-tts`, and the four MiniMax speech models) plus cloning/design model IDs.
 - [ ] 2.3 Add registry metadata for cloning/design protocol, supported operations, languages, formats, sample rates, and limits.
 - [ ] 2.4 Add separate typed Qwen-Audio/CosyVoice and Qwen-TTS `providerOptions.aliyun` parameter families.
 - [x] 2.5 Add typed `provider.audio(modelId)` overloads and public exports.
