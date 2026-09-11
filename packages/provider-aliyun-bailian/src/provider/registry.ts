@@ -379,21 +379,6 @@ const ALIYUN_MODEL_REGISTRY_BASE: Readonly<Record<ModelId, AliyunModelEntry>> =
       capabilities: AUDIO_GENERATE_CAPABILITY,
       paramSupport: {},
     },
-    "qwen-tts-latest": {
-      family: "qwen-tts",
-      capabilities: AUDIO_GENERATE_CAPABILITY,
-      paramSupport: {},
-    },
-    "qwen-tts-2025-05-22": {
-      family: "qwen-tts",
-      capabilities: AUDIO_GENERATE_CAPABILITY,
-      paramSupport: {},
-    },
-    "qwen-tts-2025-04-10": {
-      family: "qwen-tts",
-      capabilities: AUDIO_GENERATE_CAPABILITY,
-      paramSupport: {},
-    },
     "MiniMax/speech-2.8-hd": {
       family: "minimax-tts",
       capabilities: AUDIO_GENERATE_CAPABILITY,

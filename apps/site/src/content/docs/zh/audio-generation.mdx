@@ -75,7 +75,7 @@ for await (const event of streamAudio({
 | 家族 | 模型范围 | 格式 | 采样率 | 指令/SSML |
 | --- | --- | --- | --- | --- |
 | CosyVoice / Qwen-Audio | `cosyvoice-v3.5-*`、`cosyvoice-v3-*`、`cosyvoice-v2`、`qwen-audio-3.0-tts-*` | `mp3`、`pcm`、`wav`、`opus` | 8000、16000、22050、24000、44100、48000 | `instruction`；支持 `enableSsml` |
-| Qwen-TTS | `qwen3-tts-*`、`qwen-tts*` | `mp3`、`wav` | 按模型/API | `instructions`、`languageType`、`optimizeInstructions` |
+| Qwen-TTS | `qwen3-tts-*`、`qwen-tts` | `mp3`、`wav` | 按模型/API | `instructions`、`languageType`、`optimizeInstructions` |
 | MiniMax | `MiniMax/speech-2.8-*`、`MiniMax/speech-02-*` | `mp3`、`wav`、`pcm` | 16000、24000、32000、44100 | `voiceSetting` 和 `audioSetting` |
 
 Qwen-Audio/CosyVoice 还支持 `volume`、`rate`、`pitch`、`seed`、`languageHints`、

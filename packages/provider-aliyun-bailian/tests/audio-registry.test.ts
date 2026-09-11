@@ -33,4 +33,10 @@ describe("Aliyun audio registry", () => {
       ALIYUN_MODEL_REGISTRY["qwen3-tts-flash"]?.audio?.supportsSsml
     ).toBeUndefined();
   });
+
+  test("does not expose retired Qwen-TTS models", () => {
+    expect(ALIYUN_MODEL_REGISTRY).not.toHaveProperty("qwen-tts-latest");
+    expect(ALIYUN_MODEL_REGISTRY).not.toHaveProperty("qwen-tts-2025-05-22");
+    expect(ALIYUN_MODEL_REGISTRY).not.toHaveProperty("qwen-tts-2025-04-10");
+  });
 });
