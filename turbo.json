@@ -23,7 +23,7 @@
     "lint": {},
     "format": {},
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck", "^build"]
     },
     "test": {
       "dependsOn": ["^build"],
